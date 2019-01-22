@@ -19,6 +19,8 @@ trait Vector : Clone + Copy + Sized + Add + Sub + Mul<Scalar> + Div<Scalar> {
     }
 }
 
+// Vector 2
+
 #[derive(Clone, Copy)]
 struct Vector2 {
     x: Scalar,
@@ -59,5 +61,51 @@ impl Vector for Vector2  {
     }
     fn dot(self, rhs: Self) -> Scalar {
         self.x * rhs.x + self.y * rhs.y
+    }
+}
+
+// Vector 3
+
+#[derive(Clone, Copy)]
+struct Vector3 {
+    x: Scalar,
+    y: Scalar,
+    z: Scalar,
+}
+
+impl Add for Vector3 {
+    type Output = Self;
+    fn add(self, rhs: Self) -> Self {
+        Vector3 {x: self.x + rhs.x, y: self.y + rhs.y, z: self.z + rhs.z}
+    }
+}
+
+impl Sub for Vector3 {
+    type Output = Self;
+    fn sub(self, rhs: Self) -> Self {
+        Vector3 {x: self.x - rhs.x, y: self.y - rhs.y, z: self.z - rhs.z}
+    }
+}
+
+impl Mul<Scalar> for Vector3 {
+    type Output = Self;
+    fn mul(self, rhs: Scalar) -> Self {
+        Vector3 {x: self.x * rhs, y: self.y * rhs, z: self.z * rhs}
+    }
+}
+
+impl Div<Scalar> for Vector3 {
+    type Output = Self;
+    fn div(self, rhs: Scalar) -> Self {
+        Vector3 {x: self.x / rhs, y: self.y / rhs, z: self.z / rhs}
+    }
+}
+
+impl Vector for Vector3  {
+    fn zero() -> Self {
+        Vector3{x: 0 as Scalar, y: 0 as Scalar, z: 0 as Scalar}
+    }
+    fn dot(self, rhs: Self) -> Scalar {
+        self.x * rhs.x + self.y * rhs.y + self.z * rhs.z
     }
 }
