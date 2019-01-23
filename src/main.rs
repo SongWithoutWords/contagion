@@ -1,6 +1,6 @@
-
 pub mod core;
+pub mod presentation;
 
 fn main() {
-    println!("Hello, world!");
+    presentation::graphics::window::create_window();
 }

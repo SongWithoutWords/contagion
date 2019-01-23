@@ -6,3 +6,8 @@ edition = "2018"
 
 [dependencies]
 sdl2 = "0.32.1"
+
+
+[dependencies.glfw]
+git = "https://github.com/bjz/glfw-rs.git"
+default-features = false
