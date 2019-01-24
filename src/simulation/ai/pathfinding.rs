@@ -108,9 +108,9 @@ impl Polygon {
         let out = Vec::new();
 
         for i in 0..self.len() {
-            let ab = self[(i + 1) % self.len()].sub(self[i]);
-            let ac = self[(i - 1) % self.len()].sub(self[i]);
-            let n = ac.mul(-1);
+            let ab = self[(i + 1) % self.len()] - self[i];
+            let ac = self[(i - 1) % self.len()] - self[i];
+            let n = ac * -1;
             let d = n.dot(ac);
 
             if d > 0 {
@@ -157,7 +157,7 @@ pub fn find_path(start_pos: Vector2, end_pos: Vector2, obstacles: Vec<Polygon>) 
     // Placeholder for how far out we need to space the actor we are finding the path for
     let actor_radius = 5.0;
 
-    // Initialize the graph representing
+    // Initialize the graph representing the viable paths from start to end
     let mut graph = Graph.new(start_pos, end_pos);
 
     // Find all intervening obstacles between the start and the goal
@@ -186,7 +186,7 @@ pub fn find_path(start_pos: Vector2, end_pos: Vector2, obstacles: Vec<Polygon>) 
             for i in intersect.1.len() {
                 // Use normals of edges of polygon to determine direction
                 let norm_sum = &norms[i].add(&norms[(i - 1) % norms.len()]);
-                let node_pos = intersect.1.get(i) + norm_sum.div(norm_sum.length()).mul(actor_radius);
+                let node_pos = intersect.1.get(i) + (norm_sum / norm_sum.length()) * actor_radius;
 
                 // If there is a direct path to the offset node(s), add it/them to the graph/frontier
                 if intersect.1.intersects(start_pos, node_pos).len() == 0 {
@@ -225,7 +225,7 @@ pub fn find_path(start_pos: Vector2, end_pos: Vector2, obstacles: Vec<Polygon>) 
                                         for i in intersect.1.len() {
                                             // Use normals of edges of polygon to determine direction
                                             let norm_sum = &norms[i].add(&norms[(i - 1) % norms.len()]);
-                                            let node_pos = intersect.1.get(i) + norm_sum.div(norm_sum.length()).mul(actor_radius);
+                                            let node_pos = intersect.1.get(i) + (norm_sum / norm_sum.length()) * actor_radius;
 
                                             // If there is a direct path to the offset node(s), add it/them to the graph/frontier
                                             if intersect.1.intersects(start_pos, node_pos).len() == 0 {
@@ -240,7 +240,6 @@ pub fn find_path(start_pos: Vector2, end_pos: Vector2, obstacles: Vec<Polygon>) 
                     }
                     None => return None
                 }
-
             }
 
             None
@@ -249,6 +248,6 @@ pub fn find_path(start_pos: Vector2, end_pos: Vector2, obstacles: Vec<Polygon>) 
 }
 
 fn euclidean_dist(a: Vector2, b: Vector2) -> Scalar {
-    ((a.x - b.x).powf(2.0) + (a.y - b.y).powf(2.0)).sqrt()
+    (a - b).length()
 }
 
