@@ -3,5 +3,5 @@ pub mod presentation;
 pub mod simulation;
 
 fn main() {
-    presentation::graphics::window::create_window();
+    presentation::graphics::renderer::create_window();
 }
