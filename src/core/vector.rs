@@ -5,7 +5,7 @@ use std::ops::Div;
 use std::marker::Sized;
 use crate::core::scalar::Scalar;
 
-pub trait Vector : Clone + Copy + Sized + Add + Sub + Mul<Scalar> + Div<Scalar> {
+pub trait Vector : Clone + Copy + Sized + Add + Sub + Mul<Scalar> + Div<Scalar, Output = Self> {
     fn zero() -> Self;
     fn dot(self, rhs: Self) -> Scalar;
     fn length_squared(self) -> Scalar {
@@ -16,6 +16,9 @@ pub trait Vector : Clone + Copy + Sized + Add + Sub + Mul<Scalar> + Div<Scalar> 
     }
     fn longer_than(self, rhs: Self) -> bool {
         self.length_squared() > rhs.length_squared()
+    }
+    fn normalize(self) -> Self {
+        self / self.length()
     }
 }
 
