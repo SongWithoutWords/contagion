@@ -5,7 +5,7 @@ use std::ops::Div;
 use std::marker::Sized;
 use crate::core::scalar::Scalar;
 
-trait Vector : Clone + Copy + Sized + Add + Sub + Mul<Scalar> + Div<Scalar> {
+pub trait Vector : Clone + Copy + Sized + Add + Sub + Mul<Scalar> + Div<Scalar> {
     fn zero() -> Self;
     fn dot(self, rhs: Self) -> Scalar;
     fn length_squared(self) -> Scalar {
@@ -20,7 +20,7 @@ trait Vector : Clone + Copy + Sized + Add + Sub + Mul<Scalar> + Div<Scalar> {
 }
 
 #[derive(Clone, Copy)]
-struct Vector2 {
+pub struct Vector2 {
     x: Scalar,
     y: Scalar,
 }
