@@ -36,6 +36,9 @@ pub trait Vector
     fn normalize(self) -> Self {
         self / self.length()
     }
+    fn normalize_to(self, length: Scalar) -> Self {
+        self.normalize()
+    }
 }
 
 
