@@ -5,7 +5,15 @@ use std::ops::Div;
 use std::marker::Sized;
 use crate::core::scalar::Scalar;
 
-pub trait Vector : Clone + Copy + Sized + Add + Sub + Mul<Scalar> + Div<Scalar, Output = Self> {
+pub trait Vector
+    : Clone
+    + Copy
+    + Sized
+    + Add<Vector2, Output = Self>
+    + Sub<Vector2, Output = Self>
+    + Mul<Scalar, Output = Self>
+    + Div<Scalar, Output = Self>
+{
     fn zero() -> Self;
     fn dot(self, rhs: Self) -> Scalar;
     fn length_squared(self) -> Scalar {
