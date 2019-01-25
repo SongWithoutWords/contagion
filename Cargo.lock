@@ -26,6 +26,7 @@ name = "contagion"
 version = "0.1.0"
 dependencies = [
  "glfw 0.26.1 (git+https://github.com/bjz/glfw-rs.git)",
+ "rand 0.6.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "sdl2 0.32.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
