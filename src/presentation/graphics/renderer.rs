@@ -1,3 +1,4 @@
+use crate::constants::presentation::*;
 extern crate glfw;
 
 use glfw::{Action, Context, Key};
@@ -6,7 +7,7 @@ pub fn create_window() {
     let mut glfw = glfw::init(glfw::FAIL_ON_ERRORS).unwrap();
 
     // Create window and OpenGL context
-    let (mut window, events) = glfw.create_window(1000, 800, "Contagion", glfw::WindowMode::Windowed)
+    let (mut window, events) = glfw.create_window(WINDOW_W, WINDOW_H, WINDOW_TITLE, glfw::WindowMode::Windowed)
         .expect("Failed to create GLFW window!");
 
     // Set window's context current

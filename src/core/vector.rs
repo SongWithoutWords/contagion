@@ -39,6 +39,8 @@ pub trait Vector
     fn normalize_to(self, length: Scalar) -> Self {
         self.normalize()
     }
+    fn set_x(self, _x: Scalar) { }
+    fn set_y(self, _y: Scalar) { }
 }
 
 
@@ -117,4 +119,6 @@ impl Vector for Vector2  {
     fn dot(self, rhs: Self) -> Scalar {
         self.x * rhs.x + self.y * rhs.y
     }
+    fn set_x(mut self, x: Scalar) { self.x = x }
+    fn set_y(mut self, y: Scalar) { self.y = y }
 }
