@@ -20,12 +20,7 @@ pub fn initial_state(count: u32) -> State {
         let y: Scalar = rng.gen_range(0.0f64, WINDOW_H as f64);
         let position = Vector2{x: x, y: y};
         let velocity = Vector2::zero();
-        entities.push(generate_human(position, velocity));
+        entities.push(Entity{position, velocity, behaviour: Behaviour::Human});
     }
     state
-}
-
-pub fn generate_human(position: Vector2, velocity: Vector2) -> Entity {
-    let human = Entity{position, velocity, behaviour: Behaviour::Human};
-    return human;
 }
