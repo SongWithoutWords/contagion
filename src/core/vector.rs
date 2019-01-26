@@ -44,7 +44,7 @@ pub trait Vector
 }
 
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct Vector2 {
     x: Scalar,
     y: Scalar,
