@@ -46,8 +46,8 @@ pub trait Vector
 
 #[derive(Clone, Copy, Debug)]
 pub struct Vector2 {
-    x: Scalar,
-    y: Scalar,
+    pub x: Scalar,
+    pub y: Scalar,
 }
 
 impl Add for Vector2 {
