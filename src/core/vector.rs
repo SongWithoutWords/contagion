@@ -13,12 +13,12 @@ pub trait Vector
     : Clone
     + Copy
     + Sized
-    + Add<Vector2, Output = Self>
-    + Sub<Vector2, Output = Self>
+    + Add<Self, Output = Self>
+    + Sub<Self, Output = Self>
     + Mul<Scalar, Output = Self>
     + Div<Scalar, Output = Self>
-    + AddAssign<Vector2>
-    + SubAssign<Vector2>
+    + AddAssign<Self>
+    + SubAssign<Self>
     + MulAssign<Scalar>
     + DivAssign<Scalar>
 {
