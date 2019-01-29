@@ -1,37 +1,101 @@
-use crate::constants::presentation::*;
-extern crate glfw;
+extern crate glium;
+extern crate glium_sdl2;
+extern crate sdl2;
+extern crate image;
 
-use glfw::{Action, Context, Key};
+use std::io::Cursor;
+use std::ffi::CString;
+use std::{thread, time};
+use sdl2::pixels::Color;
+use sdl2::rect::{Point, Rect};
+use std::time::Instant;
 
-pub fn create_window() {
-    let mut glfw = glfw::init(glfw::FAIL_ON_ERRORS).unwrap();
+use glium::Surface;
 
-    // Create window and OpenGL context
-    let (mut window, events) = glfw.create_window(WINDOW_W, WINDOW_H, WINDOW_TITLE, glfw::WindowMode::Windowed)
-        .expect("Failed to create GLFW window!");
+use sdl2::event::Event;
+use sdl2::keyboard::Keycode;
 
-    // Set window's context current
-    window.make_current();
-    window.set_key_polling(true);
+const WIDTH: u32 = 1024;
+const HEIGHT: u32 = 768;
 
-    // Loop until user closes window
-    while !window.should_close() {
-        window.swap_buffers();
+pub fn create_window() -> (glium_sdl2::SDL2Facade, sdl2::EventPump) {
+    use glium_sdl2::DisplayBuild;
+    // initialize SDL library
+    let sdl_context = sdl2::init().unwrap();
+    // initialize video subsystem
+    let video_subsystem = sdl_context.video().unwrap();
+    // OpenGL context getters and setters
+    let gl_attr = video_subsystem.gl_attr();
+    let mut pause_time = false;
 
-        // Poll and process events
-        glfw.poll_events();
-        for (_, event) in glfw::flush_messages(&events) {
-            println!("{:?}", event);
-            handle_window_event(&mut window, event);
-        }
+    // OpenGL version switcher for platform compatibility
+    let mut major = 0;
+    let mut minor = 0;
+    if cfg!(macos) {
+        major = 4;
+        minor = 1;
     }
+    if cfg!(linux) {
+        major = 4;
+        minor = 1;
+    }
+    if cfg!(windows) {
+        major = 4;
+        minor = 1;
+    }
+
+    // setup OpenGL profile
+    gl_attr.set_context_profile(sdl2::video::GLProfile::Core); // setting type of GL context
+    // Set the context into debug mode
+    gl_attr.set_context_flags().debug().set();
+    gl_attr.set_context_version(major, minor); // specifying OpenGL version
+
+    // creating window
+    // available functionality: https://nukep.github.io/rust-sdl2/sdl2/video/struct.WindowBuilder.html#method.resizable
+    let window = video_subsystem
+        .window("Contagion", WIDTH, HEIGHT)
+        .resizable()
+        .build_glium()
+        .unwrap();
+
+    let mut event_pump = sdl_context.event_pump().unwrap();
+
+    (window, event_pump)
 }
 
-fn handle_window_event(window: &mut glfw::Window, event: glfw::WindowEvent) {
-    match event {
-        glfw::WindowEvent::Key(Key::Escape, _, Action::Press, _) => {
-            window.set_should_close(true)
-        },
-        _ => {},
-    }
+pub fn init_texture(window: &glium_sdl2::SDL2Facade) -> glium::texture::texture2d::Texture2d {
+    let image = image::load(Cursor::new(&include_bytes!("../../assets/zombie-transparent.png")[..]),
+                            image::PNG).unwrap().to_rgba();
+    let image_dimensions = image.dimensions();
+    let image = glium::texture::RawImage2d::from_raw_rgba_reversed(&image.into_raw(), image_dimensions);
+    let texture = glium::texture::Texture2d::new(window, image).unwrap();
+    (texture)
+}
+
+#[derive(Copy, Clone)]
+pub struct Vertex {
+    position: [f32; 2],
+    tex_coords: [f32; 2],
+}
+
+pub fn init_shader(window: &glium_sdl2::SDL2Facade) -> (glium::VertexBuffer<Vertex>, glium::index::NoIndices){
+    implement_vertex!(Vertex, position, tex_coords);
+    // 1      2
+    // +------+
+    // |    / |
+    // |  /   |
+    // |/     |
+    // +------+
+    // 3      4
+    let vertex1 = Vertex { position: [-0.5, 0.5], tex_coords: [0.0, 1.0] };
+    let vertex2 = Vertex { position: [0.5, 0.5], tex_coords: [1.0, 1.0] };
+    let vertex3 = Vertex { position: [-0.5, -0.5], tex_coords: [0.0, 0.0] };
+    let vertex4 = Vertex { position: [0.5, 0.5], tex_coords: [1.0, 1.0] };
+    let vertex5 = Vertex { position: [0.5, -0.5], tex_coords: [1.0, 0.0] };
+    let vertex6 = Vertex { position: [-0.5, -0.5], tex_coords: [0.0, 0.0] };
+    let shape = vec![vertex1, vertex2, vertex3, vertex4, vertex5, vertex6];
+
+    let vertex_buffer = glium::VertexBuffer::new(window, &shape).unwrap();
+    let indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
+    (vertex_buffer,indices)
 }
