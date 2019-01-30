@@ -6,11 +6,11 @@ edition = "2018"
 
 [dependencies]
 glium_sdl2 = "0.15"
-sdl2 = "0.30"
 glium = "0.18"
 image = "*"
 rand = "0.6.0"
 
-[dependencies.glfw]
-git = "https://github.com/bjz/glfw-rs.git"
+[dependencies.sdl2]
+version = "0.30"
 default-features = false
+features = ["ttf"]

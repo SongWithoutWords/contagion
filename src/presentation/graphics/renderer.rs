@@ -6,20 +6,19 @@ extern crate image;
 use std::io::Cursor;
 use std::ffi::CString;
 use std::{thread, time};
-use sdl2::pixels::Color;
-use sdl2::rect::{Point, Rect};
 use std::time::Instant;
 use std::path::Path;
 
 use glium::Surface;
+use glium_sdl2::SDL2Facade;
 
+use sdl2::{Sdl, EventPump};
 use sdl2::event::Event;
-use sdl2::keyboard::Keycode;
 
 const WIDTH: u32 = 1024;
 const HEIGHT: u32 = 768;
 
-pub fn create_window() -> (glium_sdl2::SDL2Facade, sdl2::EventPump) {
+pub fn create_window() -> (Sdl, SDL2Facade, EventPump) {
     use glium_sdl2::DisplayBuild;
     // initialize SDL library
     let sdl_context = sdl2::init().unwrap();
@@ -44,7 +43,7 @@ pub fn create_window() -> (glium_sdl2::SDL2Facade, sdl2::EventPump) {
 
     let mut event_pump = sdl_context.event_pump().unwrap();
 
-    (window, event_pump)
+    (sdl_context, window, event_pump)
 }
 
 pub fn load_texture(window: &glium_sdl2::SDL2Facade, path: &str) -> glium::texture::texture2d::Texture2d {
@@ -79,4 +78,10 @@ pub fn init_shader(window: &glium_sdl2::SDL2Facade) -> (glium::VertexBuffer<Vert
     let vertex_buffer = glium::VertexBuffer::new(window, &shape).unwrap();
     let indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
     (vertex_buffer,indices)
+}
+
+use sdl2::ttf;
+pub fn create_font() {
+    let ttf_context = ttf::init().unwrap();
+    let font = ttf_context.load_font("src/assets/ConsolaMono.ttf", 50).unwrap();
 }
