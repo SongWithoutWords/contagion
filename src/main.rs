@@ -37,8 +37,12 @@ fn init() -> Result<((Sdl, SDL2Facade, EventPump), presentation::display::Textur
     let file = File::open("src/assets/dark_rage.wav").unwrap();
     let source = rodio::Decoder::new(BufReader::new(file)).unwrap();
 
+    // Make this specific wav file (dark_rage.wav) play on loop
+    let source = source.take_duration(Duration::from_secs(326)).repeat_infinite();
+
     // Play the file
     rodio::play_raw(&device, source.convert_samples());
+
 
 
 
