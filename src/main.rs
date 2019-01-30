@@ -11,11 +11,12 @@ extern crate image;
 use sdl2::{Sdl, EventPump, ttf};
 use sdl2::event::Event;
 use std::{io::Cursor, ffi::CString, path::Path, time::Instant};
+use std::collections::HashMap;
 use glium_sdl2::SDL2Facade;
 use glium::draw_parameters::Blend;
 use glium::Surface;
 use glium::index::NoIndices;
-use glium::texture::texture2d::Texture2d;
+use glium::texture::{texture2d::Texture2d, Texture2dArray};
 use glium::VertexBuffer;
 use presentation::graphics::renderer::Vertex;
 
@@ -25,31 +26,42 @@ struct Textures {
     citizen: Texture2d,
 }
 
-struct Shader_Buffers {
+struct ShaderBuffers {
     zombie_shaders: (VertexBuffer<Vertex>, NoIndices),
     police_shaders: (VertexBuffer<Vertex>, NoIndices),
     citizen_shaders: (VertexBuffer<Vertex>, NoIndices),
 }
 
 fn init() -> Result<((Sdl, SDL2Facade, EventPump), Textures, glium::Program,
-                     Shader_Buffers), String> {
+                     ShaderBuffers), String> {
     // TODO: initialize music
 
     // initialize window and eventpump
     let window_tuple = presentation::graphics::renderer::create_window();
-    let mut window = window_tuple.1;
+    let window = window_tuple.1;
 
     // load image -> type glium::texture::texture2d::Texture2d
-    let zombie_texture = presentation::graphics::renderer::load_texture(&window, "src/assets/zombie.png");
-    let police_texture = presentation::graphics::renderer::load_texture(&window, "src/assets/police.png");
-    let citizen_texture = presentation::graphics::renderer::load_texture(&window, "src/assets/citizen.png");
+    let zombie_texture: Texture2d = presentation::graphics::renderer::load_texture(&window, "src/assets/zombie.png");
+    let police_texture: Texture2d = presentation::graphics::renderer::load_texture(&window, "src/assets/police.png");
+    let citizen_texture: Texture2d = presentation::graphics::renderer::load_texture(&window, "src/assets/citizen.png");
     let texture: Textures = Textures{zombies: zombie_texture, police: police_texture, citizen: citizen_texture};
+
+    // sprite batching
+    let texture_dict: HashMap<&str, u32> = {
+        let mut map: HashMap<&str, u32> = HashMap::new();
+        let paths = vec!["zombie.png"];
+        for (num, path) in (0u32..).zip(paths.into_iter()) {
+            map.insert(path, num);
+        }
+        map
+    };
+    let textures2array: Texture2dArray = presentation::graphics::renderer::load_texture2d_array(&window, texture_dict);
 
     // create vertex buffer, indices
     let zombie_shader = presentation::graphics::renderer::init_shader(&window);
     let police_shader = presentation::graphics::renderer::init_shader(&window);
     let citizen_shader = presentation::graphics::renderer::init_shader(&window);
-    let shader = Shader_Buffers{zombie_shaders: zombie_shader, police_shaders: police_shader, citizen_shaders: citizen_shader};
+    let shader = ShaderBuffers {zombie_shaders: zombie_shader, police_shaders: police_shader, citizen_shaders: citizen_shader};
 
     // send vertex shader and fragment shader to glium library
     let program = glium::Program::from_source(&window, include_str!("./presentation/graphics/vs.vert"),
@@ -61,7 +73,7 @@ fn init() -> Result<((Sdl, SDL2Facade, EventPump), Textures, glium::Program,
 
 fn main() {
     // init
-    let (mut window_tuple, mut texture, mut program, mut shader) = match init() {
+    let (window_tuple, texture, program, shader) = match init() {
         // error handler if init fails
         Ok(t) => t,
         Err(err) => {
