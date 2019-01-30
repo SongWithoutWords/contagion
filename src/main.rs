@@ -41,7 +41,7 @@ fn init() -> Result<(glium_sdl2::SDL2Facade, sdl2::EventPump, Textures, glium::P
     let mut event_pump = window_tuple.1;
 
     // load image -> type glium::texture::texture2d::Texture2d
-    let zombie_texture = presentation::graphics::renderer::load_texture(&window, "src/assets/zombie-transparent.png");
+    let zombie_texture = presentation::graphics::renderer::load_texture(&window, "src/assets/zombie.png");
     let police_texture = presentation::graphics::renderer::load_texture(&window, "src/assets/police.png");
     let citizen_texture = presentation::graphics::renderer::load_texture(&window, "src/assets/citizen.png");
     let texture: Textures = Textures{zombies: zombie_texture, police: police_texture, citizen: citizen_texture};
