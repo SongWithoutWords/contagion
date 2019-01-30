@@ -13,9 +13,10 @@ use glium::draw_parameters::Blend;
 use glium::Surface;
 use std::ffi::CString;
 use std::path::Path;
+use glium::texture::texture2d::Texture2d;
 
 
-fn init() -> Result<(glium_sdl2::SDL2Facade, sdl2::EventPump, glium::texture::texture2d::Texture2d, glium::Program,
+fn init() -> Result<(glium_sdl2::SDL2Facade, sdl2::EventPump, (Texture2d, Texture2d, Texture2d), glium::Program,
                      (glium::VertexBuffer<presentation::graphics::renderer::Vertex>, glium::index::NoIndices)), String> {
     // TODO: initialize music
 
@@ -25,8 +26,10 @@ fn init() -> Result<(glium_sdl2::SDL2Facade, sdl2::EventPump, glium::texture::te
     let mut event_pump = window_tuple.1;
 
     // load image -> type glium::texture::texture2d::Texture2d
-    let texture = presentation::graphics::renderer::load_texture(&window, "src/assets/zombie-transparent.png");
-
+    let zombie_texture = presentation::graphics::renderer::load_texture(&window, "src/assets/zombie-transparent.png");
+    let police_texture = presentation::graphics::renderer::load_texture(&window, "src/assets/police.png");
+    let citizen_texture = presentation::graphics::renderer::load_texture(&window, "src/assets/citizen.png");
+    let texture = (zombie_texture, police_texture, citizen_texture);
     // create vertex buffer, indices
     let shader = presentation::graphics::renderer::init_shader(&window);
 
@@ -47,6 +50,9 @@ fn main() {
             std::process::exit(1);
         },
     };
+    let zombie_texture = texture.0;
+    let police_texture = texture.1;
+    let citizen_texture = texture.2;
     let vertex_buffer = shader.0;
     let indices = shader.1;
 
@@ -69,7 +75,7 @@ fn main() {
                 [0.0, 0.0, 1.0, 0.0],
                 [ 0.0 , 0.0, 0.0, 1.0f32],
             ],
-            tex: &texture,
+            tex: &zombie_texture,
         };
         target.draw(&vertex_buffer, &indices, &program, &uniforms,
                     &params).unwrap();
