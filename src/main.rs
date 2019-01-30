@@ -9,11 +9,15 @@ extern crate sdl2;
 extern crate image;
 
 use std::io::Cursor;
-use glium::draw_parameters::Blend;
-use glium::Surface;
 use std::ffi::CString;
 use std::path::Path;
+use glium::draw_parameters::Blend;
+use glium::Surface;
+use glium::index::NoIndices;
 use glium::texture::texture2d::Texture2d;
+use glium::VertexBuffer;
+use presentation::graphics::renderer::Vertex;
+
 
 struct Textures {
     zombies: Texture2d,
@@ -21,8 +25,14 @@ struct Textures {
     citizen: Texture2d,
 }
 
+struct Shader_Buffers {
+    zombie_shaders: (VertexBuffer<Vertex>, NoIndices),
+    police_shaders: (VertexBuffer<Vertex>, NoIndices),
+    citizen_shaders: (VertexBuffer<Vertex>, NoIndices),
+}
+
 fn init() -> Result<(glium_sdl2::SDL2Facade, sdl2::EventPump, Textures, glium::Program,
-                     (glium::VertexBuffer<presentation::graphics::renderer::Vertex>, glium::index::NoIndices)), String> {
+                     Shader_Buffers), String> {
     // TODO: initialize music
 
     // initialize window and eventpump
@@ -37,7 +47,10 @@ fn init() -> Result<(glium_sdl2::SDL2Facade, sdl2::EventPump, Textures, glium::P
     let texture: Textures = Textures{zombies: zombie_texture, police: police_texture, citizen: citizen_texture};
 
     // create vertex buffer, indices
-    let shader = presentation::graphics::renderer::init_shader(&window);
+    let zombie_shader = presentation::graphics::renderer::init_shader(&window);
+    let police_shader = presentation::graphics::renderer::init_shader(&window);
+    let citizen_shader = presentation::graphics::renderer::init_shader(&window);
+    let shader = Shader_Buffers{zombie_shaders: zombie_shader, police_shaders: police_shader, citizen_shaders: citizen_shader};
 
     // send vertex shader and fragment shader to glium library
     let program = glium::Program::from_source(&window, include_str!("./presentation/graphics/vs.vert"),
@@ -59,8 +72,12 @@ fn main() {
     let zombie_texture = texture.zombies;
     let police_texture = texture.police;
     let citizen_texture = texture.citizen;
-    let vertex_buffer = shader.0;
-    let indices = shader.1;
+    let police_vb = shader.police_shaders.0;
+    let police_ib = shader.police_shaders.1;
+    let zombie_vb = shader.zombie_shaders.0;
+    let zombie_ib = shader.zombie_shaders.1;
+    let citizen_vb = shader.citizen_shaders.0;
+    let citizen_ib = shader.citizen_shaders.1;
 
     let params = glium::DrawParameters{
         blend: Blend::alpha_blending(),
@@ -70,21 +87,51 @@ fn main() {
     // main game loop
     let mut running = true;
     while running {
-        // draw background
         let mut target = window.draw();
-        // do drawing here...
+        // draw background
         target.clear_color(0.0, 0.0, 1.0, 1.0);
-        let uniforms = uniform! {
-            matrix: [
-                [1.0, 0.0, 0.0, 0.0],
-                [0.0, 1.0, 0.0, 0.0],
-                [0.0, 0.0, 1.0, 0.0],
-                [ 0.0 , 0.0, 0.0, 1.0f32],
-            ],
-            tex: &zombie_texture,
-        };
-        target.draw(&vertex_buffer, &indices, &program, &uniforms,
+        // draw zombie
+        {
+            let uniforms = uniform! {
+                matrix: [
+                    [1.0, 0.0, 0.0, 0.0],
+                    [0.0, 1.0, 0.0, 0.0],
+                    [0.0, 0.0, 1.0, 0.0],
+                    [ 0.0 , 0.0, 0.0, 1.0f32],
+                ],
+                tex: &zombie_texture,
+            };
+            target.draw(&zombie_vb, &zombie_ib, &program, &uniforms,
                     &params).unwrap();
+         }
+        // draw police
+        {
+            let uniforms = uniform! {
+                matrix: [
+                    [1.0, 0.0, 0.0, 0.0],
+                    [0.0, 1.0, 0.0, 0.0],
+                    [0.0, 0.0, 1.0, 0.0],
+                    [ -0.5 , 0.0, 0.0, 1.0f32],
+                ],
+                tex: &police_texture,
+            };
+            target.draw(&police_vb, &police_ib, &program, &uniforms,
+                        &params).unwrap();
+        }
+        // draw civilian
+        {
+            let uniforms = uniform! {
+                matrix: [
+                    [1.0, 0.0, 0.0, 0.0],
+                    [0.0, 1.0, 0.0, 0.0],
+                    [0.0, 0.0, 1.0, 0.0],
+                    [ 0.5 , 0.0, 0.0, 1.0f32],
+                ],
+                tex: &citizen_texture,
+            };
+            target.draw(&citizen_vb, &citizen_ib, &program, &uniforms,
+                        &params).unwrap();
+        }
         target.finish().unwrap();
 
         // Event loop: polls for events sent to all windows
