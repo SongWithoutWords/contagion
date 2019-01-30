@@ -3,10 +3,13 @@ pub mod core;
 pub mod presentation;
 pub mod simulation;
 
-#[macro_use] extern crate glium;
+#[macro_use]
+extern crate glium;
 extern crate glium_sdl2;
 extern crate sdl2;
 extern crate image;
+extern crate rodio;
+
 
 use sdl2::{Sdl, EventPump, ttf};
 use sdl2::event::Event;
@@ -17,9 +20,27 @@ use glium::Surface;
 use glium::index::NoIndices;
 use glium::texture::texture2d::Texture2d;
 use glium::VertexBuffer;
+use sdl2::audio::{AudioCallback, AudioSpecDesired};
+use std::time::Duration;
+use std::io::BufReader;
+use std::fs::File;
+use rodio::Source;
+
 
 fn init() -> Result<((Sdl, SDL2Facade, EventPump), presentation::display::Textures, glium::Program), String> {
-    // TODO: initialize music
+
+
+    // Handle the Audio
+    let device = rodio::default_output_device().unwrap();
+
+    // Audio source path
+    let file = File::open("src/assets/dark_rage.wav").unwrap();
+    let source = rodio::Decoder::new(BufReader::new(file)).unwrap();
+
+    // Play the file
+    rodio::play_raw(&device, source.convert_samples());
+
+
 
     // initialize window and eventpump
     let window_tuple = presentation::graphics::renderer::create_window();
@@ -29,7 +50,7 @@ fn init() -> Result<((Sdl, SDL2Facade, EventPump), presentation::display::Textur
     let textures = presentation::display::Textures {
         zombies: presentation::graphics::renderer::load_texture(&window, "src/assets/zombie.png"),
         police: presentation::graphics::renderer::load_texture(&window, "src/assets/police.png"),
-        citizen: presentation::graphics::renderer::load_texture(&window, "src/assets/citizen.png")
+        citizen: presentation::graphics::renderer::load_texture(&window, "src/assets/citizen.png"),
     };
 
     // send vertex shader and fragment shader to glium library
@@ -46,17 +67,17 @@ fn main() {
         // error handler if init fails
         Ok(t) => t,
         Err(err) => {
-            println!("{}",err);
+            println!("{}", err);
             std::process::exit(1);
-        },
+        }
     };
     let sdl_context = window_tuple.0;
     let window = window_tuple.1;
     let mut event_pump = window_tuple.2;
 
-    let params = glium::DrawParameters{
+    let params = glium::DrawParameters {
         blend: Blend::alpha_blending(),
-        .. Default::default()
+        ..Default::default()
     };
 
     let mut state = simulation::initial_state::initial_state(100);
@@ -85,7 +106,7 @@ fn main() {
 
         let mut target = window.draw();
 
-        simulation::update::update(&simulation::update::UpdateArgs{dt: elapsed_t as f64}, &mut state);
+        simulation::update::update(&simulation::update::UpdateArgs { dt: elapsed_t as f64 }, &mut state);
 
         presentation::display::display(&mut target, &window, &program, &textures, &params, &state);
 
@@ -99,7 +120,7 @@ fn main() {
                 // TODO: key inputs
                 Event::Quit { .. } => {
                     running = false;
-                },
+                }
                 _ => ()
             }
         }
