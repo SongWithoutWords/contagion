@@ -9,6 +9,7 @@ glium_sdl2 = "0.15"
 glium = "0.18"
 image = "*"
 rand = "0.6.0"
+rodio = "0.8.1"
 
 [dependencies.sdl2]
 version = "0.30"
