@@ -63,20 +63,18 @@ pub struct Vertex {
 
 pub fn init_shader(window: &glium_sdl2::SDL2Facade) -> (glium::VertexBuffer<Vertex>, glium::index::NoIndices){
     implement_vertex!(Vertex, position, tex_coords);
-    // 1      2
+    // 0      1
     // +------+
     // |    / |
     // |  /   |
     // |/     |
     // +------+
-    // 3      4
-    let vertex1 = Vertex { position: [-0.5, 0.5], tex_coords: [0.0, 1.0] };
-    let vertex2 = Vertex { position: [0.5, 0.5], tex_coords: [1.0, 1.0] };
-    let vertex3 = Vertex { position: [-0.5, -0.5], tex_coords: [0.0, 0.0] };
-    let vertex4 = Vertex { position: [0.5, 0.5], tex_coords: [1.0, 1.0] };
-    let vertex5 = Vertex { position: [0.5, -0.5], tex_coords: [1.0, 0.0] };
-    let vertex6 = Vertex { position: [-0.5, -0.5], tex_coords: [0.0, 0.0] };
-    let shape = vec![vertex1, vertex2, vertex3, vertex4, vertex5, vertex6];
+    // 2      3
+    let vertex0 = Vertex { position: [-0.5, 0.5], tex_coords: [0.0, 1.0] };
+    let vertex1 = Vertex { position: [0.5, 0.5], tex_coords: [1.0, 1.0] };
+    let vertex2 = Vertex { position: [-0.5, -0.5], tex_coords: [0.0, 0.0] };
+    let vertex3 = Vertex { position: [0.5, -0.5], tex_coords: [1.0, 0.0] };
+    let shape = vec![vertex0, vertex1, vertex2, vertex1, vertex3, vertex2];
 
     let vertex_buffer = glium::VertexBuffer::new(window, &shape).unwrap();
     let indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
