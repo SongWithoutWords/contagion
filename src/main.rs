@@ -12,6 +12,7 @@ use std::io::Cursor;
 use glium::draw_parameters::Blend;
 use glium::Surface;
 use std::ffi::CString;
+use std::path::Path;
 
 
 fn init() -> Result<(glium_sdl2::SDL2Facade, sdl2::EventPump, glium::texture::texture2d::Texture2d, glium::Program,
@@ -24,10 +25,12 @@ fn init() -> Result<(glium_sdl2::SDL2Facade, sdl2::EventPump, glium::texture::te
     let mut event_pump = window_tuple.1;
 
     // load image -> type glium::texture::texture2d::Texture2d
-    let texture = presentation::graphics::renderer::init_texture(&window);
+    let texture = presentation::graphics::renderer::load_texture(&window, "src/assets/zombie-transparent.png");
 
-    // create vertex buffer, indices, shader program
+    // create vertex buffer, indices
     let shader = presentation::graphics::renderer::init_shader(&window);
+
+    // send vertex shader and fragment shader to glium library
     let program = glium::Program::from_source(&window, include_str!("./presentation/graphics/vs.vert"),
                                               include_str!("./presentation/graphics/fs.frag"), None).unwrap();
 

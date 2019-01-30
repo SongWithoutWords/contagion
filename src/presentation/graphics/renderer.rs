@@ -9,6 +9,7 @@ use std::{thread, time};
 use sdl2::pixels::Color;
 use sdl2::rect::{Point, Rect};
 use std::time::Instant;
+use std::path::Path;
 
 use glium::Surface;
 
@@ -46,9 +47,8 @@ pub fn create_window() -> (glium_sdl2::SDL2Facade, sdl2::EventPump) {
     (window, event_pump)
 }
 
-pub fn init_texture(window: &glium_sdl2::SDL2Facade) -> glium::texture::texture2d::Texture2d {
-    let image = image::load(Cursor::new(&include_bytes!("../../assets/zombie-transparent.png")[..]),
-                            image::PNG).unwrap().to_rgba();
+pub fn load_texture(window: &glium_sdl2::SDL2Facade, path: &str) -> glium::texture::texture2d::Texture2d {
+    let image = image::open(Path::new(path)).unwrap().to_rgba();
     let image_dimensions = image.dimensions();
     let image = glium::texture::RawImage2d::from_raw_rgba_reversed(&image.into_raw(), image_dimensions);
     let texture = glium::texture::Texture2d::new(window, image).unwrap();
