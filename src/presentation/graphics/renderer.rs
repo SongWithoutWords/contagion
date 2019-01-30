@@ -3,6 +3,7 @@ extern crate glium_sdl2;
 extern crate sdl2;
 extern crate image;
 
+use crate::constants::presentation::*;
 use std::io::Cursor;
 use std::ffi::CString;
 use std::{thread, time};
@@ -36,7 +37,7 @@ pub fn create_window() -> (Sdl, SDL2Facade, EventPump) {
     // creating window
     // available functionality: https://nukep.github.io/rust-sdl2/sdl2/video/struct.WindowBuilder.html#method.resizable
     let window = video_subsystem
-        .window("Contagion", WIDTH, HEIGHT)
+        .window(WINDOW_TITLE, WINDOW_W, WINDOW_H)
         .resizable()
         .build_glium()
         .unwrap();

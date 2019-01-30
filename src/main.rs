@@ -91,7 +91,7 @@ fn main() {
     let mut last_frame = Instant::now();
     let mut last_second = Instant::now();
     let mut fps = 0;
-    let mut elapsed;
+    let mut elapsed_t;
 
     // main game loop
     let mut running = true;
