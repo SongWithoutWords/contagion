@@ -9,6 +9,7 @@ extern crate sdl2;
 extern crate image;
 
 use std::io::Cursor;
+use glium::draw_parameters::Blend;
 use glium::Surface;
 use std::ffi::CString;
 
@@ -46,6 +47,11 @@ fn main() {
     let vertex_buffer = shader.0;
     let indices = shader.1;
 
+    let params = glium::DrawParameters{
+        blend: Blend::alpha_blending(),
+        .. Default::default()
+    };
+
     // main game loop
     let mut running = true;
     while running {
@@ -63,7 +69,7 @@ fn main() {
             tex: &texture,
         };
         target.draw(&vertex_buffer, &indices, &program, &uniforms,
-                    &Default::default()).unwrap();
+                    &params).unwrap();
         target.finish().unwrap();
 
         // Event loop: polls for events sent to all windows
