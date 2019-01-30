@@ -98,13 +98,13 @@ fn main() {
     while running {
         // Handle FPS
         {
+            // use elapsed for transforming matrices
             let dt = last_frame.elapsed().subsec_nanos() as f32 / 1.0e6; // ns -> ms
             elapsed = dt / 1.0e3; // ms -> s
             last_frame = Instant::now();
             fps += 1;
             if last_frame.duration_since(last_second).as_secs() >= 1 {
                 println!("FPS: {:?}", fps);
-
                 last_second = Instant::now();
                 fps = 0;
             }
