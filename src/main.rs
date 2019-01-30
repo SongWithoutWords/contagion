@@ -59,7 +59,7 @@ fn main() {
         .. Default::default()
     };
 
-    let state = simulation::initial_state::initial_state(100);
+    let mut state = simulation::initial_state::initial_state(100);
 
     let mut last_frame = Instant::now();
     let mut last_second = Instant::now();
@@ -85,7 +85,9 @@ fn main() {
 
         let mut target = window.draw();
 
-        crate::presentation::display::display(&mut target, &window, &program, &textures, &params, &state);
+        simulation::update::update(&simulation::update::UpdateArgs{dt: elapsed_t as f64}, &mut state);
+
+        presentation::display::display(&mut target, &window, &program, &textures, &params, &state);
 
 
         target.finish().unwrap();

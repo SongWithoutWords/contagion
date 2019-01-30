@@ -3,7 +3,7 @@ use crate::core::scalar::*;
 use super::state::*;
 
 pub struct UpdateArgs {
-    dt: Scalar
+    pub dt: Scalar
 }
 
 pub fn update(args: &UpdateArgs, state: &mut State) {
@@ -27,6 +27,58 @@ pub fn update(args: &UpdateArgs, state: &mut State) {
                 simulate_zombie(args, &mut entities, i)
         }
     }
+
+    const DOUBLE_ENTITY_RADIUS_SQUARED: f64 = 4.0 * ENTITY_RADIUS * ENTITY_RADIUS;
+
+    // Check for collisions
+    for i in 0..state.entities.len() {
+        let p1 = state.entities[i].position;
+
+        for j in (i+1)..state.entities.len() {
+            let p2 = state.entities[j].position;
+
+            let delta = p2 - p1;
+
+            let delta_length_squared = delta.length_squared();
+
+            if delta_length_squared < DOUBLE_ENTITY_RADIUS_SQUARED {
+                handle_collision(args, &mut state.entities, i, j, &delta, delta_length_squared);
+            }
+        }
+    }
+
+    // Apply acceleration
+    for e in &mut state.entities {
+        let displacement = args.dt * e.velocity;
+        e.position += displacement;
+        e.velocity -= 0.5 * displacement;
+    }
+}
+
+fn handle_collision(
+    args: &UpdateArgs,
+    entities: &mut Vec<Entity>,
+    i: usize,
+    j: usize,
+    delta: &Vector2,
+    delta_length_squared: f64) {
+
+    // Spread the infection from zombies to others
+    match (&entities[i].behaviour, &entities[j].behaviour) {
+
+        (Behaviour::Human, Behaviour::Zombie) => entities[i].behaviour = Behaviour::Zombie,
+        (Behaviour::Zombie, Behaviour::Human) => entities[j].behaviour = Behaviour::Zombie,
+
+        (Behaviour::Cop, Behaviour::Zombie) => entities[i].behaviour = Behaviour::Zombie,
+        (Behaviour::Zombie, Behaviour::Cop) => entities[j].behaviour = Behaviour::Zombie,
+
+        _ => ()
+    }
+
+    // Force entities apart that are overlapping
+    let velocity_change = *delta * (args.dt / delta_length_squared);
+    entities[i].velocity -= velocity_change;
+    entities[j].velocity += velocity_change;
 }
 
 fn simulate_zombie(args: &UpdateArgs, entities: &mut Vec<Entity>, index: usize) {
