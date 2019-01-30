@@ -55,32 +55,6 @@ pub fn load_texture(window: &glium_sdl2::SDL2Facade, path: &str) -> glium::textu
     (texture)
 }
 
-#[derive(Copy, Clone)]
-pub struct Vertex {
-    position: [f32; 2],
-    tex_coords: [f32; 2],
-}
-
-pub fn init_shader(window: &glium_sdl2::SDL2Facade) -> (glium::VertexBuffer<Vertex>, glium::index::NoIndices){
-    implement_vertex!(Vertex, position, tex_coords);
-    // 0      1
-    // +------+
-    // |    / |
-    // |  /   |
-    // |/     |
-    // +------+
-    // 2      3
-    let vertex0 = Vertex { position: [-0.5, 0.5], tex_coords: [0.0, 1.0] };
-    let vertex1 = Vertex { position: [0.5, 0.5], tex_coords: [1.0, 1.0] };
-    let vertex2 = Vertex { position: [-0.5, -0.5], tex_coords: [0.0, 0.0] };
-    let vertex3 = Vertex { position: [0.5, -0.5], tex_coords: [1.0, 0.0] };
-    let shape = vec![vertex0, vertex1, vertex2, vertex1, vertex3, vertex2];
-
-    let vertex_buffer = glium::VertexBuffer::new(window, &shape).unwrap();
-    let indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
-    (vertex_buffer,indices)
-}
-
 use sdl2::ttf;
 pub fn create_font() {
     let ttf_context = ttf::init().unwrap();
