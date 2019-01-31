@@ -127,7 +127,7 @@ fn main() {
                     running = false;
                 },
 
-                Event::KeyDown { .. } => {
+                Event::KeyDown { keycode: Some(Keycode::W), .. } => {
                   println!("Hi");
                 },
                 _ => ()
