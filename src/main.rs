@@ -34,10 +34,10 @@ fn init() -> Result<((Sdl, SDL2Facade, EventPump), presentation::display::Textur
     let device = rodio::default_output_device().unwrap();
 
     // Audio source path
-    let file = File::open("src/assets/dark_rage.wav").unwrap();
+    let file = File::open("src/assets/dark_rage.ogg").unwrap();
     let source = rodio::Decoder::new(BufReader::new(file)).unwrap();
 
-    // Make this specific wav file (dark_rage.wav) play on loop
+    // Make this specific wav file (dark_rage.ogg) play on loop
     let source = source.take_duration(Duration::from_secs(326)).repeat_infinite();
 
     // Play the file
