@@ -13,6 +13,7 @@ extern crate rodio;
 
 use sdl2::{Sdl, EventPump, ttf};
 use sdl2::event::Event;
+use sdl2::keyboard::Keycode;
 use std::{io::Cursor, ffi::CString, path::Path, time::Instant};
 use glium_sdl2::SDL2Facade;
 use glium::draw_parameters::Blend;
@@ -121,10 +122,14 @@ fn main() {
         for event in event_pump.poll_iter() {
             use sdl2::event::Event;
             match event {
-                // TODO: key inputs
-                Event::Quit { .. } => {
+                // Exit window if escape key pressed or quit event triggered
+                Event::Quit { .. } | Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
                     running = false;
-                }
+                },
+
+                Event::KeyDown { .. } => {
+                  println!("Hi");
+                },
                 _ => ()
             }
         }
