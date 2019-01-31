@@ -29,10 +29,23 @@ pub fn create_window() -> (Sdl, SDL2Facade, EventPump) {
     let gl_attr = video_subsystem.gl_attr();
     let mut pause_time = false;
 
+
     // setup OpenGL profile
     gl_attr.set_context_profile(sdl2::video::GLProfile::Core); // setting type of GL context
     // Set the context into debug mode
     gl_attr.set_context_flags().debug().set();
+
+    // setup OpenGL profile
+    gl_attr.set_context_profile(sdl2::video::GLProfile::Core); // setting type of GL context
+    // Set the context into debug mode
+    gl_attr.set_context_flags().debug().set();
+
+    {
+        // OpenGL version switcher for platform compatibility
+        let major = 3;
+        let minor = 3;
+        gl_attr.set_context_version(major, minor); // specifying OpenGL version
+    }
 
     // creating window
     // available functionality: https://nukep.github.io/rust-sdl2/sdl2/video/struct.WindowBuilder.html#method.resizable
