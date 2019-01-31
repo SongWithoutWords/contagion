@@ -16,8 +16,8 @@ use glium_sdl2::SDL2Facade;
 use sdl2::{Sdl, EventPump};
 use sdl2::event::Event;
 
-const WIDTH: u32 = 1024;
-const HEIGHT: u32 = 768;
+const WIDTH: u32 = WINDOW_W;
+const HEIGHT: u32 = WINDOW_H;
 
 pub fn create_window() -> (Sdl, SDL2Facade, EventPump) {
     use glium_sdl2::DisplayBuild;

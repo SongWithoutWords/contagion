@@ -2,7 +2,8 @@ use crate::core::vector::*;
 use crate::core::scalar::Scalar;
 
 pub struct State {
-    pub entities: Vec<Entity>
+    pub entities: Vec<Entity>,
+    pub is_selected: Vec<bool>
 }
 
 pub const ENTITY_RADIUS: Scalar = 0.5;

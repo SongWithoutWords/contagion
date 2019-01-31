@@ -120,6 +120,7 @@ fn main() {
         let camera_frame = camera.compute_matrix();
 
         presentation::display::display(&mut target, &window, &program, &textures, &params, &state, camera_frame);
+
         target.finish().unwrap();
 
         // Event loop: polls for events sent to all windows
@@ -129,9 +130,26 @@ fn main() {
                 // Exit window if escape key pressed or quit event triggered
                 Event::Quit { .. } | Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
                     break 'main_game_loop;
-                }
+                },
                 Event::KeyDown { keycode: Some(Keycode::P), .. } => {
-                    game_paused = !game_paused;
+                    game_paused = ! game_paused;
+                },
+                Event::MouseButtonDown {timestamp, window_id, which, mouse_btn, x, y } => {
+                    use sdl2::mouse::MouseButton;
+                    match mouse_btn {
+                        MouseButton::Left { .. } => {
+                            simulation::control::update_selected(0, &mut state, x, y);
+                            //  for i in 0..state.is_selected.len() {
+//                              if (state.is_selected[i] == true) {
+//                            println!("selected: {:?}", state.is_selected[i]);
+//                        }
+//                    }
+                        }
+                        MouseButton::Right { .. } => {
+                            // simulation::control::
+                        }
+                        _ => ()
+                    }
                 }
                 _ => ()
             }
