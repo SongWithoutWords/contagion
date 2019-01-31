@@ -128,7 +128,19 @@ fn main() {
                 },
 
                 Event::KeyDown { keycode: Some(Keycode::W), .. } => {
-                  println!("Hi");
+                    // TODO: Camera pans forward
+                },
+
+                Event::KeyDown { keycode: Some(Keycode::S), .. } => {
+                    // TODO: Camera pans backward
+                },
+
+                Event::KeyDown { keycode: Some(Keycode::A), .. } => {
+                    // TODO: Camera pans left
+                },
+
+                Event::KeyDown { keycode: Some(Keycode::D), .. } => {
+                    // TODO: Camera pans right
                 },
                 _ => ()
             }
