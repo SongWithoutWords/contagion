@@ -42,10 +42,9 @@ pub fn create_window() -> (Sdl, SDL2Facade, EventPump) {
         .build_glium()
         .unwrap();
 
-    let mut event_pump = sdl_context.event_pump().unwrap();
-
     (sdl_context, window, event_pump)
 }
+
 
 pub fn load_texture(window: &glium_sdl2::SDL2Facade, path: &str) -> glium::texture::texture2d::Texture2d {
     let image = image::open(Path::new(path)).unwrap().to_rgba();
