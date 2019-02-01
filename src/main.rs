@@ -109,6 +109,7 @@ fn main() {
         let camera_frame = camera.compute_matrix();
 
         presentation::display::display(&mut target, &window, &program, &textures, &params, &state, camera_frame);
+        target.finish().unwrap();
 
         // Event loop: polls for events sent to all windows
         for event in event_pump.poll_iter() {
@@ -124,7 +125,5 @@ fn main() {
                 _ => ()
             }
         }
-
-        target.finish().unwrap();
     }
 }
