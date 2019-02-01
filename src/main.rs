@@ -86,32 +86,24 @@ fn main() {
     let mut state = simulation::initial_state::initial_state(100);
     let mut camera = presentation::camera::Camera::new();
     let mut last_frame = Instant::now();
-    let mut last_second = Instant::now();
-    let mut fps = 0;
-    let mut elapsed_t;
 
     // main game loop
     let mut running = true;
     while running {
-        // Handle FPS
-        {
-            // use elapsed_t for transforming matrices
-            let dt_elapsed = last_frame.elapsed().subsec_nanos() as Scalar / 1.0e6; // ns -> ms
-            elapsed_t = dt_elapsed / 1.0e3; // ms -> s
-            last_frame = Instant::now();
-            fps += 1;
-            if last_frame.duration_since(last_second).as_secs() >= 1 {
-                println!("FPS: {:?}", fps);
-                last_second = Instant::now();
-                fps = 0;
-            }
-        }
+        // Compute delta time
+        let duration = last_frame.elapsed();
+        let delta_time = duration.as_secs() as Scalar + 1e-9 * duration.subsec_nanos() as Scalar;
 
-        simulation::update::update(&simulation::update::UpdateArgs { dt: elapsed_t as Scalar }, &mut state);
+        println!("DT:  {:?}", delta_time);
+        println!("FPS: {:?}", 1.0 / delta_time);
+
+        last_frame = Instant::now();
+
+        simulation::update::update(&simulation::update::UpdateArgs { dt: delta_time }, &mut state);
 
         let mut target = window.draw();
         let keyboard_state = event_pump.keyboard_state();
-        camera.update(&keyboard_state, elapsed_t as Scalar);
+        camera.update(&keyboard_state, delta_time);
         let camera_frame = camera.compute_matrix();
 
         presentation::display::display(&mut target, &window, &program, &textures, &params, &state, camera_frame);
