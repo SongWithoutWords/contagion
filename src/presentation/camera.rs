@@ -7,7 +7,6 @@ pub struct Camera {
     pub s_down: bool,
     pub a_down: bool,
     pub d_down: bool,
-    matrix: [[f32;4];4],
 }
 
 impl Camera {
@@ -19,12 +18,7 @@ impl Camera {
             s_down: false,
             a_down: false,
             d_down: false,
-
-            matrix: [[0.1, 0.0, 0.0, 0.0],
-                [0.0, 0.1, 0.0, 0.0],
-                [0.0, 0.0, 1.0, 0.0],
-                [0.0, 0.0, 0.0, 1.0f32]],
-                }
+        }
     }
 
     fn set_direction(&mut self, x: f32, y: f32) {
