@@ -120,61 +120,57 @@ fn main() {
         for event in event_pump.poll_iter() {
             use sdl2::event::Event;
             match event {
-//                // TODO: key inputs
-                Event::KeyDown {
-                    keycode: Some(Keycode::Escape), ..
-                } => {
+                // TODO: key inputs
+                // Exit window if escape key pressed or quit event triggered
+                Event::Quit { .. } | Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
                     running = false;
-                },
+                }
                 Event::KeyDown {
                     keycode: Some(Keycode::W), ..
                 } => {
                     camera.w_down = true;
-                },
+                }
                 Event::KeyDown {
                     keycode: Some(Keycode::S), ..
                 } => {
                     camera.s_down = true;
-                },
+                }
                 Event::KeyDown {
                     keycode: Some(Keycode::A), ..
                 } => {
                     camera.a_down = true;
-                },
+                }
                 Event::KeyDown {
                     keycode: Some(Keycode::D), ..
                 } => {
                     camera.d_down = true;
-                },
+                }
 
                 Event::KeyUp {
                     keycode: Some(Keycode::W), ..
                 } => {
                     camera.w_down = false;
-                },
+                }
                 Event::KeyUp {
                     keycode: Some(Keycode::S), ..
                 } => {
                     camera.s_down = false;
-                },
+                }
                 Event::KeyUp {
                     keycode: Some(Keycode::A), ..
                 } => {
                     camera.a_down = false;
-                },
+                }
                 Event::KeyUp {
                     keycode: Some(Keycode::D), ..
                 } => {
                     camera.d_down = false;
-                },
+                }
 //                Event::KeyUp {
 //                    keycode: Some(SDLK_W)
 //                } => {
 //                    x = 0.0;
 //                },
-                Event::Quit { .. } => {
-                    running = false;
-                }
                 _ => ()
             }
         }
