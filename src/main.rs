@@ -10,7 +10,6 @@ extern crate sdl2;
 extern crate image;
 extern crate rodio;
 
-
 use sdl2::{Sdl, EventPump, ttf};
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
@@ -26,6 +25,8 @@ use std::time::Duration;
 use std::io::BufReader;
 use std::fs::File;
 use rodio::Source;
+
+use crate::core::scalar::*;
 use crate::core::vector::*;
 
 
@@ -95,7 +96,7 @@ fn main() {
         // Handle FPS
         {
             // use elapsed_t for transforming matrices
-            let dt_elapsed = last_frame.elapsed().subsec_nanos() as f32 / 1.0e6; // ns -> ms
+            let dt_elapsed = last_frame.elapsed().subsec_nanos() as Scalar / 1.0e6; // ns -> ms
             elapsed_t = dt_elapsed / 1.0e3; // ms -> s
             last_frame = Instant::now();
             fps += 1;
@@ -106,11 +107,12 @@ fn main() {
             }
         }
 
+        simulation::update::update(&simulation::update::UpdateArgs { dt: elapsed_t as Scalar }, &mut state);
+
         let mut target = window.draw();
-
-        let mut camera_frame = camera.update(elapsed_t);
-
-        simulation::update::update(&simulation::update::UpdateArgs { dt: elapsed_t as f64 }, &mut state);
+        let keyboard_state = event_pump.keyboard_state();
+        camera.update(&keyboard_state, elapsed_t as Scalar);
+        let camera_frame = camera.compute_matrix();
 
         presentation::display::display(&mut target, &window, &program, &textures, &params, &state, camera_frame);
 
@@ -118,57 +120,10 @@ fn main() {
         for event in event_pump.poll_iter() {
             use sdl2::event::Event;
             match event {
-                // TODO: key inputs
                 // Exit window if escape key pressed or quit event triggered
                 Event::Quit { .. } | Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
                     running = false;
                 }
-                Event::KeyDown {
-                    keycode: Some(Keycode::W), ..
-                } => {
-                    camera.w_down = true;
-                }
-                Event::KeyDown {
-                    keycode: Some(Keycode::S), ..
-                } => {
-                    camera.s_down = true;
-                }
-                Event::KeyDown {
-                    keycode: Some(Keycode::A), ..
-                } => {
-                    camera.a_down = true;
-                }
-                Event::KeyDown {
-                    keycode: Some(Keycode::D), ..
-                } => {
-                    camera.d_down = true;
-                }
-
-                Event::KeyUp {
-                    keycode: Some(Keycode::W), ..
-                } => {
-                    camera.w_down = false;
-                }
-                Event::KeyUp {
-                    keycode: Some(Keycode::S), ..
-                } => {
-                    camera.s_down = false;
-                }
-                Event::KeyUp {
-                    keycode: Some(Keycode::A), ..
-                } => {
-                    camera.a_down = false;
-                }
-                Event::KeyUp {
-                    keycode: Some(Keycode::D), ..
-                } => {
-                    camera.d_down = false;
-                }
-//                Event::KeyUp {
-//                    keycode: Some(SDLK_W)
-//                } => {
-//                    x = 0.0;
-//                },
                 _ => ()
             }
         }

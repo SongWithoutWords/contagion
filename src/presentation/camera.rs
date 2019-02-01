@@ -1,82 +1,51 @@
+use crate::core::scalar::*;
 use crate::core::vector::*;
 
 pub struct Camera {
-    position: (f32, f32),
-    direction: (f32, f32),
-    pub w_down: bool,
-    pub s_down: bool,
-    pub a_down: bool,
-    pub d_down: bool,
+    position: Vector2,
+    velocity: Vector2,
 }
 
 impl Camera {
     pub fn new() -> Camera {
         Camera {
-            position: (0.0, 0.0),
-            direction: (0.0, 0.0),
-            w_down: false,
-            s_down: false,
-            a_down: false,
-            d_down: false,
+            position: Vector2::zero(),
+            velocity: Vector2::zero(),
         }
     }
 
-    fn set_direction(&mut self, x: f32, y: f32) {
-        // x and y inversed in camera coord
-        self.direction = (x, y);
+    const DRAG_FACTOR: Scalar = 8.0;
+    const ACCELERATION_FACTOR: Scalar = 10.0;
+
+    pub fn update(
+        &mut self,
+        ks: &sdl2::keyboard::KeyboardState,
+        delta_time: Scalar) {
+
+        use sdl2::keyboard::Scancode;
+        fn key_pressed(ks: &sdl2::keyboard::KeyboardState, s: Scancode) -> Scalar {
+            if ks.is_scancode_pressed(s) {
+                1.0
+            } else {
+                0.0
+            }
+        }
+        let acceleration = Vector2 {
+            x: key_pressed(ks, Scancode::D) - key_pressed(ks, Scancode::A),
+            y: key_pressed(ks, Scancode::W) - key_pressed(ks, Scancode::S),
+        };
+
+        self.velocity += delta_time * Self::ACCELERATION_FACTOR * acceleration;
+        self.position += delta_time * self.velocity;
+        self.velocity -= delta_time * Self::DRAG_FACTOR * self.velocity;
     }
 
-    fn set_position(&mut self, x: f32, y: f32) {
-        // x and y inversed in camera coord
-        self.position = (x, y);
-    }
-
-    pub fn get_direction(&mut self) -> (f32, f32) {
-        (self.direction)
-    }
-
-    pub fn get_position(&mut self) -> (f32, f32) {
-        (self.position)
-    }
-
-    pub fn update(&mut self, elapsed_time: f32) -> [[f32;4];4] {
-
-        self.input_handler();
-        let dragFactor = 1.0;
-        let mut x_dir = self.get_direction().0;
-        let mut y_dir  = self.get_direction().1;
-        let mut x_pos = self.get_position().0;
-        let mut y_pos = self.get_position().1;
-        x_pos += x_dir * dragFactor * elapsed_time;
-        y_pos += y_dir * dragFactor * elapsed_time;
-        self.set_position(x_pos, y_pos);
-        self.set_direction(x_dir, y_dir);
-        let mut camera_frame = [
+    pub fn compute_matrix(&self) -> [[f32;4];4] {
+        [
             [0.1, 0.0, 0.0, 0.0],
             [0.0, 0.1, 0.0, 0.0],
             [0.0, 0.0, 1.0, 0.0],
-            [-x_pos, -y_pos, 0.0, 1.0f32],
-        ];
-        (camera_frame)
+            [-self.position.x as f32, -self.position.y as f32, 0.0, 1.0],
+        ]
     }
-
-    fn reset_direction(&mut self) {
-        self.direction = (0.0, 0.0);
-    }
-
-    // TODO: needs work
-    fn input_handler(&mut self) {
-        if self.d_down {
-            self.set_direction(1.0, 0.0);
-        } else if self.a_down {
-            self.set_direction(-1.0, 0.0);
-        } else if self.s_down {
-            self.set_direction(0.0, -1.0);
-        } else if self.w_down {
-            self.set_direction(0.0, 1.0);
-        } else {
-            self.reset_direction();
-        }
-    }
-
 }
