@@ -86,10 +86,10 @@ fn main() {
     let mut state = simulation::initial_state::initial_state(100);
     let mut camera = presentation::camera::Camera::new();
     let mut last_frame = Instant::now();
+    let mut game_paused = false;
 
     // main game loop
-    let mut running = true;
-    while running {
+    'main_game_loop: loop {
         // Compute delta time
         let duration = last_frame.elapsed();
         let delta_time = duration.as_secs() as Scalar + 1e-9 * duration.subsec_nanos() as Scalar;
@@ -99,7 +99,9 @@ fn main() {
 
         last_frame = Instant::now();
 
-        simulation::update::update(&simulation::update::UpdateArgs { dt: delta_time }, &mut state);
+        if !game_paused {
+            simulation::update::update(&simulation::update::UpdateArgs { dt: delta_time }, &mut state);
+        }
 
         let mut target = window.draw();
         let keyboard_state = event_pump.keyboard_state();
@@ -114,7 +116,10 @@ fn main() {
             match event {
                 // Exit window if escape key pressed or quit event triggered
                 Event::Quit { .. } | Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
-                    running = false;
+                    break 'main_game_loop;
+                }
+                Event::KeyDown { keycode: Some(Keycode::P), .. } => {
+                    game_paused = !game_paused;
                 }
                 _ => ()
             }
