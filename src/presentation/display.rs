@@ -84,8 +84,6 @@ pub fn display(
 
     frame.clear_color(0.2, 0.2, 0.2, 1.0);
 
-    let camera_frame = camera_frame;
-
     let mut cop_vertices = Vec::new();
     let mut human_vertices = Vec::new();
     let mut zombie_vertices = Vec::new();
