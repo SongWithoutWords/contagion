@@ -13,6 +13,7 @@ extern crate rodio;
 
 use sdl2::{Sdl, EventPump, ttf};
 use sdl2::event::Event;
+use sdl2::keyboard::Keycode;
 use std::{io::Cursor, ffi::CString, path::Path, time::Instant};
 use glium_sdl2::SDL2Facade;
 use glium::draw_parameters::Blend;
@@ -25,6 +26,7 @@ use std::time::Duration;
 use std::io::BufReader;
 use std::fs::File;
 use rodio::Source;
+use crate::core::vector::*;
 
 
 fn init() -> Result<((Sdl, SDL2Facade, EventPump), presentation::display::Textures, glium::Program), String> {
@@ -42,9 +44,6 @@ fn init() -> Result<((Sdl, SDL2Facade, EventPump), presentation::display::Textur
 
     // Play the file
     rodio::play_raw(&device, source.convert_samples());
-
-
-
 
     // initialize window and eventpump
     let window_tuple = presentation::graphics::renderer::create_window();
@@ -83,13 +82,14 @@ fn main() {
         blend: Blend::alpha_blending(),
         ..Default::default()
     };
-
     let mut state = simulation::initial_state::initial_state(100);
-
+    let mut camera = presentation::camera::Camera::new();
     let mut last_frame = Instant::now();
     let mut last_second = Instant::now();
     let mut fps = 0;
     let mut elapsed_t;
+    let mut x = 0.0;
+    let mut y = 0.0;
 
     // main game loop
     let mut running = true;
@@ -97,8 +97,8 @@ fn main() {
         // Handle FPS
         {
             // use elapsed_t for transforming matrices
-            let dt = last_frame.elapsed().subsec_nanos() as f32 / 1.0e6; // ns -> ms
-            elapsed_t = dt / 1.0e3; // ms -> s
+            let dt_elapsed = last_frame.elapsed().subsec_nanos() as f32 / 1.0e6; // ns -> ms
+            elapsed_t = dt_elapsed / 1.0e3; // ms -> s
             last_frame = Instant::now();
             fps += 1;
             if last_frame.duration_since(last_second).as_secs() >= 1 {
@@ -110,23 +110,75 @@ fn main() {
 
         let mut target = window.draw();
 
+        let mut camera_frame = camera.update(elapsed_t);
+
         simulation::update::update(&simulation::update::UpdateArgs { dt: elapsed_t as f64 }, &mut state);
 
-        presentation::display::display(&mut target, &window, &program, &textures, &params, &state);
-
-
-        target.finish().unwrap();
+        presentation::display::display(&mut target, &window, &program, &textures, &params, &state, camera_frame);
 
         // Event loop: polls for events sent to all windows
         for event in event_pump.poll_iter() {
             use sdl2::event::Event;
             match event {
-                // TODO: key inputs
+//                // TODO: key inputs
+                Event::KeyDown {
+                    keycode: Some(Keycode::Escape), ..
+                } => {
+                    running = false;
+                },
+                Event::KeyDown {
+                    keycode: Some(Keycode::W), ..
+                } => {
+                    camera.w_down = true;
+                },
+                Event::KeyDown {
+                    keycode: Some(Keycode::S), ..
+                } => {
+                    camera.s_down = true;
+                },
+                Event::KeyDown {
+                    keycode: Some(Keycode::A), ..
+                } => {
+                    camera.a_down = true;
+                },
+                Event::KeyDown {
+                    keycode: Some(Keycode::D), ..
+                } => {
+                    camera.d_down = true;
+                },
+
+                Event::KeyUp {
+                    keycode: Some(Keycode::W), ..
+                } => {
+                    camera.w_down = false;
+                },
+                Event::KeyUp {
+                    keycode: Some(Keycode::S), ..
+                } => {
+                    camera.s_down = false;
+                },
+                Event::KeyUp {
+                    keycode: Some(Keycode::A), ..
+                } => {
+                    camera.a_down = false;
+                },
+                Event::KeyUp {
+                    keycode: Some(Keycode::D), ..
+                } => {
+                    camera.d_down = false;
+                },
+//                Event::KeyUp {
+//                    keycode: Some(SDLK_W)
+//                } => {
+//                    x = 0.0;
+//                },
                 Event::Quit { .. } => {
                     running = false;
                 }
                 _ => ()
             }
         }
+
+        target.finish().unwrap();
     }
 }

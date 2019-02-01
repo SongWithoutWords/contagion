@@ -80,16 +80,9 @@ pub fn display(
     program: &glium::Program,
     textures: &Textures,
     params: &glium::DrawParameters,
-    state: &State) {
+    state: &State, camera_frame: [[f32;4];4]) {
 
     frame.clear_color(0.2, 0.2, 0.2, 1.0);
-
-    let camera_frame = [
-        [0.1, 0.0, 0.0, 0.0],
-        [0.0, 0.1, 0.0, 0.0],
-        [0.0, 0.0, 1.0, 0.0],
-        [0.0, 0.0, 0.0, 1.0f32],
-    ];
 
     let mut cop_vertices = Vec::new();
     let mut human_vertices = Vec::new();
