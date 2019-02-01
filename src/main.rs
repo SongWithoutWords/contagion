@@ -88,8 +88,6 @@ fn main() {
     let mut last_second = Instant::now();
     let mut fps = 0;
     let mut elapsed_t;
-    let mut x = 0.0;
-    let mut y = 0.0;
 
     // main game loop
     let mut running = true;
