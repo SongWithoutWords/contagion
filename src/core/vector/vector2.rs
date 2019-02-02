@@ -9,6 +9,12 @@ pub struct Vector2 {
     pub y: Scalar,
 }
 
+impl Vector2 {
+    pub fn as_f32_array(&self) -> [f32; 2] {
+        [self.x as f32, self.y as f32]
+    }
+}
+
 pub fn vector2(x: Scalar, y: Scalar) -> Vector2 {
     Vector2{ x: x, y: y }
 }

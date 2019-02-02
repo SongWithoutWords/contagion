@@ -1,4 +1,4 @@
-use crate::core::vector::Vector2;
+use crate::core::vector::*;
 use crate::core::scalar::Scalar;
 
 pub struct State {
@@ -11,6 +11,12 @@ pub struct Entity {
     pub position: Vector2,
     pub velocity: Vector2,
     pub behaviour: Behaviour
+}
+
+impl Entity {
+    pub fn get_facing_normal(&self) -> Vector2 {
+        return self.velocity.normalize();
+    }
 }
 
 pub enum Behaviour {

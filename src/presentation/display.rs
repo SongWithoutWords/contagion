@@ -18,7 +18,16 @@ struct Vertex {
 }
 implement_vertex!(Vertex, position, tex_coords);
 
-fn push_sprite_vertices(buffer: &mut Vec<Vertex>, position: Vector2) {
+fn push_sprite_vertices(buffer: &mut Vec<Vertex>, entity: &Entity) {
+
+    let position = entity.position;
+    let up = entity.get_facing_normal();
+    let right = vector2(up.y, -up.x);
+
+    let top_left  = position - 0.5 * right + 0.5 * up;
+    let top_right = position + 0.5 * right + 0.5 * up;
+    let bot_left  = position - 0.5 * right - 0.5 * up;
+    let bot_right = position + 0.5 * right - 0.5 * up;
 
     // 0      1
     // +------+
@@ -28,21 +37,20 @@ fn push_sprite_vertices(buffer: &mut Vec<Vertex>, position: Vector2) {
     // +------+
     // 2      3
 
-    // TODO: Account for rotation/facing
     let vertex0 = Vertex {
-        position: [position.x as f32 - 0.5, position.y as f32 + 0.5],
+        position: top_left.as_f32_array(),
         tex_coords: [0.0, 1.0]
     };
     let vertex1 = Vertex {
-        position: [position.x as f32 + 0.5, position.y as f32 + 0.5],
+        position: top_right.as_f32_array(),
         tex_coords: [1.0, 1.0]
     };
     let vertex2 = Vertex {
-        position: [position.x as f32 - 0.5, position.y as f32 - 0.5],
+        position: bot_left.as_f32_array(),
         tex_coords: [0.0, 0.0]
     };
     let vertex3 = Vertex {
-        position: [position.x as f32 + 0.5, position.y as f32 - 0.5],
+        position: bot_right.as_f32_array(),
         tex_coords: [1.0, 0.0]
     };
     buffer.push(vertex0);
@@ -91,16 +99,14 @@ pub fn display(
     // Compute the vertices in world coordinates of all entities
     for entity in &state.entities {
 
-        let position = entity.position;
-
         match entity.behaviour {
-            Behaviour::Cop => push_sprite_vertices(&mut cop_vertices, position),
+            Behaviour::Cop => push_sprite_vertices(&mut cop_vertices, entity),
             Behaviour::Dead =>
             // TODO: Draw a corpse
             // or if that's not what we want for the tone of the game, then don't!
                 (),
-            Behaviour::Human => push_sprite_vertices(&mut human_vertices, position),
-            Behaviour::Zombie => push_sprite_vertices(&mut zombie_vertices, position),
+            Behaviour::Human => push_sprite_vertices(&mut human_vertices, entity),
+            Behaviour::Zombie => push_sprite_vertices(&mut zombie_vertices, entity),
         }
     }
 
