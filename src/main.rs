@@ -100,7 +100,9 @@ fn main() {
         last_frame = Instant::now();
 
         if !game_paused {
-            simulation::update::update(&simulation::update::UpdateArgs { dt: delta_time }, &mut state);
+            let soundEffects = simulation::update::update(
+                &simulation::update::UpdateArgs { dt: delta_time },
+                &mut state);
         }
 
         let mut target = window.draw();

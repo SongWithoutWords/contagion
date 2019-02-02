@@ -6,7 +6,14 @@ pub struct UpdateArgs {
     pub dt: Scalar
 }
 
-pub fn update(args: &UpdateArgs, state: &mut State) {
+pub enum SoundEffect {
+    Gunshot,
+    Reload,
+    PersonInfected,
+    ZombieDeath,
+}
+
+pub fn update(args: &UpdateArgs, state: &mut State) -> Vec<SoundEffect> {
 
     let mut entities = &mut state.entities;
 
@@ -53,6 +60,8 @@ pub fn update(args: &UpdateArgs, state: &mut State) {
         e.position += displacement;
         e.velocity -= 0.5 * displacement;
     }
+
+    vec!()
 }
 
 fn handle_collision(
