@@ -26,6 +26,8 @@ use std::io::BufReader;
 use std::fs::File;
 use rodio::Source;
 
+use crate::core::matrix::*;
+use crate::core::matrix::Mat4;
 use crate::core::scalar::*;
 use crate::core::vector::*;
 use crate::presentation::audio::sound_effects::*;
