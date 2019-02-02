@@ -9,6 +9,10 @@ pub struct Vector2 {
     pub y: Scalar,
 }
 
+pub fn vector2(x: Scalar, y: Scalar) -> Vector2 {
+    Vector2{ x: x, y: y }
+}
+
 impl Add for Vector2 {
     type Output = Self;
     fn add(self, rhs: Self) -> Self {

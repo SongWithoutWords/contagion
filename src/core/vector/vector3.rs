@@ -10,6 +10,10 @@ pub struct Vector3 {
     pub z: Scalar,
 }
 
+pub fn vector3(x: Scalar, y: Scalar, z: Scalar) -> Vector3 {
+    Vector3{ x: x, y: y, z: z }
+}
+
 impl Add for Vector3 {
     type Output = Self;
     fn add(self, rhs: Self) -> Self {
