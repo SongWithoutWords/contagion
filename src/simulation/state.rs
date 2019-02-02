@@ -21,7 +21,7 @@ impl Entity {
 }
 
 pub enum Behaviour {
-    Cop,
+    Cop { waypoint: Option<Vector2> },
     Dead,
     Human,
     Zombie

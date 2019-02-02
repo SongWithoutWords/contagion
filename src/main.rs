@@ -102,8 +102,8 @@ fn main() {
         let duration = last_frame.elapsed();
         let delta_time = duration.as_secs() as Scalar + 1e-9 * duration.subsec_nanos() as Scalar;
 
-        println!("DT:  {:?}", delta_time);
-        println!("FPS: {:?}", 1.0 / delta_time);
+//        println!("DT:  {:?}", delta_time);
+//        println!("FPS: {:?}", 1.0 / delta_time);
 
         last_frame = Instant::now();
 
@@ -139,14 +139,14 @@ fn main() {
                     match mouse_btn {
                         MouseButton::Left { .. } => {
                             simulation::control::update_selected(0, &mut state, x, y);
-                            //  for i in 0..state.is_selected.len() {
-//                              if (state.is_selected[i] == true) {
-//                            println!("selected: {:?}", state.is_selected[i]);
-//                        }
-//                    }
+//                                for i in 0..state.is_selected.len() {
+//                                    if (state.is_selected[i] == true) {
+//                                    println!("selected: {:?}", state.is_selected[i]);
+//                                    }
+//                                }
                         }
                         MouseButton::Right { .. } => {
-                            // simulation::control::
+                            simulation::control::issue_police_order(simulation::control::PoliceOrder::Move, &mut state, x, y);
                         }
                         _ => ()
                     }

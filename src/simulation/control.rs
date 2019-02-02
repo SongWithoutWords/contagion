@@ -1,17 +1,20 @@
 
+use crate::constants::presentation::*;
+use crate::core::vector::*;
 use crate::core::scalar::Scalar;
 use super::state::*;
 
 pub fn update_selected(action_type: u32, state: &mut State, x_mouse: i32, y_mouse: i32) {
     state.is_selected = vec![false; state.entities.len()];
-    let x_mouse = x_mouse as f64;
-    let y_mouse = y_mouse as f64;
-    println!("x_mouse {:?}, y_mouse {:?}", x_mouse, y_mouse);
+    let m_pos = &mut Vector2{ x : x_mouse as f64, y : y_mouse as f64};
+    translate_mouse_to_camera(m_pos);
+    translate_camera_to_world(m_pos);
+    println!("x_mouse {:?}, y_mouse {:?}", m_pos.x, m_pos.y);
 
     for i in 0..state.entities.len() {
         let entity = &mut state.entities[i];
         match entity.behaviour {
-            Behaviour::Cop => {
+            Behaviour::Cop {..} => {
                 let x_pos: Scalar = entity.position.x;
                 let y_pos: Scalar = entity.position.y;
                 println!("x_pos {:?}, y_pos {:?}", x_pos, y_pos);
@@ -19,10 +22,6 @@ pub fn update_selected(action_type: u32, state: &mut State, x_mouse: i32, y_mous
 //                    && y_mouse <= y_pos + 0.5 && y_mouse >= y_pos - 0.5) {
 //                    state.is_selected[i] = true;
 //                }
-                if (x_mouse <= 520.0 && x_mouse >= 480.0
-                    && y_mouse <= 400.0 && y_mouse >= 370.0) {
-                    state.is_selected[i] = true;
-                }
             }
             _ => ()
         }
@@ -30,13 +29,35 @@ pub fn update_selected(action_type: u32, state: &mut State, x_mouse: i32, y_mous
 }
 
 // Issue an order to selected police
-pub fn issue_police_order(order: PoliceOrder, state: &mut State) {
+pub fn issue_police_order(order: PoliceOrder, state: &mut State, x_mouse: i32, y_mouse: i32) {
     match order {
         PoliceOrder::Move => {
-            // TODO: set police destination or something cancer!
+            let x_mouse = x_mouse as f64;
+            let y_mouse = y_mouse as f64;
+            for i in 0..state.is_selected.len() {
+                if (state.is_selected[i] == true) {
+                    match state.entities[i].behaviour {
+                        Behaviour::Cop {mut waypoint} => {
+                            // todo: get this ref mut way_point thing to work ??
+                            // todo: dynamic x_xmouse, y_mouse positions
+                            waypoint = Some(Vector2{x: 1.0, y:1.0});
+                        }
+                        _ => ()
+                    }
+                }
+            }
         }
         _=>()
     }
+}
+
+pub fn translate_mouse_to_camera(vec: &mut Vector2) {
+    vec.x = vec.x / WINDOW_W as f64 * 2.0 - 1.0;
+    vec.y = -(vec.y / WINDOW_H as f64 * 2.0 - 1.0);
+}
+
+pub fn translate_camera_to_world(vec: &mut Vector2) {
+
 }
 
 pub enum PoliceOrder {
