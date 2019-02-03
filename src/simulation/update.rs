@@ -20,9 +20,9 @@ pub fn update(args: &UpdateArgs, state: &mut State) -> Vec<SoundEffect> {
     // Apply individual behaviours
     for i in 0..entities.len() {
         match entities[i].behaviour {
-            Behaviour::Cop {waypoint} =>
+            Behaviour::Cop { .. } =>
             // TODO: Shoot zombies
-                simulate_cop(args, &mut entities, i, waypoint),
+                simulate_cop(args, &mut entities, i),
             Behaviour::Dead =>
             // Do nothing
                 (),
@@ -90,27 +90,32 @@ fn handle_collision(
     entities[j].velocity += velocity_change;
 }
 
-fn simulate_cop(args: &UpdateArgs, entities: &mut Vec<Entity>, index: usize, final_dest: Option<Vector2>) {
+fn simulate_cop(args: &UpdateArgs, entities: &mut Vec<Entity>, index: usize) {
     let my_pos = entities[index].position;
 
     let mut min_delta = Vector2{x: 1.0, y: 1.0};
 
-    if let Some(ref m) = final_dest {
-        println!("{}, {}", m.x, m.y);
+    match entities[index].behaviour {
+        Behaviour::Cop {ref mut waypoint} => {
+            match waypoint {
+                None => {
+                    // Do nothing
+                }
+                Some(ref mut point) => {
+                    let episilon: f64 = 0.01;
+                    if (my_pos.x - point.x).abs() <= episilon && (my_pos.y - point.y).abs() <= episilon {
+                        *waypoint = None;
+                        entities[index].velocity.x = 0.0;
+                        entities[index].velocity.y = 0.0;
+                    } else {
+                        // todo: move towards final destination
+                        entities[index].velocity += args.dt * min_delta;
+                    }
+                }
+            }
+        }
+        _ => ()
     }
-
-    // entities[index].velocity += args.dt * min_delta;
-
-//    if (final_dest == None) {
-//        // do nothing
-//    } else if (my_pos.x == final_dest.x && my_pos.y == final_dest.y) {
-//        // todo: create a range of episilon to stop the entity
-//        // stop the unit
-//        final_dest == None;
-//    } else {
-//        // todo: move towards final destination
-//        entities[index].velocity += args.dt * min_delta;
-//    }
 }
 
 fn simulate_zombie(args: &UpdateArgs, entities: &mut Vec<Entity>, index: usize) {

@@ -141,14 +141,14 @@ fn main() {
                     match mouse_btn {
                         MouseButton::Left { .. } => {
                             simulation::control::update_selected(0, &mut state, &window, camera_frame, x, y);
-//                                for i in 0..state.is_selected.len() {
-//                                    if (state.is_selected[i] == true) {
-//                                    println!("selected: {:?}", state.is_selected[i]);
-//                                    }
-//                                }
+                                for i in 0..state.is_selected.len() {
+                                    if (state.is_selected[i] == true) {
+                                    println!("selected: {:?}", state.is_selected[i]);
+                                    }
+                                }
                         }
                         MouseButton::Right { .. } => {
-                            simulation::control::issue_police_order(simulation::control::PoliceOrder::Move, &mut state, x, y);
+                            simulation::control::issue_police_order(simulation::control::PoliceOrder::Move, &mut state, &window, camera_frame, x, y);
                         }
                         _ => ()
                     }
