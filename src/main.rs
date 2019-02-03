@@ -36,7 +36,7 @@ use crate::presentation::audio::sound_effects::*;
 fn init() -> Result<((Sdl, SDL2Facade, EventPump),
                      presentation::display::Textures,
                      glium::Program,
-                     SoundEffectFiles),
+                     SoundEffectSources),
                     String> {
 
     // Handle the Audio

@@ -6,60 +6,68 @@ use std::io::BufReader;
 use std::fs::File;
 use rodio::Source;
 
-pub struct SoundEffectFiles {
-    // Storing sound files here
-    gunshot_file: File,
-    person_infected_file: File,
-    reload_file: File,
-    zombie_dead_file: File,
-}
+// use rodio;
+use std::io;
+use std::io::Read;
+use std::convert::AsRef;
+use std::sync::Arc;
 
-pub fn load_sound_effect_files() -> SoundEffectFiles {
+pub struct Sound (Arc<Vec<u8>>);
 
-    // Loading sound files here
-    SoundEffectFiles {
-        gunshot_file: File::open("src/assets/gunshot.wav").unwrap(),
-        person_infected_file: File::open("src/assets/person_infected.wav").unwrap(),
-        reload_file: File::open("src/assets/reload.wav.ogg").unwrap(),
-        zombie_dead_file: File::open("src/assets/zombie_dead.ogg").unwrap(),
+impl AsRef<[u8]> for Sound {
+    fn as_ref(&self) -> &[u8] {
+        &self.0
     }
 }
 
-pub fn play_sound_effects(sound_effect_files: &SoundEffectFiles, sounds: &Vec<SoundEffect>) {
+// Adapted from
+// https://github.com/tomaka/rodio/issues/141
+impl Sound {
+    pub fn load(filename: &str) -> io::Result<Sound> {
+        use std::fs::File;
+        let mut buf = Vec::new();
+        let mut file = File::open(filename)?;
+        file.read_to_end(&mut buf)?;
+        Ok(Sound(Arc::new(buf)))
+    }
+    pub fn cursor(self: &Self) -> io::Cursor<Sound> {
+        io::Cursor::new(Sound(self.0.clone()))
+    }
+    pub fn decoder(self: &Self) -> rodio::Decoder<io::Cursor<Sound>> {
+        rodio::Decoder::new(self.cursor()).unwrap()
+    }
+}
+
+pub struct SoundEffectSources {
+    pub gunshot: Sound,
+    pub reload: Sound,
+    pub person_infected: Sound,
+    pub zombie_dead: Sound,
+}
+
+pub fn load_sound_effect_files() -> SoundEffectSources {
+
+    // Loading sound files here
+    SoundEffectSources {
+        gunshot: Sound::load("src/assets/gunshot.wav").unwrap(),
+        reload: Sound::load("src/assets/reload.wav").unwrap(),
+        person_infected: Sound::load("src/assets/person_infected.wav").unwrap(),
+        zombie_dead: Sound::load("src/assets/zombie_dead.ogg").unwrap(),
+    }
+}
+
+pub fn play_sound_effects(sources: &SoundEffectSources, sounds: &Vec<SoundEffect>) {
 
     // Handle the Audio
     let device = rodio::default_output_device().unwrap();
 
-    // Read the sounds from the files
-    let gunshot_read = rodio::Decoder::new(BufReader::new(sound_effect_files.gunshot_file)).unwrap();
-    let person_infected_read = rodio::Decoder::new(BufReader::new(sound_effect_files.person_infected_file)).unwrap();
-    let reload_read = rodio::Decoder::new(BufReader::new(sound_effect_files.reload_file)).unwrap();
-    let zombie_dead_read = rodio::Decoder::new(BufReader::new(sound_effect_files.zombie_dead_file)).unwrap();
-
-    // Make the sounds start from the beginning and available to be used.
-    let gunshot_sound = gunshot_read.take_duration(Duration::from_secs(0));
-    let person_infected_sound = person_infected_read.take_duration(Duration::from_secs(0));
-    let reload_sound = reload_read.take_duration(Duration::from_secs(0));
-    let zombie_dead_sound = zombie_dead_read.take_duration(Duration::from_secs(0));
-
-
     for sound in sounds {
-        match sound {
-            // Play the gunshot sound
-            SoundEffect::Gunshot =>
-                rodio::play_raw(&device, gunshot_sound.convert_samples()),
-
-            // Play the infected person sound
-            SoundEffect::PersonInfected =>
-                rodio::play_raw(&device, person_infected_sound.convert_samples()),
-
-            // Play the reload sound
-            SoundEffect::Reload =>
-                rodio::play_raw(&device, reload_sound.convert_samples()),
-
-            // Play the dead zombie sound
-            SoundEffect::ZombieDeath =>
-                rodio::play_raw(&device, zombie_dead_sound.convert_samples())
-        }
+        let source = match sound {
+            SoundEffect::Gunshot => &sources.gunshot,
+            SoundEffect::PersonInfected => &sources.person_infected,
+            SoundEffect::Reload => &sources.reload,
+            SoundEffect::ZombieDeath => &sources.zombie_dead,
+        };
+        rodio::play_raw(&device, source.decoder().convert_samples());
     }
 }
