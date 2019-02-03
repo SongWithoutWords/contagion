@@ -40,6 +40,7 @@ fn init() -> Result<((Sdl, SDL2Facade, EventPump),
     // Handle the Audio
     let device = rodio::default_output_device().unwrap();
 
+    // Call the sound effects to be loaded
     let sound_effect_files = load_sound_effect_files();
 
     // Background audio source path

@@ -7,12 +7,22 @@ use std::fs::File;
 use rodio::Source;
 
 pub struct SoundEffectFiles {
-    // TODO: store sound effect data here
+    // Storing sound files here
+    gunshot_file: File,
+    person_infected_file: File,
+    reload_file: File,
+    zombie_dead_file: File,
 }
 
 pub fn load_sound_effect_files() -> SoundEffectFiles {
-    // TODO: load sound effects here
-    SoundEffectFiles{}
+
+    // Loading sound files here
+    SoundEffectFiles {
+        gunshot_file: File::open("src/assets/gunshot.wav").unwrap(),
+        person_infected_file: File::open("src/assets/person_infected.wav").unwrap(),
+        reload_file: File::open("src/assets/reload.wav.ogg").unwrap(),
+        zombie_dead_file: File::open("src/assets/zombie_dead.ogg").unwrap(),
+    }
 }
 
 pub fn play_sound_effects(sound_effect_files: &SoundEffectFiles, sounds: &Vec<SoundEffect>) {
@@ -20,17 +30,11 @@ pub fn play_sound_effects(sound_effect_files: &SoundEffectFiles, sounds: &Vec<So
     // Handle the Audio
     let device = rodio::default_output_device().unwrap();
 
-    // Import the sounds from their files
-    let gunshot_file = File::open("src/assets/gunshot.wav").unwrap();
-    let person_infected_file = File::open("src/assets/person_infected.wav").unwrap();
-    let reload_file = File::open("src/assets/reload.wav.ogg").unwrap();
-    let zombie_dead_file = File::open("src/assets/zombie_dead.ogg").unwrap();
-
     // Read the sounds from the files
-    let gunshot_read = rodio::Decoder::new(BufReader::new(gs)).unwrap();
-    let person_infected_read = rodio::Decoder::new(BufReader::new(pi)).unwrap();
-    let reload_read = rodio::Decoder::new(BufReader::new(r)).unwrap();
-    let zombie_dead_read = rodio::Decoder::new(BufReader::new(zd)).unwrap();
+    let gunshot_read = rodio::Decoder::new(BufReader::new(sound_effect_files.gunshot_file)).unwrap();
+    let person_infected_read = rodio::Decoder::new(BufReader::new(sound_effect_files.person_infected_file)).unwrap();
+    let reload_read = rodio::Decoder::new(BufReader::new(sound_effect_files.reload_file)).unwrap();
+    let zombie_dead_read = rodio::Decoder::new(BufReader::new(sound_effect_files.zombie_dead_file)).unwrap();
 
     // Make the sounds start from the beginning and available to be used.
     let gunshot_sound = gunshot_read.take_duration(Duration::from_secs(0));
@@ -56,8 +60,6 @@ pub fn play_sound_effects(sound_effect_files: &SoundEffectFiles, sounds: &Vec<So
             // Play the dead zombie sound
             SoundEffect::ZombieDeath =>
                 rodio::play_raw(&device, zombie_dead_sound.convert_samples())
-
-
         }
     }
 }
