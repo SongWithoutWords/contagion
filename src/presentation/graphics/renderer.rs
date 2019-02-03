@@ -5,9 +5,7 @@ extern crate image;
 
 use crate::constants::presentation::*;
 use std::path::Path;
-
 use glium_sdl2::SDL2Facade;
-
 use sdl2::{Sdl, EventPump};
 
 pub fn create_window() -> (Sdl, SDL2Facade, EventPump) {

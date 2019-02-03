@@ -1,4 +1,3 @@
-
 use rand::*;
 use rand_xorshift::XorShiftRng;
 use crate::core::vector::*;

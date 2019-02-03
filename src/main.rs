@@ -118,7 +118,11 @@ fn main() {
                         MouseButton::Left { .. } => {
                             simulation::control::update_selected(0, &mut state, &window, camera_frame, x, y);
                                 for i in 0..state.is_selected.len() {
+<<<<<<< HEAD
                                     if state.is_selected[i] == true {
+=======
+                                    if state.is_selected[i] {
+>>>>>>> Linting brackets and import statements
                                     println!("selected: {:?}", state.is_selected[i]);
                                     }
                                 }
