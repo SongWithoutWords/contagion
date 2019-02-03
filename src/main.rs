@@ -140,7 +140,7 @@ fn main() {
                     use sdl2::mouse::MouseButton;
                     match mouse_btn {
                         MouseButton::Left { .. } => {
-                            simulation::control::update_selected(0, &mut state, &window, x, y);
+                            simulation::control::update_selected(0, &mut state, &window, camera_frame, x, y);
 //                                for i in 0..state.is_selected.len() {
 //                                    if (state.is_selected[i] == true) {
 //                                    println!("selected: {:?}", state.is_selected[i]);

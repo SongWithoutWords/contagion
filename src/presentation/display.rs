@@ -1,5 +1,6 @@
 use crate::core::vector::*;
 use crate::core::scalar::*;
+use crate::core::matrix::*;
 use crate::simulation::state::*;
 
 use glium::Surface;
@@ -66,10 +67,11 @@ fn draw_sprites(
     window: &glium_sdl2::SDL2Facade,
     vertices: &Vec<Vertex>,
     program: &glium::Program,
-    camera_frame: [[f32; 4]; 4],
+    camera_frame: Mat4,
     texture: &Texture2d,
     params: &glium::DrawParameters,
 ) {
+    let camera_frame = camera_frame.as_f32_array();
     let uniforms = uniform! {
         matrix: camera_frame,
         tex: texture,
@@ -88,7 +90,7 @@ pub fn display(
     program: &glium::Program,
     textures: &Textures,
     params: &glium::DrawParameters,
-    state: &State, camera_frame: [[f32;4];4]) {
+    state: &State, camera_frame: Mat4) {
 
     frame.clear_color(0.2, 0.2, 0.2, 1.0);
 

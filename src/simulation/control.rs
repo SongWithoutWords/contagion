@@ -2,14 +2,15 @@
 use crate::constants::presentation::*;
 use crate::core::vector::*;
 use crate::core::scalar::Scalar;
+use crate::core::matrix::*;
 use glium_sdl2::SDL2Facade;
 use super::state::*;
 
-pub fn update_selected(action_type: u32, state: &mut State, window: &SDL2Facade, x_mouse: i32, y_mouse: i32) {
+pub fn update_selected(action_type: u32, state: &mut State, window: &SDL2Facade, camera_frame: Mat4, x_mouse: i32, y_mouse: i32) {
     state.is_selected = vec![false; state.entities.len()];
     let m_pos = &mut Vector2{ x : x_mouse as f64, y : y_mouse as f64};
     translate_mouse_to_camera(m_pos, window.window().size());
-    translate_camera_to_world(m_pos);
+    translate_camera_to_world(m_pos, camera_frame);
     println!("x_mouse {:?}, y_mouse {:?}", m_pos.x, m_pos.y);
 
     for i in 0..state.entities.len() {
@@ -57,8 +58,10 @@ pub fn translate_mouse_to_camera(vec: &mut Vector2, window_size: (u32, u32)) {
     vec.y = -(vec.y / window_size.1 as f64 * 2.0 - 1.0);
 }
 
-pub fn translate_camera_to_world(vec: &mut Vector2) {
-
+pub fn translate_camera_to_world(vec: &mut Vector2, matrix: Mat4) {
+    let inverse_matrix = matrix.inverse_matrix4();
+    println!("inversed x:{}", inverse_matrix.w.x);
+    println!("inversed y:{}", inverse_matrix.w.y);
 }
 
 pub enum PoliceOrder {
