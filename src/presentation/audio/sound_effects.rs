@@ -1,9 +1,6 @@
 extern crate rodio;
 
 use crate::simulation::update::SoundEffect;
-use std::time::Duration;
-use std::io::BufReader;
-use std::fs::File;
 use rodio::Source;
 
 // use rodio;

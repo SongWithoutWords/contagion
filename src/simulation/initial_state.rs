@@ -3,7 +3,6 @@ extern crate rand;
 use rand::Rng;
 use crate::core::vector::*;
 use crate::core::scalar::*;
-use crate::constants::presentation::*;
 
 use super::state::*;
 

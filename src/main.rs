@@ -10,24 +10,17 @@ extern crate sdl2;
 extern crate image;
 extern crate rodio;
 
-use sdl2::{Sdl, EventPump, ttf};
-use sdl2::event::Event;
+use sdl2::{Sdl, EventPump};
 use sdl2::keyboard::Keycode;
-use std::{io::Cursor, ffi::CString, path::Path, time::Instant};
+
+use std::{time::Instant, time::Duration, fs::File, io::BufReader};
+
 use glium_sdl2::SDL2Facade;
 use glium::draw_parameters::Blend;
 use glium::Surface;
-use glium::index::NoIndices;
-use glium::texture::texture2d::Texture2d;
-use glium::VertexBuffer;
-use sdl2::audio::{AudioCallback, AudioSpecDesired};
-use std::time::Duration;
-use std::io::BufReader;
-use std::fs::File;
+
 use rodio::Source;
 
-use crate::core::matrix::*;
-use crate::core::matrix::Mat4;
 use crate::core::scalar::*;
 use crate::core::vector::*;
 use crate::presentation::audio::sound_effects::*;
@@ -142,7 +135,7 @@ fn main() {
                         MouseButton::Left { .. } => {
                             simulation::control::update_selected(0, &mut state, &window, camera_frame, x, y);
                                 for i in 0..state.is_selected.len() {
-                                    if (state.is_selected[i] == true) {
+                                    if state.is_selected[i] {
                                     println!("selected: {:?}", state.is_selected[i]);
                                     }
                                 }

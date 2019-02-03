@@ -4,17 +4,12 @@ extern crate sdl2;
 extern crate image;
 
 use crate::constants::presentation::*;
-use std::io::Cursor;
-use std::ffi::CString;
-use std::{thread, time};
-use std::time::Instant;
+
 use std::path::Path;
 
-use glium::Surface;
 use glium_sdl2::SDL2Facade;
 
 use sdl2::{Sdl, EventPump};
-use sdl2::event::Event;
 
 const WIDTH: u32 = WINDOW_W;
 const HEIGHT: u32 = WINDOW_H;
