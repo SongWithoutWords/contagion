@@ -1,3 +1,6 @@
+use crate::core::geo::circle::*;
+use crate::core::geo::segment2::*;
+use crate::core::geo::intersect::segment_circle::*;
 use crate::core::scalar::*;
 use crate::core::vector::*;
 use super::state::*;
@@ -58,6 +61,53 @@ pub fn update(args: &UpdateArgs, state: &mut State) -> Vec<SoundEffect> {
         let displacement = args.dt * e.velocity;
         e.position += displacement;
         e.velocity -= 0.5 * displacement;
+    }
+
+    // Remove motionless projectiles
+    state.projectiles.retain(
+        |p| p.velocity.length_squared() > MIN_PROJECTILE_SPEED
+    );
+
+    // Simulate projectiles
+    for projectile in &mut state.projectiles {
+        let displacement = args.dt * projectile.velocity;
+
+        let segment = Segment2 { p1: projectile.position, p2: projectile.position + displacement };
+
+        let mut first_intersect_time_and_index = None;
+        for i in 0..state.entities.len() {
+
+            let entity = &state.entities[i];
+
+            if let Behaviour::Dead = entity.behaviour {
+                // Dead entities don't collide with bullets
+                continue;
+            }
+
+            let circle = Circle { center: entity.position, radius: ENTITY_RADIUS };
+
+            let this_min_intersection = segment_circle_min_positive_intersect_time(&segment, &circle);
+
+            match (first_intersect_time_and_index, this_min_intersection) {
+                (None, Some(this)) => {
+                    first_intersect_time_and_index = Some((this, i))
+                },
+                (Some((min, _)), Some(this)) if this < min => {
+                    first_intersect_time_and_index = Some((this, i))
+                },
+                _ => ()
+            }
+        }
+
+        match first_intersect_time_and_index {
+            None => (),
+            Some((_, i)) => {
+                state.entities[i].behaviour = Behaviour::Dead;
+                projectile.velocity = Vector2::zero();
+            }
+        }
+
+        projectile.position = segment.p2;
     }
 
     vec!()

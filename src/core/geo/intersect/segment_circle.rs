@@ -38,7 +38,7 @@ pub fn segment_circle_has_intersection(s: &Segment2, c: &Circle) -> bool {
     }
 }
 
-pub fn segment_circle_first_intersection_time(s: &Segment2, c: &Circle) -> Option<Scalar> {
+pub fn segment_circle_min_positive_intersect_time(s: &Segment2, c: &Circle) -> Option<Scalar> {
     match segment_circle_intersection_times(s, c) {
         None => None,
         Some(IntersectionTimes(t1, t2)) =>
@@ -54,7 +54,7 @@ pub fn segment_circle_first_intersection_time(s: &Segment2, c: &Circle) -> Optio
 }
 
 pub fn segment_circle_first_intersection_point(s: &Segment2, c: &Circle) -> Option<Vector2> {
-    match segment_circle_first_intersection_time(s, c) {
+    match segment_circle_min_positive_intersect_time(s, c) {
         None => None,
         Some(t) => Some(t * (s.p2 - s.p1))
     }

@@ -23,7 +23,7 @@ pub const COP_RELOAD_COOLDOWN: f64 = 10.0;
 pub const COP_AIM_COOLDOWN: f64 = 2.0;
 pub const COP_MAGAZINE_CAPACITY: i64 = 6;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq)]
 pub enum Behaviour {
     Cop {
         rounds_in_magazine: i64,
@@ -34,7 +34,7 @@ pub enum Behaviour {
     Zombie
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq)]
 pub enum CopState {
     Aiming {
         aim_time_remaining: Scalar,
@@ -47,6 +47,7 @@ pub enum CopState {
 }
 
 pub const BULLET_SPEED: f64 = 50.0;
+pub const MIN_PROJECTILE_SPEED: f64 = 0.1;
 
 pub struct Projectile {
     pub position: Vector2,
