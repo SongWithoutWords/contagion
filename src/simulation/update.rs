@@ -18,12 +18,14 @@ pub enum SoundEffect {
 
 pub fn update(args: &UpdateArgs, state: &mut State) -> Vec<SoundEffect> {
 
+    let mut sound_effects = vec!();
+
     // Apply individual behaviours
     for i in 0..state.entities.len() {
         match &state.entities[i].behaviour {
             b @ Behaviour::Cop{..} => {
                 // simulate_cop(args, &mut entities, i),
-                let behaviour = update_cop(&args, state, i, b.clone());
+                let behaviour = update_cop(&args, state, &mut sound_effects, i, b.clone());
                 state.entities[i].behaviour = behaviour
             }
             Behaviour::Dead =>
@@ -52,7 +54,7 @@ pub fn update(args: &UpdateArgs, state: &mut State) -> Vec<SoundEffect> {
             let delta_length_squared = delta.length_squared();
 
             if delta_length_squared < DOUBLE_ENTITY_RADIUS_SQUARED {
-                handle_collision(args, &mut state.entities, i, j, &delta, delta_length_squared);
+                handle_collision(args, &mut state.entities, &mut sound_effects, i, j, &delta, delta_length_squared);
             }
         }
     }
@@ -105,18 +107,20 @@ pub fn update(args: &UpdateArgs, state: &mut State) -> Vec<SoundEffect> {
             Some((_, i)) => {
                 state.entities[i].behaviour = Behaviour::Dead;
                 projectile.velocity = Vector2::zero();
+                sound_effects.push(SoundEffect::ZombieDeath);
             }
         }
 
         projectile.position = segment.p2;
     }
 
-    vec!()
+    sound_effects
 }
 
 fn handle_collision(
     args: &UpdateArgs,
     entities: &mut Vec<Entity>,
+    sound_effects: &mut Vec<SoundEffect>,
     i: usize,
     j: usize,
     delta: &Vector2,
@@ -125,12 +129,14 @@ fn handle_collision(
     // Spread the infection from zombies to others
     match (&entities[i].behaviour, &entities[j].behaviour) {
 
-        (Behaviour::Human, Behaviour::Zombie) => entities[i].behaviour = Behaviour::Zombie,
-        (Behaviour::Zombie, Behaviour::Human) => entities[j].behaviour = Behaviour::Zombie,
-
-        (Behaviour::Cop {..}, Behaviour::Zombie) => entities[i].behaviour = Behaviour::Zombie,
-        (Behaviour::Zombie, Behaviour::Cop {..}) => entities[j].behaviour = Behaviour::Zombie,
-
+        (Behaviour::Human, Behaviour::Zombie) | (Behaviour::Cop {..}, Behaviour::Zombie) => {
+            entities[i].behaviour = Behaviour::Zombie;
+            sound_effects.push(SoundEffect::PersonInfected);
+        },
+        (Behaviour::Zombie, Behaviour::Human) | (Behaviour::Zombie, Behaviour::Cop {..}) => {
+            entities[j].behaviour = Behaviour::Zombie;
+            sound_effects.push(SoundEffect::PersonInfected);
+        },
         _ => ()
     }
 
@@ -143,6 +149,7 @@ fn handle_collision(
 fn update_cop(
     args: &UpdateArgs,
     sim_state: &mut State,
+    sound_effects: &mut Vec<SoundEffect>,
     index: usize,
     behaviour: Behaviour) -> Behaviour {
 
@@ -177,6 +184,10 @@ fn update_cop(
                                 position: entities[index].position + 1.125 * ENTITY_RADIUS * delta_normal,
                                 velocity: BULLET_SPEED * delta_normal
                             });
+
+                        // Append sound effect
+                        sound_effects.push(SoundEffect::Gunshot);
+
                         Behaviour::Cop{
                             rounds_in_magazine: rounds_in_magazine - 1,
                             state: CopState::Aiming{aim_time_remaining, target_index: target_index}
