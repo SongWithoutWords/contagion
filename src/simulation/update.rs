@@ -108,7 +108,10 @@ fn update_cop(
                     aim_time_remaining -= args.dt;
                     if aim_time_remaining > 0.0 {
                         // Taking aim, do nothing
-                        behaviour.clone()
+                        Behaviour::Cop{
+                            rounds_in_magazine: rounds_in_magazine,
+                            state: CopState::Aiming{aim_time_remaining, target_index: target_index}
+                        }
                     }
                     else {
                         // Finished aiming, take the shot
@@ -133,7 +136,10 @@ fn update_cop(
                     reload_time_remaining -= args.dt;
                     if reload_time_remaining > 0.0 {
                         // Reloading, do nothing
-                        behaviour
+                        Behaviour::Cop{
+                            rounds_in_magazine: rounds_in_magazine,
+                            state: CopState::Reloading{reload_time_remaining: reload_time_remaining}
+                        }
                     }
                     else {
                         // Finished reloading, replenish rounds
