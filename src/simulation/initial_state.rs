@@ -28,7 +28,14 @@ pub fn initial_state(count: u32) -> State {
         }
         // spawn 18% cops
         else if  _i >= human_count && _i < (count - zombie_count) {
-            entities.push(Entity { position, velocity, behaviour: Behaviour::Cop });
+            entities.push( Entity {
+                position,
+                velocity,
+                behaviour: Behaviour::Cop {
+                    rounds_in_magazine: COP_MAGAZINE_CAPACITY,
+                    state: CopState::Idle
+                }
+            });
         }
         // spawn rest zombie
         else {

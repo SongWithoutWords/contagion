@@ -19,13 +19,34 @@ impl Entity {
         return self.velocity.normalize();
     }
 }
+pub const COP_RELOAD_COOLDOWN: f64 = 10.0;
+pub const COP_AIM_COOLDOWN: f64 = 2.0;
+pub const COP_MAGAZINE_CAPACITY: i64 = 6;
 
+#[derive(Copy, Clone)]
 pub enum Behaviour {
-    Cop,
+    Cop {
+        rounds_in_magazine: i64,
+        state: CopState,
+    },
     Dead,
     Human,
     Zombie
 }
+
+#[derive(Copy, Clone)]
+pub enum CopState {
+    Aiming {
+        aim_time_remaining: Scalar,
+        target_index: usize,
+    },
+    Reloading {
+        reload_time_remaining: Scalar,
+    },
+    Idle
+}
+
+pub const BULLET_SPEED: f64 = 50.0;
 
 pub struct Projectile {
     pub position: Vector2,

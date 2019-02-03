@@ -100,7 +100,7 @@ pub fn display(
     for entity in &state.entities {
 
         match entity.behaviour {
-            Behaviour::Cop => push_sprite_vertices(&mut cop_vertices, entity),
+            Behaviour::Cop{..} => push_sprite_vertices(&mut cop_vertices, entity),
             Behaviour::Dead =>
             // TODO: Draw a corpse
             // or if that's not what we want for the tone of the game, then don't!
