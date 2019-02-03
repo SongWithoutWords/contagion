@@ -11,7 +11,7 @@ pub fn initial_state(count: u32) -> State {
     let human_count: u32 = (count as f32 * 0.8) as u32;
     let cop_count: u32 = (count as f32 * 0.18) as u32;
     let zombie_count = count - (human_count + cop_count);
-    let mut state = State { entities: vec!() };
+    let mut state = State { entities: vec!(), projectiles: vec!()};
 
     let entities = &mut state.entities;
 

@@ -2,7 +2,8 @@ use crate::core::vector::*;
 use crate::core::scalar::Scalar;
 
 pub struct State {
-    pub entities: Vec<Entity>
+    pub entities: Vec<Entity>,
+    pub projectiles: Vec<Projectile>,
 }
 
 pub const ENTITY_RADIUS: Scalar = 0.5;
@@ -24,4 +25,9 @@ pub enum Behaviour {
     Dead,
     Human,
     Zombie
+}
+
+pub struct Projectile {
+    pub position: Vector2,
+    pub velocity: Vector2,
 }
