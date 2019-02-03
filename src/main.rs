@@ -28,13 +28,19 @@ use rodio::Source;
 
 use crate::core::scalar::*;
 use crate::core::vector::*;
+use crate::presentation::audio::sound_effects::*;
 
 
-fn init() -> Result<((Sdl, SDL2Facade, EventPump), presentation::display::Textures, glium::Program), String> {
-
+fn init() -> Result<((Sdl, SDL2Facade, EventPump),
+                     presentation::display::Textures,
+                     glium::Program,
+                     SoundEffectFiles),
+                    String> {
 
     // Handle the Audio
     let device = rodio::default_output_device().unwrap();
+
+    let sound_effect_files = load_sound_effect_files();
 
     // Background audio source path
     let file = File::open("src/assets/dark_rage.ogg").unwrap();
@@ -63,12 +69,12 @@ fn init() -> Result<((Sdl, SDL2Facade, EventPump), presentation::display::Textur
                                               include_str!("./presentation/graphics/fs.frag"), None).unwrap();
     let window_tuple: (Sdl, SDL2Facade, EventPump) = (window_tuple.0, window, window_tuple.2);
 
-    Ok((window_tuple, textures, program))
+    Ok((window_tuple, textures, program, sound_effect_files))
 }
 
 fn main() {
     // init
-    let (mut window_tuple, textures, program) = match init() {
+    let (mut window_tuple, textures, program, sound_effect_files) = match init() {
         // error handler if init fails
         Ok(t) => t,
         Err(err) => {
@@ -101,9 +107,10 @@ fn main() {
         last_frame = Instant::now();
 
         if !game_paused {
-            let soundEffects = simulation::update::update(
+            let sound_effects = simulation::update::update(
                 &simulation::update::UpdateArgs { dt: delta_time },
                 &mut state);
+            play_sound_effects(&sound_effect_files, &sound_effects);
         }
 
         let mut target = window.draw();

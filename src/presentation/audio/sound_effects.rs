@@ -6,7 +6,16 @@ use std::io::BufReader;
 use std::fs::File;
 use rodio::Source;
 
-pub fn play_sound_effects(sounds: &Vec<SoundEffect>) {
+pub struct SoundEffectFiles {
+    // TODO: store sound effect data here
+}
+
+pub fn load_sound_effect_files() -> SoundEffectFiles {
+    // TODO: load sound effects here
+    SoundEffectFiles{}
+}
+
+pub fn play_sound_effects(sound_effect_files: &SoundEffectFiles, sounds: &Vec<SoundEffect>) {
 
     // Handle the Audio
     let device = rodio::default_output_device().unwrap();
