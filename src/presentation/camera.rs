@@ -1,5 +1,6 @@
 use crate::core::scalar::*;
 use crate::core::vector::*;
+use crate::core::matrix::*;
 
 pub struct Camera {
     position: Vector2,
@@ -40,12 +41,12 @@ impl Camera {
         self.velocity -= delta_time * Self::DRAG_FACTOR * self.velocity;
     }
 
-    pub fn compute_matrix(&self) -> [[f32;4];4] {
-        [
-            [0.1, 0.0, 0.0, 0.0],
-            [0.0, 0.1, 0.0, 0.0],
-            [0.0, 0.0, 1.0, 0.0],
-            [-self.position.x as f32, -self.position.y as f32, 0.0, 1.0],
-        ]
+    pub fn compute_matrix(&self) -> Mat4 {
+        (Mat4 {
+            i : Vector4 {x: 0.1, y: 0.0, z: 0.0, w: 0.0},
+            j : Vector4 {x: 0.0, y: 0.1, z: 0.0, w: 0.0},
+            k : Vector4 {x: 0.0, y: 0.0, z: 1.0, w: 0.0},
+            w : Vector4 {x: -self.position.x as f64, y: -self.position.y as f64, z: 0.0, w: 1.0},
+        })
     }
 }

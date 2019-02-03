@@ -20,9 +20,9 @@ pub fn update(args: &UpdateArgs, state: &mut State) -> Vec<SoundEffect> {
     // Apply individual behaviours
     for i in 0..entities.len() {
         match entities[i].behaviour {
-            Behaviour::Cop =>
+            Behaviour::Cop { .. } =>
             // TODO: Shoot zombies
-                (),
+                simulate_cop(args, &mut entities, i),
             Behaviour::Dead =>
             // Do nothing
                 (),
@@ -78,8 +78,8 @@ fn handle_collision(
         (Behaviour::Human, Behaviour::Zombie) => entities[i].behaviour = Behaviour::Zombie,
         (Behaviour::Zombie, Behaviour::Human) => entities[j].behaviour = Behaviour::Zombie,
 
-        (Behaviour::Cop, Behaviour::Zombie) => entities[i].behaviour = Behaviour::Zombie,
-        (Behaviour::Zombie, Behaviour::Cop) => entities[j].behaviour = Behaviour::Zombie,
+        (Behaviour::Cop {..}, Behaviour::Zombie) => entities[i].behaviour = Behaviour::Zombie,
+        (Behaviour::Zombie, Behaviour::Cop {..}) => entities[j].behaviour = Behaviour::Zombie,
 
         _ => ()
     }
@@ -88,6 +88,34 @@ fn handle_collision(
     let velocity_change = *delta * (args.dt / delta_length_squared);
     entities[i].velocity -= velocity_change;
     entities[j].velocity += velocity_change;
+}
+
+fn simulate_cop(args: &UpdateArgs, entities: &mut Vec<Entity>, index: usize) {
+    let my_pos = entities[index].position;
+
+    let mut min_delta = Vector2{x: 1.0, y: 1.0};
+
+    match entities[index].behaviour {
+        Behaviour::Cop {ref mut waypoint} => {
+            match waypoint {
+                None => {
+                    // Do nothing
+                }
+                Some(ref mut point) => {
+                    let episilon: f64 = 0.01;
+                    if (my_pos.x - point.x).abs() <= episilon && (my_pos.y - point.y).abs() <= episilon {
+                        *waypoint = None;
+                        entities[index].velocity.x = 0.0;
+                        entities[index].velocity.y = 0.0;
+                    } else {
+                        // todo: move towards final destination
+                        entities[index].velocity += args.dt * min_delta;
+                    }
+                }
+            }
+        }
+        _ => ()
+    }
 }
 
 fn simulate_zombie(args: &UpdateArgs, entities: &mut Vec<Entity>, index: usize) {
@@ -101,7 +129,7 @@ fn simulate_zombie(args: &UpdateArgs, entities: &mut Vec<Entity>, index: usize) 
         match entities[i].behaviour {
 
             // Chase humans and cops
-            Behaviour::Cop | Behaviour::Human => {
+            Behaviour::Cop{..} | Behaviour::Human => {
                 let delta = entities[i].position - my_pos;
                 let distance_sqr = delta.length_squared();
                 if distance_sqr < min_distance_sqr {
