@@ -29,20 +29,21 @@ pub fn play_sound_effects(sounds: &Vec<SoundEffect>) {
     let reload_sound = reload_read.take_duration(Duration::from_secs(0));
     let zombie_dead_sound = zombie_dead_read.take_duration(Duration::from_secs(0));
 
-    // Play the file
-
 
     for sound in sounds {
         match sound {
             // Play the gunshot sound
             SoundEffect::Gunshot =>
                 rodio::play_raw(&device, gunshot_sound.convert_samples()),
+
             // Play the infected person sound
             SoundEffect::PersonInfected =>
                 rodio::play_raw(&device, person_infected_sound.convert_samples()),
+
             // Play the reload sound
             SoundEffect::Reload =>
                 rodio::play_raw(&device, reload_sound.convert_samples()),
+
             // Play the dead zombie sound
             SoundEffect::ZombieDeath =>
                 rodio::play_raw(&device, zombie_dead_sound.convert_samples())
