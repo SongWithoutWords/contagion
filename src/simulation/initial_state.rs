@@ -11,15 +11,15 @@ pub fn initial_state(count: u32) -> State {
     let human_count: u32 = (count as f32 * 0.8) as u32;
     let cop_count: u32 = (count as f32 * 0.18) as u32;
     let zombie_count = count - (human_count + cop_count);
-    let mut state = State { entities: vec!(), is_selected: vec!() };
+    let mut state = State { entities: vec!(), is_selected: vec!(), projectiles: vec!()};
 
     let entities = &mut state.entities;
 
     for _i in 0..count {
         // TODO: need to optimize this later with housing units and two entities shouldn't be placed on same tile
         let mut rng = rand::thread_rng();
-        let x: Scalar = rng.gen_range(0.0f64, 10 as f64);
-        let y: Scalar = rng.gen_range(0.0f64, 10 as f64);
+        let x: Scalar = rng.gen_range(0.0f64, 25 as f64);
+        let y: Scalar = rng.gen_range(0.0f64, 25 as f64);
         let position = vector2(x, y);
         let velocity = Vector2::zero();
         // spawn 80% humans
@@ -27,8 +27,16 @@ pub fn initial_state(count: u32) -> State {
             entities.push(Entity { position, velocity, behaviour: Behaviour::Human });
         } // spawn 18% cops
         else if  _i >= human_count && _i < (count - zombie_count) {
-            entities.push(Entity { position, velocity, behaviour: Behaviour::Cop { waypoint: None } });
-        } // spawn rest zombie
+            entities.push( Entity {
+                position,
+                velocity,
+                behaviour: Behaviour::Cop {
+                    rounds_in_magazine: COP_MAGAZINE_CAPACITY,
+                    state: CopState::Idle
+                }
+            });
+        }
+        // spawn rest zombie
         else {
             entities.push(Entity { position, velocity, behaviour: Behaviour::Zombie });
         }

@@ -38,8 +38,8 @@ pub fn issue_police_order(order: PoliceOrder, state: &mut State, window: &SDL2Fa
             for i in 0..state.is_selected.len() {
                 if (state.is_selected[i] == true) {
                     match state.entities[i].behaviour {
-                        Behaviour::Cop {ref mut waypoint} => {
-                            *waypoint = Some(Vector2{x: m_pos.x, y: m_pos.y});
+                        Behaviour::Cop {ref mut state, ..} => {
+                            *state = CopState::Moving{ waypoint: *m_pos }
                         }
                         _ => ()
                     }
