@@ -104,28 +104,14 @@ fn main() {
         // Compute delta time
         let duration = last_frame.elapsed();
         let delta_time = duration.as_secs() as Scalar + 1e-9 * duration.subsec_nanos() as Scalar;
+        last_frame = Instant::now();
 
 //        println!("DT:  {:?}", delta_time);
 //        println!("FPS: {:?}", 1.0 / delta_time);
 
-        last_frame = Instant::now();
-
-        if !game_paused {
-            let _sound_effects = simulation::update::update(
-                &simulation::update::UpdateArgs { dt: delta_time },
-                &mut state);
-            // Sound effects temporarily disabled because they are not working
-            // play_sound_effects(&sound_effect_files, &sound_effects);
-        }
-
-        let mut target = window.draw();
         let keyboard_state = event_pump.keyboard_state();
         camera.update(&keyboard_state, delta_time);
         let camera_frame = camera.compute_matrix();
-
-        presentation::display::display(&mut target, &window, &program, &textures, &params, &state, camera_frame);
-
-        target.finish().unwrap();
 
         // Event loop: polls for events sent to all windows
         for event in event_pump.poll_iter() {
@@ -158,5 +144,17 @@ fn main() {
                 _ => ()
             }
         }
+
+        if !game_paused {
+            let _sound_effects = simulation::update::update(
+                &simulation::update::UpdateArgs { dt: delta_time },
+                &mut state);
+            // Sound effects temporarily disabled because they are not working
+            // play_sound_effects(&sound_effect_files, &sound_effects);
+        }
+
+        let mut target = window.draw();
+        presentation::display::display(&mut target, &window, &program, &textures, &params, &state, camera_frame);
+        target.finish().unwrap();
     }
 }
