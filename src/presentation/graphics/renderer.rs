@@ -17,7 +17,6 @@ pub fn create_window() -> (Sdl, SDL2Facade, EventPump) {
     // OpenGL context getters and setters
     let gl_attr = video_subsystem.gl_attr();
 
-
     // setup OpenGL profile
     gl_attr.set_context_profile(sdl2::video::GLProfile::Core); // setting type of GL context
     // Set the context into debug mode
@@ -42,7 +41,7 @@ pub fn create_window() -> (Sdl, SDL2Facade, EventPump) {
         .resizable()
         .build_glium()
         .unwrap();
-
+    
     // force vsync
     video_subsystem.gl_set_swap_interval(1);
 
