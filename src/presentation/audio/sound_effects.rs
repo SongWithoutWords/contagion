@@ -49,9 +49,9 @@ pub fn load_sound_effect_files() -> SoundEffectSources {
 
     // Loading sound files here
     SoundEffectSources {
-        gunshot: Sound::load("src/assets/gunshot.wav").unwrap(),
-        reload: Sound::load("src/assets/reload.wav").unwrap(),
-        person_infected: Sound::load("src/assets/person_infected.wav").unwrap(),
+        gunshot: Sound::load("src/assets/gunshot.ogg").unwrap(),
+        reload: Sound::load("src/assets/reload.ogg").unwrap(),
+        person_infected: Sound::load("src/assets/person_infected.ogg").unwrap(),
         zombie_dead: Sound::load("src/assets/zombie_dead.ogg").unwrap(),
     }
 }
