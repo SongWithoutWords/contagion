@@ -10,6 +10,7 @@ pub struct Textures {
     pub zombies: Texture2d,
     pub dead_zombie: Texture2d,
     pub police: Texture2d,
+    pub selection_highlight: Texture2d,
     pub citizen: Texture2d,
 }
 
@@ -102,7 +103,6 @@ pub fn display(
 
     // Compute the vertices in world coordinates of all entities
     for entity in &state.entities {
-
         match entity.behaviour {
             Behaviour::Cop{..} => push_sprite_vertices(&mut cop_vertices, entity),
             Behaviour::Dead => push_sprite_vertices(&mut dead_vertices, entity),
@@ -116,4 +116,15 @@ pub fn display(
     draw_sprites(frame, window, &dead_vertices, program, camera_frame, &textures.dead_zombie, params);
     draw_sprites(frame, window, &human_vertices, program, camera_frame, &textures.citizen, params);
     draw_sprites(frame, window, &zombie_vertices, program, camera_frame, &textures.zombies, params);
+
+    {
+        let mut selection_highlight_vertices = Vec::new();
+        for i in 0..state.is_selected.len() {
+            if state.is_selected[i] {
+                push_sprite_vertices(&mut selection_highlight_vertices, &state.entities[i]);
+            }
+        }
+        draw_sprites(frame, window, &selection_highlight_vertices, program, camera_frame, &textures.selection_highlight, params);
+}
+
 }

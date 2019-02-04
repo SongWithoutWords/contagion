@@ -65,6 +65,7 @@ fn init() -> Result<((Sdl, SDL2Facade, EventPump),
         zombies: presentation::graphics::renderer::load_texture(&window, "src/assets/zombie.png"),
         dead_zombie: presentation::graphics::renderer::load_texture(&window, "src/assets/dead_zombie.png"),
         police: presentation::graphics::renderer::load_texture(&window, "src/assets/police.png"),
+        selection_highlight: presentation::graphics::renderer::load_texture(&window, "src/assets/selection_highlight.png"),
         citizen: presentation::graphics::renderer::load_texture(&window, "src/assets/citizen.png"),
     };
 
