@@ -17,7 +17,6 @@ use std::{time::Instant, time::Duration, fs::File, io::BufReader};
 
 use glium_sdl2::SDL2Facade;
 use glium::draw_parameters::Blend;
-use glium::Surface;
 
 use rodio::Source;
 
@@ -51,7 +50,7 @@ fn init() -> Result<((Sdl, SDL2Facade, EventPump),
 
     // initialize window and eventpump
     let window_tuple = presentation::graphics::renderer::create_window();
-    let mut window = window_tuple.1;
+    let window = window_tuple.1;
 
     // load image -> type glium::texture::texture2d::Texture2d
     let textures = presentation::display::Textures {
@@ -70,7 +69,7 @@ fn init() -> Result<((Sdl, SDL2Facade, EventPump),
 
 fn main() {
     // init
-    let (mut window_tuple, textures, program, sound_effect_files) = match init() {
+    let (window_tuple, textures, program, sound_effect_files) = match init() {
         // error handler if init fails
         Ok(t) => t,
         Err(err) => {
@@ -78,7 +77,7 @@ fn main() {
             std::process::exit(1);
         }
     };
-    let sdl_context = window_tuple.0;
+    let _sdl_context = window_tuple.0;
     let window = window_tuple.1;
     let mut event_pump = window_tuple.2;
 
@@ -129,7 +128,7 @@ fn main() {
                 Event::KeyDown { keycode: Some(Keycode::P), .. } => {
                     game_paused = ! game_paused;
                 },
-                Event::MouseButtonDown {timestamp, window_id, which, mouse_btn, x, y } => {
+                Event::MouseButtonDown { timestamp, window_id, which, mouse_btn, x, y } => {
                     use sdl2::mouse::MouseButton;
                     match mouse_btn {
                         MouseButton::Left { .. } => {

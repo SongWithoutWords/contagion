@@ -22,8 +22,7 @@ pub fn create_window() -> (Sdl, SDL2Facade, EventPump) {
     let video_subsystem = sdl_context.video().unwrap();
     // OpenGL context getters and setters
     let gl_attr = video_subsystem.gl_attr();
-    let mut pause_time = false;
-
+    let _pause_time = false;
 
     // setup OpenGL profile
     gl_attr.set_context_profile(sdl2::video::GLProfile::Core); // setting type of GL context
@@ -50,7 +49,7 @@ pub fn create_window() -> (Sdl, SDL2Facade, EventPump) {
         .build_glium()
         .unwrap();
 
-    let mut event_pump = sdl_context.event_pump().unwrap();
+    let event_pump = sdl_context.event_pump().unwrap();
 
     (sdl_context, window, event_pump)
 }
@@ -66,5 +65,5 @@ pub fn load_texture(window: &glium_sdl2::SDL2Facade, path: &str) -> glium::textu
 use sdl2::ttf;
 pub fn create_font() {
     let ttf_context = ttf::init().unwrap();
-    let font = ttf_context.load_font("src/assets/ConsolaMono.ttf", 50).unwrap();
+    let _font = ttf_context.load_font("src/assets/ConsolaMono.ttf", 50).unwrap();
 }

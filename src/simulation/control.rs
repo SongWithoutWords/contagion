@@ -7,7 +7,7 @@ use glium_sdl2::SDL2Facade;
 
 use super::state::*;
 
-pub fn update_selected(action_type: u32, state: &mut State, window: &SDL2Facade, camera_frame: Mat4, x_mouse: i32, y_mouse: i32) {
+pub fn update_selected(_action_type: u32, state: &mut State, window: &SDL2Facade, camera_frame: Mat4, x_mouse: i32, y_mouse: i32) {
     state.is_selected = vec![false; state.entities.len()];
     let m_pos = &mut Vector2{ x : x_mouse as f64, y : y_mouse as f64};
     translate_mouse_to_camera(m_pos, window.window().size());
