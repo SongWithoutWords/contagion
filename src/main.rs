@@ -106,9 +106,6 @@ fn main() {
         let delta_time = duration.as_secs() as Scalar + 1e-9 * duration.subsec_nanos() as Scalar;
         last_frame = Instant::now();
 
-//        println!("DT:  {:?}", delta_time);
-//        println!("FPS: {:?}", 1.0 / delta_time);
-
         let keyboard_state = event_pump.keyboard_state();
         camera.update(&keyboard_state, delta_time);
         let camera_frame = camera.compute_matrix();
@@ -123,6 +120,13 @@ fn main() {
                 },
                 Event::KeyDown { keycode: Some(Keycode::P), .. } => {
                     game_paused = ! game_paused;
+                },
+                Event::KeyDown { keycode: Some(Keycode::L), .. } => {
+                    println!("Debug info:");
+                    println!("  DT:               {:?}", delta_time);
+                    println!("  FPS:              {:?}", 1.0 / delta_time);
+                    println!("  Entity count:     {:?}", state.entities.len());
+                    println!("  Projectile count: {:?}", state.projectiles.len());
                 },
                 Event::MouseButtonDown {timestamp, window_id, which, mouse_btn, x, y } => {
                     use sdl2::mouse::MouseButton;
