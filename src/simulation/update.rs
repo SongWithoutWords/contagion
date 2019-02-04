@@ -190,7 +190,7 @@ fn update_cop(
 
                         Behaviour::Cop{
                             rounds_in_magazine: rounds_in_magazine - 1,
-                            state: CopState::Aiming{aim_time_remaining, target_index: target_index}
+                            state: CopState::Idle,
                         }
                     }
                 },
