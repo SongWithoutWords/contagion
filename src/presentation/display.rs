@@ -8,6 +8,7 @@ use glium::texture::texture2d::Texture2d;
 
 pub struct Textures {
     pub zombies: Texture2d,
+    pub dead_zombie: Texture2d,
     pub police: Texture2d,
     pub citizen: Texture2d,
 }
@@ -95,6 +96,7 @@ pub fn display(
     frame.clear_color(0.2, 0.2, 0.2, 1.0);
 
     let mut cop_vertices = Vec::new();
+    let mut dead_vertices = Vec::new();
     let mut human_vertices = Vec::new();
     let mut zombie_vertices = Vec::new();
 
@@ -103,10 +105,7 @@ pub fn display(
 
         match entity.behaviour {
             Behaviour::Cop{..} => push_sprite_vertices(&mut cop_vertices, entity),
-            Behaviour::Dead =>
-            // TODO: Draw a corpse
-            // or if that's not what we want for the tone of the game, then don't!
-                (),
+            Behaviour::Dead => push_sprite_vertices(&mut dead_vertices, entity),
             Behaviour::Human => push_sprite_vertices(&mut human_vertices, entity),
             Behaviour::Zombie => push_sprite_vertices(&mut zombie_vertices, entity),
         }
@@ -114,6 +113,7 @@ pub fn display(
 
     // Make the draw calls
     draw_sprites(frame, window, &cop_vertices, program, camera_frame, &textures.police, params);
+    draw_sprites(frame, window, &dead_vertices, program, camera_frame, &textures.dead_zombie, params);
     draw_sprites(frame, window, &human_vertices, program, camera_frame, &textures.citizen, params);
     draw_sprites(frame, window, &zombie_vertices, program, camera_frame, &textures.zombies, params);
 }

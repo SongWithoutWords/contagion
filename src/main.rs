@@ -63,6 +63,7 @@ fn init() -> Result<((Sdl, SDL2Facade, EventPump),
     // load image -> type glium::texture::texture2d::Texture2d
     let textures = presentation::display::Textures {
         zombies: presentation::graphics::renderer::load_texture(&window, "src/assets/zombie.png"),
+        dead_zombie: presentation::graphics::renderer::load_texture(&window, "src/assets/dead_zombie.png"),
         police: presentation::graphics::renderer::load_texture(&window, "src/assets/police.png"),
         citizen: presentation::graphics::renderer::load_texture(&window, "src/assets/citizen.png"),
     };
