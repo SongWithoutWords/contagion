@@ -1,4 +1,3 @@
-use crate::core::scalar::Scalar;
 use crate::core::vector::*;
 
 use crate::simulation::ai::path::{Node, Edge, Path};
@@ -13,7 +12,7 @@ struct Graph {
 impl Graph {
     fn new(start_pos: Vector2, end_pos: Vector2) -> Self {
         let start_node = Node { pos: start_pos, h: euclidean_dist(start_pos, end_pos) };
-        let end_node = Node { pos: end_pos, h: 0.0 };
+        let end_node = Node { pos: end_pos, h: 0 };
 
         Graph {
             start: start_node,
@@ -54,7 +53,7 @@ pub fn find_path(start_pos: Vector2, end_pos: Vector2, obstacles: Vec<Polygon>) 
     let mut intersections = Vec::<(Vector2, Polygon)>::new();
     for poly in obstacles.iter() {
         for intersect in poly.intersects(start_pos, end_pos) {
-            intersections.push((intersect, *poly));
+            intersections.push((intersect, poly.clone()));
         }
     }
 
@@ -63,7 +62,7 @@ pub fn find_path(start_pos: Vector2, end_pos: Vector2, obstacles: Vec<Polygon>) 
         // Nothing between start and end, answer is a straight line
         None => return Some(Path::from_edge(Edge {
             start: Node { pos: start_pos, h: euclidean_dist(start_pos, end_pos) },
-            end: Node { pos: end_pos, h: 0.0 },
+            end: Node { pos: end_pos, h: 0 },
             cost: euclidean_dist(start_pos, end_pos)
         })),
         Some(intersect) => {
@@ -76,7 +75,7 @@ pub fn find_path(start_pos: Vector2, end_pos: Vector2, obstacles: Vec<Polygon>) 
             for i in 0..intersect.1.num_sides() {
                 // Use normals of edges of polygon to determine direction
                 let norm_sum = norms[i] + norms[(i - 1) % norms.len()];
-                let node_pos = intersect.1.get(i) + (norm_sum / euclidean_dist(Vector2::zero(), norm_sum)) * actor_radius;
+                let node_pos = intersect.1.get(i) + (norm_sum / (euclidean_dist(Vector2::zero(), norm_sum) as f64).sqrt()) * actor_radius;
 
                 // If there is a direct path to the offset node(s), add it/them to the graph/frontier
                 if intersect.1.intersects(start_pos, node_pos).len() == 0 {
@@ -100,7 +99,7 @@ pub fn find_path(start_pos: Vector2, end_pos: Vector2, obstacles: Vec<Polygon>) 
                                 intersections = Vec::<(Vector2, Polygon)>::new();
                                 for poly in obstacles.iter() {
                                     for intersect in poly.intersects(edge.end.pos, end_pos) {
-                                        intersections.push((intersect, *poly));
+                                        intersections.push((intersect, poly.clone()));
                                     }
                                 }
 
@@ -117,12 +116,13 @@ pub fn find_path(start_pos: Vector2, end_pos: Vector2, obstacles: Vec<Polygon>) 
                                         for i in 0..intersect.1.num_sides() {
                                             // Use normals of edges of polygon to determine direction
                                             let norm_sum = norms[i] + norms[(i - 1) % norms.len()];
-                                            let node_pos = intersect.1.get(i) + (norm_sum / euclidean_dist(Vector2::zero(), norm_sum)) * actor_radius;
+                                            let node_pos = intersect.1.get(i) + (norm_sum / (euclidean_dist(Vector2::zero(), norm_sum) as f64).sqrt()) * actor_radius;
 
                                             // If there is a direct path to the offset node(s), add it/them to the graph/frontier
                                             if intersect.1.intersects(start_pos, node_pos).len() == 0 {
                                                 let mut new_path = path.clone();
-                                                frontier.push(new_path.append_edge(graph.add_edge(edge.end.pos, node_pos)));
+                                                new_path.append_edge(graph.add_edge(edge.end.pos, node_pos));
+                                                frontier.push(new_path);
                                             }
                                         }
                                     }
@@ -140,6 +140,6 @@ pub fn find_path(start_pos: Vector2, end_pos: Vector2, obstacles: Vec<Polygon>) 
     }
 }
 
-fn euclidean_dist(a: Vector2, b: Vector2) -> Scalar {
-    ((a.x - b.x).powf(2.0) + (a.y - b.y).powf(2.0)).sqrt()
+fn euclidean_dist(a: Vector2, b: Vector2) -> u64 {
+    ((a.x - b.x).powf(2.0) + (a.y - b.y).powf(2.0)).sqrt() as u64
 }
