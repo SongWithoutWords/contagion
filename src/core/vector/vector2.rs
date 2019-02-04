@@ -3,7 +3,7 @@ use crate::core::vector::Vector;
 
 use std::ops::*;
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
 pub struct Vector2 {
     pub x: Scalar,
     pub y: Scalar,
@@ -55,6 +55,11 @@ impl Mul<Scalar> for Vector2 {
     fn mul(self, rhs: Scalar) -> Self {
         Vector2 {x: self.x * rhs, y: self.y * rhs}
     }
+}
+
+impl Neg for Vector2 {
+    type Output = Self;
+    fn neg(self) -> Self { self.mul(-1.0) }
 }
 
 // Unfortunately not possible to do this more generally for all vectors, see link:
