@@ -20,7 +20,7 @@ impl Polygon {
         for i in 0..self.num_sides() {
             let ab = self.0[(i + 1) % self.num_sides()] - self.0[i];
             let ac = self.0[(i - 1) % self.num_sides()] - self.0[i];
-            let n = -ac;
+            let n = Vector2 { x: ab.y, y: -ab.x };
             let d = n.dot(ac);
 
             if d > 0.0 {
