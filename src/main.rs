@@ -110,10 +110,11 @@ fn main() {
         last_frame = Instant::now();
 
         if !game_paused {
-            let sound_effects = simulation::update::update(
+            let _sound_effects = simulation::update::update(
                 &simulation::update::UpdateArgs { dt: delta_time },
                 &mut state);
-            play_sound_effects(&sound_effect_files, &sound_effects);
+            // Sound effects temporarily disabled because they are not working
+            // play_sound_effects(&sound_effect_files, &sound_effects);
         }
 
         let mut target = window.draw();
