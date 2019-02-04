@@ -1,8 +1,6 @@
 use crate::core::geo::circle::*;
 use crate::core::geo::segment2::*;
 use crate::core::geo::intersect::segment_circle::*;
-use crate::core::scalar::*;
-use crate::core::vector::*;
 use super::state::*;
 
 pub struct UpdateArgs {

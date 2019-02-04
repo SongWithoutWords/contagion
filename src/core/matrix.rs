@@ -1,4 +1,3 @@
-use crate::core::scalar::Scalar;
 use crate::core::vector::*;
 
 #[derive(Clone, Copy, Debug)]
@@ -42,10 +41,10 @@ impl Mat4 {
         let a0113 = self.j.x * self.w.y - self.j.y * self.w.x;
         let a0112 = self.j.x * self.k.y - self.j.y * self.k.x;
 
-        let det: f64 = (self.i.x * (self.j.y * a2323 - self.j.z * a1323 + self.j.w * a1223)
+        let det: f64 = self.i.x * (self.j.y * a2323 - self.j.z * a1323 + self.j.w * a1223)
             - self.i.y * (self.j.x * a2323 - self.j.z * a0323 + self.j.w * a0223)
             + self.i.z * (self.j.x * a1323 - self.j.y * a0323 + self.j.w * a0123)
-            - self.i.w * (self.j.x * a1223 - self.j.y * a0223 + self.j.z * a0123));
+            - self.i.w * (self.j.x * a1223 - self.j.y * a0223 + self.j.z * a0123);
 
         let ix = 1.0 / det * (self.j.y * a2323 - self.j.z * a1323 + self.j.w * a1223);
         let iy = 1.0 / det * -(self.i.y * a2323 - self.i.z * a1323 + self.i.w * a1223);

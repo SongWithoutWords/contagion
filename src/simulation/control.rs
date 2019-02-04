@@ -1,12 +1,11 @@
 
-use crate::constants::presentation::*;
 use crate::core::vector::*;
 use crate::core::scalar::Scalar;
 use crate::core::matrix::*;
 use glium_sdl2::SDL2Facade;
 use super::state::*;
 
-pub fn update_selected(action_type: u32, state: &mut State, window: &SDL2Facade, camera_frame: Mat4, x_mouse: i32, y_mouse: i32) {
+pub fn update_selected(_action_type: u32, state: &mut State, window: &SDL2Facade, camera_frame: Mat4, x_mouse: i32, y_mouse: i32) {
     state.is_selected = vec![false; state.entities.len()];
     let m_pos = &mut Vector2{ x : x_mouse as f64, y : y_mouse as f64};
     translate_mouse_to_camera(m_pos, window.window().size());
@@ -18,8 +17,8 @@ pub fn update_selected(action_type: u32, state: &mut State, window: &SDL2Facade,
             Behaviour::Cop {..} => {
                 let x_pos: Scalar = entity.position.x;
                 let y_pos: Scalar = entity.position.y;
-                if (m_pos.x <= x_pos + 0.5 && m_pos.x >= x_pos - 0.5
-                    && m_pos.y <= y_pos + 0.5 && m_pos.y >= y_pos - 0.5) {
+                if m_pos.x <= x_pos + 0.5 && m_pos.x >= x_pos - 0.5
+                    && m_pos.y <= y_pos + 0.5 && m_pos.y >= y_pos - 0.5 {
                     state.is_selected[i] = true;
                 }
             }
@@ -36,7 +35,7 @@ pub fn issue_police_order(order: PoliceOrder, state: &mut State, window: &SDL2Fa
             translate_mouse_to_camera(m_pos, window.window().size());
             translate_camera_to_world(m_pos, camera_frame);
             for i in 0..state.is_selected.len() {
-                if (state.is_selected[i] == true) {
+                if state.is_selected[i] == true {
                     match state.entities[i].behaviour {
                         Behaviour::Cop {ref mut state, ..} => {
                             *state = CopState::Moving{ waypoint: *m_pos }

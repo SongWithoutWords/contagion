@@ -10,24 +10,16 @@ extern crate sdl2;
 extern crate image;
 extern crate rodio;
 
-use sdl2::{Sdl, EventPump, ttf};
-use sdl2::event::Event;
+use sdl2::{Sdl, EventPump};
 use sdl2::keyboard::Keycode;
-use std::{io::Cursor, ffi::CString, path::Path, time::Instant};
+use std::time::Instant;
 use glium_sdl2::SDL2Facade;
 use glium::draw_parameters::Blend;
-use glium::Surface;
-use glium::index::NoIndices;
-use glium::texture::texture2d::Texture2d;
-use glium::VertexBuffer;
-use sdl2::audio::{AudioCallback, AudioSpecDesired};
 use std::time::Duration;
 use std::io::BufReader;
 use std::fs::File;
 use rodio::Source;
 
-use crate::core::matrix::*;
-use crate::core::matrix::Mat4;
 use crate::core::scalar::*;
 use crate::core::vector::*;
 use crate::presentation::audio::sound_effects::*;
@@ -58,7 +50,7 @@ fn init() -> Result<((Sdl, SDL2Facade, EventPump),
 
     // initialize window and eventpump
     let window_tuple = presentation::graphics::renderer::create_window();
-    let mut window = window_tuple.1;
+    let window = window_tuple.1;
 
     // load image -> type glium::texture::texture2d::Texture2d
     let textures = presentation::display::Textures {
@@ -79,7 +71,7 @@ fn init() -> Result<((Sdl, SDL2Facade, EventPump),
 
 fn main() {
     // init
-    let (mut window_tuple, textures, program, sound_effect_files) = match init() {
+    let (window_tuple, textures, program, _sound_effect_files) = match init() {
         // error handler if init fails
         Ok(t) => t,
         Err(err) => {
@@ -87,10 +79,9 @@ fn main() {
             std::process::exit(1);
         }
     };
-    let sdl_context = window_tuple.0;
+    let _sdl_context = window_tuple.0;
     let window = window_tuple.1;
     let mut event_pump = window_tuple.2;
-
     let params = glium::DrawParameters {
         blend: Blend::alpha_blending(),
         ..Default::default()
@@ -106,7 +97,6 @@ fn main() {
         let duration = last_frame.elapsed();
         let delta_time = duration.as_secs() as Scalar + 1e-9 * duration.subsec_nanos() as Scalar;
         last_frame = Instant::now();
-
         let keyboard_state = event_pump.keyboard_state();
         camera.update(&keyboard_state, delta_time);
         let camera_frame = camera.compute_matrix();
@@ -129,13 +119,13 @@ fn main() {
                     println!("  Entity count:     {:?}", state.entities.len());
                     println!("  Projectile count: {:?}", state.projectiles.len());
                 },
-                Event::MouseButtonDown {timestamp, window_id, which, mouse_btn, x, y } => {
+                Event::MouseButtonDown {timestamp: _, window_id: _, which: _, mouse_btn, x, y } => {
                     use sdl2::mouse::MouseButton;
                     match mouse_btn {
                         MouseButton::Left { .. } => {
                             simulation::control::update_selected(0, &mut state, &window, camera_frame, x, y);
                                 for i in 0..state.is_selected.len() {
-                                    if (state.is_selected[i] == true) {
+                                    if state.is_selected[i] == true {
                                     println!("selected: {:?}", state.is_selected[i]);
                                     }
                                 }
