@@ -78,7 +78,7 @@ fn main() {
         blend: Blend::alpha_blending(),
         ..Default::default()
     };
-    let mut state = simulation::initial_state::initial_state(20);
+    let mut state = simulation::initial_state::initial_state(100);
     let mut camera = presentation::camera::Camera::new();
     let mut last_frame = Instant::now();
     let mut game_paused = false;
