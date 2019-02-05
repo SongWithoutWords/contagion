@@ -109,6 +109,7 @@ fn main() {
 
         let keyboard_state = event_pump.keyboard_state();
         camera.update(&keyboard_state, delta_time);
+
         let camera_frame = camera.compute_matrix();
 
         // Event loop: polls for events sent to all windows
@@ -145,6 +146,9 @@ fn main() {
                         }
                         _ => ()
                     }
+                },
+                Event::MouseWheel {timestamp, window_id, which, x, y, direction} => {
+                    camera.set_zoom(y);
                 }
                 _ => ()
             }
