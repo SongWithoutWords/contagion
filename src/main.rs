@@ -54,8 +54,10 @@ fn init() -> Result<((Sdl, SDL2Facade, EventPump),
     let textures = presentation::display::load_textures(&window);
 
     // send vertex shader and fragment shader to glium library
-    let program = glium::Program::from_source(&window, include_str!("./presentation/graphics/vs.vert"),
-                                              include_str!("./presentation/graphics/fs.frag"), None).unwrap();
+    let program = glium::Program::from_source(
+        &window,
+        include_str!("./presentation/graphics/sprite.vs.glsl"),
+        include_str!("./presentation/graphics/sprite.fs.glsl"), None).unwrap();
     let window_tuple: (Sdl, SDL2Facade, EventPump) = (window_tuple.0, window, window_tuple.2);
 
     Ok((window_tuple, textures, program, sound_effect_files))
