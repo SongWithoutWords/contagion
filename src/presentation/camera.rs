@@ -55,9 +55,14 @@ impl Camera {
 
     // Set camera zoom level
     pub fn set_zoom(&mut self, mouse_scroll: i32) {
-        const SCALE_FACTOR: Scalar = 0.001;
+        const SCALE_FACTOR: Scalar = 0.0007;
 
         let zoom = mouse_scroll as Scalar;
-        self.zoom += zoom * SCALE_FACTOR;
+        let zoom_scale = zoom * SCALE_FACTOR;
+
+        self.zoom += zoom_scale;
+
+
+
     }
 }
