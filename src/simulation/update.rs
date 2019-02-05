@@ -160,6 +160,10 @@ fn update_cop(
                 CopState::Aiming { mut aim_time_remaining, target_index} => {
 
                     // TODO: check if we can still see the target, and stop aiming if not
+                    let my_pos = entities[index].position;
+                    let target_pos = entities[target_index].position;
+                    let delta = target_pos - my_pos;
+                    entities[index].look_along_vector(delta, args.dt);
 
                     aim_time_remaining -= args.dt;
                     if aim_time_remaining > 0.0 {
@@ -171,9 +175,7 @@ fn update_cop(
                     }
                     else {
                         // Finished aiming, take the shot
-                        let my_pos:Vector2 = entities[index].position;
-                        let target_pos = entities[target_index].position;
-                        let delta_normal = (target_pos - my_pos).normalize();
+                        let delta_normal = delta.normalize();
 
                         // Fire at the taget
                         sim_state.projectiles.push(
@@ -200,8 +202,7 @@ fn update_cop(
                             state: CopState::Idle
                         }
                     } else {
-                        // todo: move towards the waypoint
-                        entities[index].velocity += delta.normalize_to(args.dt);
+                        entities[index].accelerate_along_vector(delta, args.dt);
                         Behaviour::Cop{
                             rounds_in_magazine: rounds_in_magazine,
                             state: CopState::Moving{ waypoint }
@@ -306,7 +307,7 @@ fn simulate_zombie(args: &UpdateArgs, entities: &mut Vec<Entity>, index: usize) 
 
     if min_distance_sqr < INFINITY {
         // Accelerate towards the nearest target
-        entities[index].velocity += args.dt * min_delta.normalize();
+        entities[index].accelerate_along_vector(min_delta, args.dt);
     }
 }
 
@@ -337,6 +338,6 @@ fn simulate_human(args: &UpdateArgs, entities: &mut Vec<Entity>, index: usize) {
 
     if min_distance_sqr < INFINITY {
         // Accelerate away from the nearest zombie
-        entities[index].velocity -= min_delta.normalize_to(args.dt);
+        entities[index].accelerate_along_vector(-min_delta, args.dt);
     }
 }

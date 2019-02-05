@@ -12,12 +12,28 @@ pub const ENTITY_RADIUS: Scalar = 0.5;
 pub struct Entity {
     pub position: Vector2,
     pub velocity: Vector2,
-    pub behaviour: Behaviour
+    pub facing_angle: Scalar,
+    pub behaviour: Behaviour,
 }
 
 impl Entity {
     pub fn get_facing_normal(&self) -> Vector2 {
-        return self.velocity.normalize();
+        Vector2::from_angle(self.facing_angle)
+    }
+    pub fn look_along_angle(&mut self, angle: Scalar, delta_time: Scalar) {
+        let delta_theta = (angle - self.facing_angle) % 6.28;
+        let angular_deviation = if delta_theta < 3.14 { delta_theta } else { delta_theta - 6.28 };
+        self.facing_angle += delta_time * angular_deviation;
+    }
+    pub fn look_along_vector(&mut self, vector: Vector2, delta_time: Scalar) {
+        self.look_along_angle(vector.angle(), delta_time);
+    }
+    pub fn look_at_point(&mut self, point: Vector2, delta_time: Scalar) {
+        self.look_along_vector(point - self.position, delta_time);
+    }
+    pub fn accelerate_along_vector(&mut self, vector: Vector2, delta_time: Scalar) {
+        self.look_along_vector(vector, delta_time);
+        self.velocity += vector.normalize_to(delta_time);
     }
 }
 pub const COP_RELOAD_COOLDOWN: Scalar = 10.0;
