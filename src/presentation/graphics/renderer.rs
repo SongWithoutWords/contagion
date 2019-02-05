@@ -4,20 +4,11 @@ extern crate sdl2;
 extern crate image;
 
 use crate::constants::presentation::*;
-use std::io::Cursor;
-use std::ffi::CString;
-use std::{thread, time};
-use std::time::Instant;
 use std::path::Path;
 
-use glium::Surface;
 use glium_sdl2::SDL2Facade;
 
 use sdl2::{Sdl, EventPump};
-use sdl2::event::Event;
-
-const WIDTH: u32 = WINDOW_W;
-const HEIGHT: u32 = WINDOW_H;
 
 pub fn create_window() -> (Sdl, SDL2Facade, EventPump) {
     use glium_sdl2::DisplayBuild;
@@ -27,7 +18,6 @@ pub fn create_window() -> (Sdl, SDL2Facade, EventPump) {
     let video_subsystem = sdl_context.video().unwrap();
     // OpenGL context getters and setters
     let gl_attr = video_subsystem.gl_attr();
-    let mut pause_time = false;
 
 
     // setup OpenGL profile
@@ -55,7 +45,10 @@ pub fn create_window() -> (Sdl, SDL2Facade, EventPump) {
         .build_glium()
         .unwrap();
 
-    let mut event_pump = sdl_context.event_pump().unwrap();
+    // force vsync
+    video_subsystem.gl_set_swap_interval(1);
+
+    let event_pump = sdl_context.event_pump().unwrap();
 
     (sdl_context, window, event_pump)
 }
@@ -71,5 +64,5 @@ pub fn load_texture(window: &glium_sdl2::SDL2Facade, path: &str) -> glium::textu
 use sdl2::ttf;
 pub fn create_font() {
     let ttf_context = ttf::init().unwrap();
-    let font = ttf_context.load_font("src/assets/ConsolaMono.ttf", 50).unwrap();
+    let _font = ttf_context.load_font("src/assets/ConsolaMono.ttf", 50).unwrap();
 }
