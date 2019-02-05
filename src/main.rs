@@ -137,7 +137,7 @@ fn main() {
                         _ => ()
                     }
                 },
-                Event::MouseWheel {timestamp, window_id, which, x, y, direction} => {
+                Event::MouseWheel {timestamp: _, window_id: _, which: _, x: _, y, direction: _} => {
                     camera.set_zoom(y);
                 }
                 _ => ()

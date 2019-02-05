@@ -57,13 +57,7 @@ impl Camera {
     pub fn set_zoom(&mut self, mouse_scroll: i32) {
         const SCALE_FACTOR: Scalar = 0.001;
 
-        let mut zoom_scale = mouse_scroll as Scalar;
-        zoom_scale = zoom_scale * SCALE_FACTOR;
-
-        // Prevent camera from inverted zoom
-        if self.zoom - zoom_scale > 0.0 {
-            self.zoom += zoom_scale;
-        }
-
+        let zoom = mouse_scroll as Scalar;
+        self.zoom += zoom * SCALE_FACTOR;
     }
 }
