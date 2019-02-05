@@ -27,7 +27,7 @@ use crate::presentation::audio::sound_effects::*;
 
 fn init() -> Result<((Sdl, SDL2Facade, EventPump),
                      presentation::display::Textures,
-                     glium::Program,
+                     presentation::display::Programs,
                      SoundEffectSources),
                     String> {
 
@@ -53,19 +53,16 @@ fn init() -> Result<((Sdl, SDL2Facade, EventPump),
 
     let textures = presentation::display::load_textures(&window);
 
-    // send vertex shader and fragment shader to glium library
-    let program = glium::Program::from_source(
-        &window,
-        include_str!("./presentation/graphics/sprite.vs.glsl"),
-        include_str!("./presentation/graphics/sprite.fs.glsl"), None).unwrap();
+    let programs = presentation::display::load_programs(&window);
+
     let window_tuple: (Sdl, SDL2Facade, EventPump) = (window_tuple.0, window, window_tuple.2);
 
-    Ok((window_tuple, textures, program, sound_effect_files))
+    Ok((window_tuple, textures, programs, sound_effect_files))
 }
 
 fn main() {
     // init
-    let (window_tuple, textures, program, _sound_effect_files) = match init() {
+    let (window_tuple, textures, programs, _sound_effect_files) = match init() {
         // error handler if init fails
         Ok(t) => t,
         Err(err) => {
@@ -148,7 +145,7 @@ fn main() {
         }
 
         let mut target = window.draw();
-        presentation::display::display(&mut target, &window, &program, &textures, &params, &state, camera_frame);
+        presentation::display::display(&mut target, &window, &programs, &textures, &params, &state, camera_frame);
         target.finish().unwrap();
     }
 }

@@ -18,13 +18,6 @@ pub enum SpriteType {
 
 pub type Textures = EnumMap<SpriteType, Texture2d>;
 
-#[derive(Copy, Clone)]
-struct Vertex {
-    position: [f32; 2],
-    tex_coords: [f32; 2],
-}
-implement_vertex!(Vertex, position, tex_coords);
-
 pub fn load_textures(window: &glium_sdl2::SDL2Facade) -> Textures {
     use crate::presentation::graphics::renderer::load_texture;
     enum_map! {
@@ -35,6 +28,27 @@ pub fn load_textures(window: &glium_sdl2::SDL2Facade) -> Textures {
         SpriteType::SelectionHighlight => load_texture(&window, "src/assets/selection_highlight.png"),
     }
 }
+
+pub struct Programs {
+    sprite_program: glium::Program,
+    // shadow_program: glium::Program,
+}
+pub fn load_programs(window: &glium_sdl2::SDL2Facade) -> Programs {
+    Programs {
+        sprite_program: glium::Program::from_source(
+            window,
+            include_str!("graphics/sprite.vs.glsl"),
+            include_str!("graphics/sprite.fs.glsl"), None).unwrap()
+    }
+}
+
+#[derive(Copy, Clone)]
+struct Vertex {
+    position: [f32; 2],
+    tex_coords: [f32; 2],
+}
+implement_vertex!(Vertex, position, tex_coords);
+
 
 fn push_sprite_vertices(buffer: &mut Vec<Vertex>, entity: &Entity) {
 
@@ -103,7 +117,7 @@ fn draw_sprites(
 pub fn display(
     frame: &mut glium::Frame,
     window: &glium_sdl2::SDL2Facade,
-    program: &glium::Program,
+    programs: &Programs,
     textures: &Textures,
     params: &glium::DrawParameters,
     state: &State, camera_frame: Mat4) {
@@ -139,7 +153,7 @@ pub fn display(
             frame,
             window,
             &vertex_buffer,
-            program,
+            &programs.sprite_program,
             params,
             camera_frame,
             &textures[sprite_type]);
