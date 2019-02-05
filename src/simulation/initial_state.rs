@@ -13,11 +13,11 @@ pub fn initial_state(count: u32) -> State {
 
     let entities = &mut state.entities;
 
+    let mut rng = rand::thread_rng();
     for _i in 0..count {
         // TODO: need to optimize this later with housing units and two entities shouldn't be placed on same tile
-        let mut rng = rand::thread_rng();
-        let x: Scalar = rng.gen_range(0.0f64, 25 as f64);
-        let y: Scalar = rng.gen_range(0.0f64, 25 as f64);
+        let x: Scalar = rng.gen_range(0.0f64, 10 as f64);
+        let y: Scalar = rng.gen_range(0.0f64, 10 as f64);
         let position = vector2(x, y);
         let velocity = Vector2::zero();
         // spawn 80% humans

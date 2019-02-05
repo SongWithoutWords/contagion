@@ -5,6 +5,7 @@ authors = ["ian <ianmccall93@gmail.com>"]
 edition = "2018"
 
 [dependencies]
+enum-map = "0.5.0"
 glium_sdl2 = "0.15"
 glium = "0.18"
 image = "*"
