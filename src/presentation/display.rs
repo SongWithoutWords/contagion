@@ -26,14 +26,13 @@ struct Vertex {
 implement_vertex!(Vertex, position, tex_coords);
 
 pub fn load_textures(window: &glium_sdl2::SDL2Facade) -> Textures {
-    use SpriteType::*;
     use crate::presentation::graphics::renderer::load_texture;
     enum_map! {
-        Cop                => load_texture(&window, "src/assets/police.png"),
-        Zombie             => load_texture(&window, "src/assets/zombie.png"),
-        Civilian           => load_texture(&window, "src/assets/citizen.png"),
-        Dead               => load_texture(&window, "src/assets/dead_zombie.png"),
-        SelectionHighlight => load_texture(&window, "src/assets/selection_highlight.png"),
+        SpriteType::Cop                => load_texture(&window, "src/assets/police.png"),
+        SpriteType::Zombie             => load_texture(&window, "src/assets/zombie.png"),
+        SpriteType::Civilian           => load_texture(&window, "src/assets/citizen.png"),
+        SpriteType::Dead               => load_texture(&window, "src/assets/dead_zombie.png"),
+        SpriteType::SelectionHighlight => load_texture(&window, "src/assets/selection_highlight.png"),
     }
 }
 
