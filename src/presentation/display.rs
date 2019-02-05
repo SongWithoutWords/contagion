@@ -4,14 +4,19 @@ use crate::simulation::state::*;
 
 use glium::Surface;
 use glium::texture::texture2d::Texture2d;
+use enum_map::EnumMap;
 
-pub struct Textures {
-    pub zombies: Texture2d,
-    pub dead_zombie: Texture2d,
-    pub police: Texture2d,
-    pub selection_highlight: Texture2d,
-    pub citizen: Texture2d,
+// Enum ordered by draw order
+#[derive(Copy, Clone, Debug, Enum)]
+pub enum SpriteType {
+    SelectionHighlight,
+    Dead,
+    Civilian,
+    Zombie,
+    Cop,
 }
+
+pub type Textures = EnumMap<SpriteType, Texture2d>;
 
 #[derive(Copy, Clone)]
 struct Vertex {
@@ -19,6 +24,18 @@ struct Vertex {
     tex_coords: [f32; 2],
 }
 implement_vertex!(Vertex, position, tex_coords);
+
+pub fn load_textures(window: &glium_sdl2::SDL2Facade) -> Textures {
+    use SpriteType::*;
+    use crate::presentation::graphics::renderer::load_texture;
+    enum_map! {
+        Cop                => load_texture(&window, "src/assets/police.png"),
+        Zombie             => load_texture(&window, "src/assets/zombie.png"),
+        Civilian           => load_texture(&window, "src/assets/citizen.png"),
+        Dead               => load_texture(&window, "src/assets/dead_zombie.png"),
+        SelectionHighlight => load_texture(&window, "src/assets/selection_highlight.png"),
+    }
+}
 
 fn push_sprite_vertices(buffer: &mut Vec<Vertex>, entity: &Entity) {
 
@@ -68,10 +85,9 @@ fn draw_sprites(
     window: &glium_sdl2::SDL2Facade,
     vertices: &Vec<Vertex>,
     program: &glium::Program,
-    camera_frame: Mat4,
-    texture: &Texture2d,
     params: &glium::DrawParameters,
-) {
+    camera_frame: Mat4,
+    texture: &Texture2d) {
     let camera_frame = camera_frame.as_f32_array();
     let uniforms = uniform! {
         matrix: camera_frame,
@@ -95,35 +111,38 @@ pub fn display(
 
     frame.clear_color(0.2, 0.2, 0.2, 1.0);
 
-    let mut cop_vertices = Vec::new();
-    let mut dead_vertices = Vec::new();
-    let mut human_vertices = Vec::new();
-    let mut zombie_vertices = Vec::new();
+    let mut vertex_buffers = enum_map!{_ => vec!()};
 
     // Compute the vertices in world coordinates of all entities
     for entity in &state.entities {
-        match entity.behaviour {
-            Behaviour::Cop{..} => push_sprite_vertices(&mut cop_vertices, entity),
-            Behaviour::Dead => push_sprite_vertices(&mut dead_vertices, entity),
-            Behaviour::Human => push_sprite_vertices(&mut human_vertices, entity),
-            Behaviour::Zombie => push_sprite_vertices(&mut zombie_vertices, entity),
+        let sprite_type = match entity.behaviour {
+            Behaviour::Cop{..} => SpriteType::Cop,
+            Behaviour::Dead => SpriteType::Dead,
+            Behaviour::Human => SpriteType::Civilian,
+            Behaviour::Zombie => SpriteType::Zombie,
+        };
+        push_sprite_vertices(&mut vertex_buffers[sprite_type], entity);
+    }
+
+
+    // Compute vertices for selection highlights
+    {
+        for i in 0..state.is_selected.len() {
+            if state.is_selected[i] {
+                push_sprite_vertices(&mut vertex_buffers[SpriteType::SelectionHighlight], &state.entities[i]);
+            }
         }
     }
 
     // Make the draw calls
-    draw_sprites(frame, window, &cop_vertices, program, camera_frame, &textures.police, params);
-    draw_sprites(frame, window, &dead_vertices, program, camera_frame, &textures.dead_zombie, params);
-    draw_sprites(frame, window, &human_vertices, program, camera_frame, &textures.citizen, params);
-    draw_sprites(frame, window, &zombie_vertices, program, camera_frame, &textures.zombies, params);
-
-    {
-        let mut selection_highlight_vertices = Vec::new();
-        for i in 0..state.is_selected.len() {
-            if state.is_selected[i] {
-                push_sprite_vertices(&mut selection_highlight_vertices, &state.entities[i]);
-            }
-        }
-        draw_sprites(frame, window, &selection_highlight_vertices, program, camera_frame, &textures.selection_highlight, params);
-}
-
+    for (sprite_type, vertex_buffer) in &vertex_buffers {
+        draw_sprites(
+            frame,
+            window,
+            &vertex_buffer,
+            program,
+            params,
+            camera_frame,
+            &textures[sprite_type]);
+    }
 }

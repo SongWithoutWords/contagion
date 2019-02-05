@@ -3,10 +3,10 @@ pub mod core;
 pub mod presentation;
 pub mod simulation;
 
-#[macro_use]
-extern crate glium;
+#[macro_use] extern crate glium;
 extern crate glium_sdl2;
 extern crate sdl2;
+#[macro_use] extern crate enum_map;
 extern crate image;
 extern crate rodio;
 
@@ -47,19 +47,11 @@ fn init() -> Result<((Sdl, SDL2Facade, EventPump),
     // Play the file
     rodio::play_raw(&device, source.convert_samples());
 
-
     // initialize window and eventpump
     let window_tuple = presentation::graphics::renderer::create_window();
     let window = window_tuple.1;
 
-    // load image -> type glium::texture::texture2d::Texture2d
-    let textures = presentation::display::Textures {
-        zombies: presentation::graphics::renderer::load_texture(&window, "src/assets/zombie.png"),
-        dead_zombie: presentation::graphics::renderer::load_texture(&window, "src/assets/dead_zombie.png"),
-        police: presentation::graphics::renderer::load_texture(&window, "src/assets/police.png"),
-        selection_highlight: presentation::graphics::renderer::load_texture(&window, "src/assets/selection_highlight.png"),
-        citizen: presentation::graphics::renderer::load_texture(&window, "src/assets/citizen.png"),
-    };
+    let textures = presentation::display::load_textures(&window);
 
     // send vertex shader and fragment shader to glium library
     let program = glium::Program::from_source(&window, include_str!("./presentation/graphics/vs.vert"),
@@ -86,7 +78,7 @@ fn main() {
         blend: Blend::alpha_blending(),
         ..Default::default()
     };
-    let mut state = simulation::initial_state::initial_state(100);
+    let mut state = simulation::initial_state::initial_state(20);
     let mut camera = presentation::camera::Camera::new();
     let mut last_frame = Instant::now();
     let mut game_paused = false;
