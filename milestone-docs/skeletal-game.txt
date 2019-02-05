@@ -54,3 +54,4 @@ explaining how your milestone aligns with the plan. Explain all discrepancies.
 - Logic for police reloading and magazine capacity
 - Presentation with sprites (rather than geometric shapes)
 - Sprite-batching to render multiple sprites with a single draw call
+- Shader and rendering code so that sprites cast shadows

@@ -31,14 +31,18 @@ pub fn load_textures(window: &glium_sdl2::SDL2Facade) -> Textures {
 
 pub struct Programs {
     sprite_program: glium::Program,
-    // shadow_program: glium::Program,
+    shadow_program: glium::Program,
 }
 pub fn load_programs(window: &glium_sdl2::SDL2Facade) -> Programs {
     Programs {
         sprite_program: glium::Program::from_source(
             window,
             include_str!("graphics/sprite.vs.glsl"),
-            include_str!("graphics/sprite.fs.glsl"), None).unwrap()
+            include_str!("graphics/sprite.fs.glsl"), None).unwrap(),
+        shadow_program: glium::Program::from_source(
+            window,
+            include_str!("graphics/shadow.vs.glsl"),
+            include_str!("graphics/shadow.fs.glsl"), None).unwrap()
     }
 }
 
@@ -93,24 +97,20 @@ fn push_sprite_vertices(buffer: &mut Vec<Vertex>, entity: &Entity) {
     buffer.push(vertex2);
 }
 
-fn draw_sprites(
+fn draw_sprites<U>(
     frame: &mut glium::Frame,
     window: &glium_sdl2::SDL2Facade,
     vertices: &Vec<Vertex>,
     program: &glium::Program,
     params: &glium::DrawParameters,
-    camera_frame: Mat4,
-    texture: &Texture2d) {
-    let camera_frame = camera_frame.as_f32_array();
-    let uniforms = uniform! {
-        matrix: camera_frame,
-        tex: texture,
-    };
+    uniforms: &U)
+    where U: glium::uniforms::Uniforms
+{
     frame.draw(
         &glium::VertexBuffer::new(window, vertices).unwrap(),
         &glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList),
         program,
-        &uniforms,
+        uniforms,
         params).unwrap();
 }
 
@@ -147,15 +147,39 @@ pub fn display(
         }
     }
 
-    // Make the draw calls
+    let camera_frame = camera_frame.as_f32_array();
+
+    // Render shadows
+    use crate::presentation::display::SpriteType::*;
+    for sprite_type in &[Cop, Civilian, Dead, Zombie] {
+
+        let uniforms = uniform! {
+            matrix: camera_frame,
+            tex: &textures[*sprite_type],
+            height: match sprite_type { Dead => 0.5, _ => 1.0 } as f32
+        };
+        draw_sprites(
+            frame,
+            window,
+            &vertex_buffers[*sprite_type],
+            &programs.shadow_program,
+            params,
+            &uniforms);
+    }
+
+    // Render sprites
     for (sprite_type, vertex_buffer) in &vertex_buffers {
+
+        let uniforms = uniform! {
+            matrix: camera_frame,
+            tex: &textures[sprite_type],
+        };
         draw_sprites(
             frame,
             window,
             &vertex_buffer,
             &programs.sprite_program,
             params,
-            camera_frame,
-            &textures[sprite_type]);
+            &uniforms);
     }
 }
