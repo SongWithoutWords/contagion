@@ -90,6 +90,7 @@ fn main() {
         let delta_time = duration.as_secs() as Scalar + 1e-9 * duration.subsec_nanos() as Scalar;
         last_frame = Instant::now();
         let keyboard_state = event_pump.keyboard_state();
+
         camera.update(&keyboard_state, delta_time);
 
         let camera_frame = camera.compute_matrix();
