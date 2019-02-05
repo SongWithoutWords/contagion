@@ -17,39 +17,25 @@
    inkscape:version="0.92.3 (2405546, 2018-03-11)"
    sodipodi:docname="selection_highlight.svg">
   <defs
-     id="defs2">
-    <filter
-       inkscape:collect="always"
-       style="color-interpolation-filters:sRGB"
-       id="filter4652"
-       x="-0.012017647"
-       width="1.0240353"
-       y="-0.011982405"
-       height="1.0239648">
-      <feGaussianBlur
-         inkscape:collect="always"
-         stdDeviation="1.2870089"
-         id="feGaussianBlur4654" />
-    </filter>
-  </defs>
+     id="defs2" />
   <sodipodi:namedview
      id="base"
      pagecolor="#ffffff"
      bordercolor="#666666"
      borderopacity="1.0"
-     inkscape:pageopacity="0.0"
+     inkscape:pageopacity="0"
      inkscape:pageshadow="2"
      inkscape:zoom="0.35"
-     inkscape:cx="-107.14286"
-     inkscape:cy="560"
+     inkscape:cx="347.14285"
+     inkscape:cy="102.85714"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="false"
-     inkscape:window-width="1920"
-     inkscape:window-height="1019"
-     inkscape:window-x="0"
+     inkscape:window-width="929"
+     inkscape:window-height="1015"
+     inkscape:window-x="983"
      inkscape:window-y="0"
-     inkscape:window-maximized="1" />
+     inkscape:window-maximized="0" />
   <metadata
      id="metadata5">
     <rdf:RDF>
@@ -67,12 +53,13 @@
      inkscape:groupmode="layer"
      id="layer1"
      transform="translate(0,-41)">
-    <ellipse
-       style="fill:#0066ff;fill-opacity:0.50917429;stroke-width:0.26458332;filter:url(#filter4652)"
+    <circle
+       style="opacity:0.54900004;fill:#0066ff;fill-opacity:1;stroke-width:0.26418695"
        id="path3717"
-       cx="128.5119"
-       cy="169.62204"
-       rx="124.73214"
-       ry="125.86607" />
+       cx="128.13393"
+       cy="170.37799"
+       inkscape:export-xdpi="25.986706"
+       inkscape:export-ydpi="25.986706"
+       r="125.11012" />
   </g>
 </svg>
