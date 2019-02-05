@@ -1,6 +1,56 @@
+Team 12 Skeletal Game Submission
+
 Note: we are using a late day and are not submitting our skeletal game until Monday, February 4th.
 
 Please checkout the skeletal-game tag to evaluate our submission
 - We will add this tag for our submission on Monday, February 4th.
 
 Link to project: https://github.com/SongWithoutWords/contagion
+
+* MILESTONE REQUIREMENTS *
+For this milestone you should have a basic game of comparable complexity to the “Hello World”
+assignment. This should include basic rendering, input-driven response, basic 2D motion, basic
+event-driven/random response, and a minimal set of assets.
+(75%) Milestone requirements:
+- Working application rendering code and shaders for background and sprite assets
+- Loading and rendering of textured geometry with correct blending.
+- Working basic 2D transformations.
+- Keyboard/mouse control of one or more character sprites. This can include changes in the
+set of rendered objects, object geometry, position, orientation, textures, colors, and other
+attributes.
+- Random or hard-coded action of (other) characters/assets.
+- Basic key-frame/state interpolation (smooth movement from point A to point B in
+Cartesian or angle space).
+- Stable game code supporting continuing execution and graceful termination.
+(25%) Creative: You should implement one or more additional creative elements. These can
+include additional integrated assets or rendering effects or pre-emptive implementation of one or
+more features from subsequent milestones.
+Your submission should align with your proposed development plan: Provide a write-up
+explaining how your milestone aligns with the plan. Explain all discrepancies.
+
+* PROPOSED DEVELOPMENT PLAN *
+- Core data types (vectors, matrices, random number generation, etc.)
+- Basic simulation (entities with mass, acceleration, drag)
+- Pause/stop/restart
+- Collision between entities
+- Zombies chase civilians and police
+- Civilians flee zombies
+- Police shoot zombies
+- Collision between entities and projectiles
+- Basic presentation (rendering of entities, may just be shapes)
+- Initial work on camera
+  - Pan with acceleration/drag
+  - Zoom into and out of cursor
+- Random seeding of infected citizens at beginning of game
+- Can select and issue movement orders to individual police
+
+* PLANNED FEATURES NOT DELIVERED *
+- Zoom into and out of cursor
+
+* ADDITIONAL FEATURES DELIVERED *
+- Ambient audio
+- Visual highlight of selected entities (police)
+- Smooth interpolation of entity facing angle (e.g. police track target while aiming)
+- Logic for police reloading and magazine capacity
+- Presentation with sprites (rather than geometric shapes)
+- Sprite-batching to render multiple sprites with a single draw call
