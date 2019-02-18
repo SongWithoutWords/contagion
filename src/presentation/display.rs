@@ -5,6 +5,8 @@ use crate::simulation::state::*;
 use glium::Surface;
 use glium::texture::texture2d::Texture2d;
 use enum_map::EnumMap;
+use crate::presentation::ui::gui::Gui;
+use crate::presentation::ui::gui::GuiType;
 
 // Enum ordered by draw order
 #[derive(Copy, Clone, Debug, Enum)]
@@ -32,6 +34,7 @@ pub fn load_textures(window: &glium_sdl2::SDL2Facade) -> Textures {
 pub struct Programs {
     sprite_program: glium::Program,
     shadow_program: glium::Program,
+    gui_program: glium::Program,
 }
 pub fn load_programs(window: &glium_sdl2::SDL2Facade) -> Programs {
     Programs {
@@ -42,7 +45,11 @@ pub fn load_programs(window: &glium_sdl2::SDL2Facade) -> Programs {
         shadow_program: glium::Program::from_source(
             window,
             include_str!("graphics/shadow.vs.glsl"),
-            include_str!("graphics/shadow.fs.glsl"), None).unwrap()
+            include_str!("graphics/shadow.fs.glsl"), None).unwrap(),
+        gui_program: glium::Program::from_source(
+            window,
+            include_str!("graphics/shadow.vs.glsl"),
+            include_str!("graphics/shadow.fs.glsl"), None).unwrap(),
     }
 }
 
@@ -60,10 +67,50 @@ fn push_sprite_vertices(buffer: &mut Vec<Vertex>, entity: &Entity) {
     let up = entity.get_facing_normal();
     let right = vector2(up.y, -up.x);
 
+
     let top_left  = position - 0.5 * right + 0.5 * up;
     let top_right = position + 0.5 * right + 0.5 * up;
     let bot_left  = position - 0.5 * right - 0.5 * up;
     let bot_right = position + 0.5 * right - 0.5 * up;
+
+    // 0      1
+    // +------+
+    // |    / |
+    // |  /   |
+    // |/     |
+    // +------+
+    // 2      3
+
+    let vertex0 = Vertex {
+        position: top_left.as_f32_array(),
+        tex_coords: [0.0, 1.0]
+    };
+    let vertex1 = Vertex {
+        position: top_right.as_f32_array(),
+        tex_coords: [1.0, 1.0]
+    };
+    let vertex2 = Vertex {
+        position: bot_left.as_f32_array(),
+        tex_coords: [0.0, 0.0]
+    };
+    let vertex3 = Vertex {
+        position: bot_right.as_f32_array(),
+        tex_coords: [1.0, 0.0]
+    };
+    buffer.push(vertex0);
+    buffer.push(vertex1);
+    buffer.push(vertex2);
+    buffer.push(vertex1);
+    buffer.push(vertex3);
+    buffer.push(vertex2);
+}
+
+// TODO: fix
+fn push_gui_vertices(buffer: &mut Vec<Vertex>, ui: &Gui) {
+    let top_left  =  ui.top_left;
+    let top_right =  ui.top_right;
+    let bot_left  = ui.bot_left;
+    let bot_right =  ui.bot_right;
 
     // 0      1
     // +------+
@@ -120,11 +167,14 @@ pub fn display(
     programs: &Programs,
     textures: &Textures,
     params: &glium::DrawParameters,
-    state: &State, camera_frame: Mat4) {
+    state: &State, camera_frame: Mat4,
+    ui: &mut Gui
+    ) {
 
     frame.clear_color(0.2, 0.2, 0.2, 1.0);
 
     let mut vertex_buffers = enum_map!{_ => vec!()};
+    let mut vertex_buffers_gui = enum_map!{_ => vec!()};
 
     // Compute the vertices in world coordinates of all entities
     for entity in &state.entities {
@@ -140,9 +190,15 @@ pub fn display(
 
     // Compute vertices for selection highlights
     {
+        let mut count = -1;
         for i in 0..state.is_selected.len() {
             if state.is_selected[i] {
                 push_sprite_vertices(&mut vertex_buffers[SpriteType::SelectionHighlight], &state.entities[i]);
+
+                // add more selection GUI to right
+                count += 1;
+                ui.move_pos(Vector2{x: 0.1 * (count as f64), y: 0.0});
+                push_gui_vertices(&mut vertex_buffers_gui[GuiType::Selected], ui);
             }
         }
     }
@@ -179,6 +235,25 @@ pub fn display(
             window,
             &vertex_buffer,
             &programs.sprite_program,
+            params,
+            &uniforms);
+    }
+
+    // Render GUI TODO: need to move with camera
+    for (_gui_type, vertex_buffer) in &vertex_buffers_gui {
+        let uniforms = uniform! {
+                    matrix: [
+                        [1.0, 0.0, 0.0, 0.0],
+                        [0.0, 1.0, 0.0, 0.0],
+                        [0.0, 0.0, 1.0, 0.0],
+                        [0.0, 0.0, 0.0, 1.0f32],
+                    ]
+                };
+        draw_sprites(
+            frame,
+            window,
+            &vertex_buffer,
+            &programs.gui_program,
             params,
             &uniforms);
     }

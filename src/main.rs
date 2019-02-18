@@ -19,6 +19,7 @@ use std::time::Duration;
 use std::io::BufReader;
 use std::fs::File;
 use rodio::Source;
+//use std::thread;
 
 use crate::core::scalar::*;
 use crate::core::vector::*;
@@ -78,6 +79,7 @@ fn main() {
         ..Default::default()
     };
     let mut state = simulation::initial_state::initial_state(100);
+    let mut ui = presentation::ui::gui::Gui::new(presentation::ui::gui::GuiType::Selected, 0.1, 0.1, Vector2{x: -0.9,y: -0.9});
     let mut camera = presentation::camera::Camera::new();
     let mut last_frame = Instant::now();
     let mut game_paused = false;
@@ -87,6 +89,7 @@ fn main() {
         // Compute delta time
         let duration = last_frame.elapsed();
         let delta_time = duration.as_secs() as Scalar + 1e-9 * duration.subsec_nanos() as Scalar;
+//        println!("{}", delta_time);
         last_frame = Instant::now();
         let keyboard_state = event_pump.keyboard_state();
 
@@ -137,6 +140,11 @@ fn main() {
         }
 
         if !game_paused {
+//            // limit updates to 60 frames per second
+//            if delta_time < 0.0166 {
+//                let sleep_t = ((0.0166 - delta_time) * 1000.0) as u32;
+//                thread::sleep_ms(sleep_t);
+//            }
             let _sound_effects = simulation::update::update(
                 &simulation::update::UpdateArgs { dt: delta_time },
                 &mut state);
@@ -145,7 +153,7 @@ fn main() {
         }
 
         let mut target = window.draw();
-        presentation::display::display(&mut target, &window, &programs, &textures, &params, &state, camera_frame);
+        presentation::display::display(&mut target, &window, &programs, &textures, &params, &state, camera_frame, &mut ui);
         target.finish().unwrap();
     }
 }
