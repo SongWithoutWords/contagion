@@ -2,6 +2,7 @@ use rand::*;
 use rand_xorshift::XorShiftRng;
 use crate::core::vector::*;
 use crate::core::scalar::*;
+use crate::core::geo::polygon::*;
 use super::state::*;
 
 pub fn initial_state(entity_count: u32, random_seed: u32) -> State {
@@ -10,12 +11,17 @@ pub fn initial_state(entity_count: u32, random_seed: u32) -> State {
     let zombie_count = entity_count - (human_count + cop_count);
     let mut state = State {
         entities: vec!(),
+        buildings: vec!(),
         is_selected: vec!(),
         projectiles: vec!(),
         rng: XorShiftRng::seed_from_u64(random_seed as u64)
     };
 
     let entities = &mut state.entities;
+    let buildings = &mut state.buildings;
+
+    buildings.push(Polygon(vec![Vector2 { x: 7.5, y: 7.5 }, Vector2 { x: 15.0, y: 7.5 },
+                                Vector2 { x: 15.0, y: 15.0 }, Vector2 { x: 7.5, y: 15.0 }]));
 
     // let mut rng = rand::thread_rng();
     for i in 0..entity_count {
