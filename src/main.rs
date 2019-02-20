@@ -105,7 +105,6 @@ fn main() {
         // Compute delta time
         let duration = last_frame.elapsed();
         let delta_time = duration.as_secs() as Scalar + 1e-9 * duration.subsec_nanos() as Scalar;
-//        println!("{}", delta_time);
         last_frame = Instant::now();
         let keyboard_state = event_pump.keyboard_state();
 
@@ -156,11 +155,6 @@ fn main() {
         }
 
         if !game_paused {
-//            // limit updates to 60 frames per second
-//            if delta_time < 0.0166 {
-//                let sleep_t = ((0.0166 - delta_time) * 1000.0) as u32;
-//                thread::sleep_ms(sleep_t);
-//            }
             let _sound_effects = simulation::update::update(
                 &simulation::update::UpdateArgs { dt: delta_time },
                 &mut state);
