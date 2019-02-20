@@ -11,6 +11,8 @@ glium = "0.18"
 image = "*"
 rand = "0.6.0"
 rodio = "0.8.1"
+freetype-sys = "0.7"
+libc = "0.2"
 
 [dependencies.sdl2]
 version = "0.30"

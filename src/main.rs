@@ -10,6 +10,7 @@ extern crate sdl2;
 extern crate image;
 extern crate rodio;
 
+
 use sdl2::{Sdl, EventPump};
 use sdl2::keyboard::Keycode;
 use std::time::Instant;
@@ -24,12 +25,14 @@ use rodio::Source;
 use crate::core::scalar::*;
 use crate::core::vector::*;
 use crate::presentation::audio::sound_effects::*;
+use crate::presentation::ui::glium_text;
 
 
 fn init() -> Result<((Sdl, SDL2Facade, EventPump),
                      presentation::display::Textures,
                      presentation::display::Programs,
-                     SoundEffectSources),
+                     SoundEffectSources,
+                     glium_text::FontTexture),
                     String> {
 
     // Handle the Audio
@@ -52,18 +55,28 @@ fn init() -> Result<((Sdl, SDL2Facade, EventPump),
     let window_tuple = presentation::graphics::renderer::create_window();
     let window = window_tuple.1;
 
+    let font = glium_text::FontTexture::new(
+        &window,
+        File::open("src/assets/CONSOLA.TTF").unwrap(),
+        70,
+    ).unwrap();
     let textures = presentation::display::load_textures(&window);
+
 
     let programs = presentation::display::load_programs(&window);
 
     let window_tuple: (Sdl, SDL2Facade, EventPump) = (window_tuple.0, window, window_tuple.2);
 
-    Ok((window_tuple, textures, programs, sound_effect_files))
+    Ok((window_tuple, textures, programs, sound_effect_files, font))
 }
 
 fn main() {
     // init
-    let (window_tuple, textures, programs, _sound_effect_files) = match init() {
+    let (window_tuple,
+        textures,
+        programs,
+        _sound_effect_files,
+        font) = match init() {
         // error handler if init fails
         Ok(t) => t,
         Err(err) => {
@@ -153,7 +166,7 @@ fn main() {
         }
 
         let mut target = window.draw();
-        presentation::display::display(&mut target, &window, &programs, &textures, &params, &state, camera_frame, &mut ui);
+        presentation::display::display(&mut target, &window, &programs, &textures, &params, &state, camera_frame, &mut ui, &font);
         target.finish().unwrap();
     }
 }

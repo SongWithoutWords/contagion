@@ -7,6 +7,8 @@ use glium::texture::texture2d::Texture2d;
 use enum_map::EnumMap;
 use crate::presentation::ui::gui::Gui;
 use crate::presentation::ui::gui::GuiType;
+use crate::presentation::ui::glium_text;
+use crate::presentation::ui::glium_text::FontTexture;
 
 // Enum ordered by draw order
 #[derive(Copy, Clone, Debug, Enum)]
@@ -168,7 +170,8 @@ pub fn display(
     textures: &Textures,
     params: &glium::DrawParameters,
     state: &State, camera_frame: Mat4,
-    ui: &mut Gui
+    ui: &mut Gui,
+    font: &FontTexture,
     ) {
 
     frame.clear_color(0.2, 0.2, 0.2, 1.0);
@@ -239,7 +242,7 @@ pub fn display(
             &uniforms);
     }
 
-    // Render GUI TODO: need to move with camera
+    // Render GUI
     for (_gui_type, vertex_buffer) in &vertex_buffers_gui {
         let uniforms = uniform! {
                     matrix: [
@@ -257,4 +260,18 @@ pub fn display(
             params,
             &uniforms);
     }
+
+    // Render Text
+    let system = glium_text::TextSystem::new(window);
+    let text = glium_text::TextDisplay::new(&system, font, "This is a demo");
+    let color = [1.0, 1.0, 0.0, 1.0f32];
+    let text_width = text.get_width();
+    let (w, h) = frame.get_dimensions();
+    let matrix = [
+        [1.0 / text_width, 0.0, 0.0, 0.0],
+        [0.0, 1.0 * (w as f32) / (h as f32) / text_width, 0.0, 0.0],
+        [0.0, 0.0, 1.0, 0.0],
+        [-1.0, 0.85, 0.0, 1.0f32],
+    ];
+    glium_text::draw(&text, &system, frame, matrix, color);
 }
