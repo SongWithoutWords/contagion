@@ -3,6 +3,8 @@ use crate::core::geo::segment2::*;
 use crate::core::geo::intersect::segment_circle::*;
 use super::state::*;
 
+use rand::distributions::*;
+
 pub struct UpdateArgs {
     pub dt: Scalar
 }
@@ -260,10 +262,12 @@ fn update_cop(
                         }
 
                         if min_distance_sqr < INFINITY {
+                            let aim_time_distribution =
+                                LogNormal::new(COP_AIM_TIME_MEAN, COP_AIM_TIME_STD_DEV);
                             Behaviour::Cop {
                                 rounds_in_magazine: rounds_in_magazine,
                                 state: CopState::Aiming {
-                                    aim_time_remaining: COP_AIM_COOLDOWN,
+                                    aim_time_remaining: aim_time_distribution.sample(&mut sim_state.rng),
                                     target_index: min_index
                                 }
                             }

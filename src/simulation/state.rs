@@ -38,7 +38,9 @@ impl Entity {
     }
 }
 pub const COP_RELOAD_COOLDOWN: Scalar = 10.0;
-pub const COP_AIM_COOLDOWN: Scalar = 2.0;
+pub const COP_AIM_TIME_MEAN: Scalar = 1.0;
+pub const COP_AIM_TIME_STD_DEV: Scalar = 1.0;
+
 pub const COP_MAGAZINE_CAPACITY: i64 = 6;
 
 #[derive(Copy, Clone)]
