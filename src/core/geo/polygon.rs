@@ -2,7 +2,7 @@ use crate::core::vector::*;
 
 // Could probably refactor this to be a Vec<Edge>
 #[derive(Clone, Debug)]
-pub struct Polygon(Vec<Vector2>);
+pub struct Polygon(pub Vec<Vector2>);
 
 impl Polygon {
     pub fn num_sides(&self) -> usize {

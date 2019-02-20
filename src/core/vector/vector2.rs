@@ -29,13 +29,6 @@ pub fn vector2(x: Scalar, y: Scalar) -> Vector2 {
     Vector2{ x: x, y: y }
 }
 
-impl Neg for Vector2 {
-    type Output = Vector2;
-    fn neg(self) -> Self {
-        vector2(-self.x, -self.y)
-    }
-}
-
 impl Add for Vector2 {
     type Output = Self;
     fn add(self, rhs: Self) -> Self {
