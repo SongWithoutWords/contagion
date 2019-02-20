@@ -8,6 +8,8 @@ extern crate glium_sdl2;
 extern crate sdl2;
 #[macro_use] extern crate enum_map;
 extern crate image;
+extern crate rand;
+extern crate rand_xorshift;
 extern crate rodio;
 
 
@@ -91,7 +93,8 @@ fn main() {
         blend: Blend::alpha_blending(),
         ..Default::default()
     };
-    let mut state = simulation::initial_state::initial_state(100);
+ 
+    let mut state = simulation::initial_state::initial_state(100, rand::random::<u32>());
     let mut ui = presentation::ui::gui::Gui::new(presentation::ui::gui::GuiType::Selected, 0.1, 0.1, Vector2{x: -0.9,y: -0.9});
     let mut camera = presentation::camera::Camera::new();
     let mut last_frame = Instant::now();

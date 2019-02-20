@@ -5,6 +5,7 @@ pub struct State {
     pub entities: Vec<Entity>,
     pub is_selected: Vec<bool>,
     pub projectiles: Vec<Projectile>,
+    pub rng: rand_xorshift::XorShiftRng,
 }
 
 pub const ENTITY_RADIUS: Scalar = 0.5;
