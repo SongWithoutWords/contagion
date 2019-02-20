@@ -6,9 +6,7 @@ use std::io;
 use std::io::BufReader;
 use std::io::Read;
 use std::sync::Arc;
-use std::time::Duration;
 
-use enum_map::EnumMap;
 use rodio::Sink;
 use rodio::Source;
 
