@@ -8,6 +8,8 @@ extern crate glium_sdl2;
 extern crate sdl2;
 #[macro_use] extern crate enum_map;
 extern crate image;
+extern crate rand;
+extern crate rand_xorshift;
 extern crate rodio;
 
 use sdl2::{Sdl, EventPump};
@@ -77,7 +79,7 @@ fn main() {
         blend: Blend::alpha_blending(),
         ..Default::default()
     };
-    let mut state = simulation::initial_state::initial_state(100);
+    let mut state = simulation::initial_state::initial_state(100, rand::random::<u32>());
     let mut camera = presentation::camera::Camera::new();
     let mut last_frame = Instant::now();
     let mut game_paused = false;
