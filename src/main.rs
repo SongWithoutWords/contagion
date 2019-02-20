@@ -12,17 +12,12 @@ extern crate rand;
 extern crate rand_xorshift;
 extern crate rodio;
 
-
 use sdl2::{Sdl, EventPump};
 use sdl2::keyboard::Keycode;
+use std::fs::File;
 use std::time::Instant;
 use glium_sdl2::SDL2Facade;
 use glium::draw_parameters::Blend;
-use std::time::Duration;
-use std::io::BufReader;
-use std::fs::File;
-use rodio::Source;
-//use std::thread;
 
 use crate::core::scalar::*;
 use crate::core::vector::*;
@@ -37,21 +32,8 @@ fn init() -> Result<((Sdl, SDL2Facade, EventPump),
                      glium_text::FontTexture),
                     String> {
 
-    // Handle the Audio
-    let device = rodio::default_output_device().unwrap();
-
     // Call the sound effects to be loaded
     let sound_effect_files = load_sound_effect_files();
-
-    // Background audio source path
-    let file = File::open("src/assets/dark_rage.ogg").unwrap();
-    let source = rodio::Decoder::new(BufReader::new(file)).unwrap();
-
-    // Make this specific ogg file (dark_rage.ogg) play on loop
-    let source = source.take_duration(Duration::from_secs(326)).repeat_infinite();
-
-    // Play the file
-    rodio::play_raw(&device, source.convert_samples());
 
     // initialize window and eventpump
     let window_tuple = presentation::graphics::renderer::create_window();
@@ -63,7 +45,6 @@ fn init() -> Result<((Sdl, SDL2Facade, EventPump),
         70,
     ).unwrap();
     let textures = presentation::display::load_textures(&window);
-
 
     let programs = presentation::display::load_programs(&window);
 
@@ -77,7 +58,7 @@ fn main() {
     let (window_tuple,
         textures,
         programs,
-        _sound_effect_files,
+        sound_effect_files,
         font) = match init() {
         // error handler if init fails
         Ok(t) => t,
@@ -93,10 +74,11 @@ fn main() {
         blend: Blend::alpha_blending(),
         ..Default::default()
     };
- 
+
     let mut state = simulation::initial_state::initial_state(100, rand::random::<u32>());
     let mut ui = presentation::ui::gui::Gui::new(presentation::ui::gui::GuiType::Selected, 0.1, 0.1, Vector2{x: -0.9,y: -0.9});
     let mut camera = presentation::camera::Camera::new();
+    let mut audio_state = presentation::audio::sound_effects::AudioState::new();
     let mut last_frame = Instant::now();
     let mut game_paused = false;
 
@@ -155,11 +137,10 @@ fn main() {
         }
 
         if !game_paused {
-            let _sound_effects = simulation::update::update(
+            let sound_effects = simulation::update::update(
                 &simulation::update::UpdateArgs { dt: delta_time },
                 &mut state);
-            // Sound effects temporarily disabled because they are not working
-            // play_sound_effects(&sound_effect_files, &sound_effects);
+            play_sound_effects(&sound_effect_files, &sound_effects, &mut audio_state);
         }
 
         let mut target = window.draw();

@@ -1,13 +1,18 @@
 extern crate rodio;
 
-use crate::simulation::update::SoundEffect;
+use std::convert::AsRef;
+use std::fs::File;
+use std::io;
+use std::io::BufReader;
+use std::io::Read;
+use std::sync::Arc;
+use std::time::Duration;
+
+use enum_map::EnumMap;
+use rodio::Sink;
 use rodio::Source;
 
-// use rodio;
-use std::io;
-use std::io::Read;
-use std::convert::AsRef;
-use std::sync::Arc;
+use crate::simulation::update::SoundEffect;
 
 pub struct Sound (Arc<Vec<u8>>);
 
@@ -21,7 +26,6 @@ impl AsRef<[u8]> for Sound {
 // https://github.com/tomaka/rodio/issues/141
 impl Sound {
     pub fn load(filename: &str) -> io::Result<Sound> {
-        use std::fs::File;
         let mut buf = Vec::new();
         let mut file = File::open(filename)?;
         file.read_to_end(&mut buf)?;
@@ -42,6 +46,34 @@ pub struct SoundEffectSources {
     pub zombie_dead: Sound,
 }
 
+// this is the maximum number of concurrent sound effects
+pub const SOUND_EFFECT_SINK_COUNT: usize = 8;
+pub struct AudioState {
+    device: rodio::Device,
+    ambient_sink: Sink,
+    sound_effect_sinks: Vec<Sink>,
+    index_of_least_recently_used: usize,
+}
+impl AudioState {
+    pub fn new() -> Self {
+        let device = rodio::default_output_device().unwrap();
+
+        let ambient_file = File::open("src/assets/dark_rage.ogg").unwrap();
+        let ambient_source = rodio::Decoder::new(BufReader::new(ambient_file)).unwrap();
+        let ambient_sink = Sink::new(&device);
+        ambient_sink.append(ambient_source.repeat_infinite());
+
+        let sinks = (0..SOUND_EFFECT_SINK_COUNT).map(|_| Sink::new(&device)).collect();
+
+        AudioState {
+            device: device,
+            ambient_sink: ambient_sink,
+            sound_effect_sinks: sinks,
+            index_of_least_recently_used: 0,
+        }
+    }
+}
+
 pub fn load_sound_effect_files() -> SoundEffectSources {
 
     // Loading sound files here
@@ -53,18 +85,24 @@ pub fn load_sound_effect_files() -> SoundEffectSources {
     }
 }
 
-pub fn play_sound_effects(sources: &SoundEffectSources, sounds: &Vec<SoundEffect>) {
-
-    // Handle the Audio
-    let device = rodio::default_output_device().unwrap();
-
+pub fn play_sound_effects(
+    sources: &SoundEffectSources,
+    sounds: &Vec<SoundEffect>,
+    state: &mut AudioState
+) {
     for sound in sounds {
+
         let source = match sound {
             SoundEffect::Gunshot => &sources.gunshot,
             SoundEffect::PersonInfected => &sources.person_infected,
             SoundEffect::Reload => &sources.reload,
             SoundEffect::ZombieDeath => &sources.zombie_dead,
         };
-        rodio::play_raw(&device, source.decoder().convert_samples());
+
+        state.sound_effect_sinks[state.index_of_least_recently_used] = Sink::new(&state.device);
+        state.sound_effect_sinks[state.index_of_least_recently_used].append(source.decoder());
+
+        state.index_of_least_recently_used += 1;
+        state.index_of_least_recently_used %= SOUND_EFFECT_SINK_COUNT;
     }
 }
