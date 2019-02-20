@@ -184,8 +184,11 @@ fn update_cop(
                         }
                     }
                     else {
+                        let angular_deviation =
+                            Normal::new(0.0, COP_ANGULAR_ACCURACY_STD_DEV).sample(&mut sim_state.rng);
+
                         // Finished aiming, take the shot
-                        let delta_normal = delta.normalize();
+                        let delta_normal = delta.rotate_by(angular_deviation);
 
                         // Fire at the taget
                         sim_state.projectiles.push(

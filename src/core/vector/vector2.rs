@@ -17,6 +17,9 @@ impl Vector2 {
     pub fn angle(&self) -> Scalar {
         self.y.atan2(self.x)
     }
+    pub fn rotate_by(&self, angle: Scalar) -> Vector2 {
+        Self::from_angle(self.angle() + angle)
+    }
     pub fn as_f32_array(&self) -> [f32; 2] {
         [self.x as f32, self.y as f32]
     }
