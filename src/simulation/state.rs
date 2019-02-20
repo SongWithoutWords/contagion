@@ -43,7 +43,7 @@ pub const COP_AIM_TIME_STD_DEV: Scalar = 1.0;
 
 pub const COP_MAGAZINE_CAPACITY: i64 = 6;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq)]
 pub enum Behaviour {
     Cop {
         rounds_in_magazine: i64,
@@ -56,7 +56,7 @@ pub enum Behaviour {
 
 pub const COP_MIN_DISTANCE_FROM_WAYPOINT_SQUARED: Scalar = 0.01;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq)]
 pub enum CopState {
     Aiming {
         aim_time_remaining: Scalar,

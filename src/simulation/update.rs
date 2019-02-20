@@ -82,7 +82,7 @@ pub fn update(args: &UpdateArgs, state: &mut State) -> Vec<SoundEffect> {
 
             let entity = &state.entities[i];
 
-            if let Behaviour::Dead = entity.behaviour {
+            if entity.behaviour == Behaviour::Dead {
                 // Dead entities don't collide with bullets
                 continue;
             }
@@ -161,7 +161,15 @@ fn update_cop(
             match state {
                 CopState::Aiming { mut aim_time_remaining, target_index} => {
 
+                    if entities[target_index].behaviour == Behaviour::Dead {
+                        // Stop aiming if the target is already dead
+                        return Behaviour::Cop {
+                            rounds_in_magazine: rounds_in_magazine,
+                            state: CopState::Idle
+                        } ;
+                    }
                     // TODO: check if we can still see the target, and stop aiming if not
+
                     let my_pos = entities[index].position;
                     let target_pos = entities[target_index].position;
                     let delta = target_pos - my_pos;
