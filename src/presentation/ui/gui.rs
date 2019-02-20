@@ -8,6 +8,22 @@ pub enum GuiType {
     Timer,    // Top Middle
 }
 
+pub trait Selected {
+    fn move_pos(&mut self, vec: Vector2);
+}
+
+pub trait Commands {
+    fn move_pos(&mut self, vec: Vector2);
+}
+
+pub trait Score {
+    fn move_pos(&mut self, vec: Vector2);
+}
+
+pub trait Timer {
+    fn move_pos(&mut self, vec: Vector2);
+}
+
 
 pub struct Gui {
     pub id: GuiType,
@@ -43,15 +59,37 @@ impl Gui {
         self.bot_left.y += vec.y;
         self.bot_right.y += vec.y;
     }
-//
-//    // get dimension of the user interface
-//    // ordered top_left, top_right, bot_left, bot_right
-//    pub fn get_dimension(&mut self) -> (Vector2,Vector2,Vector2,Vector2) {
-//        (self.top_left, self.top_right, self.bot_left, self.bot_right)
-//    }
-//
-//    // get type of GUI
-//    pub fn get_id(&mut self) -> (GuiType) {
-//        (self.id)
-//    }
+
+    // get dimension of the user interface
+    // ordered top_left, top_right, bot_left, bot_right
+    pub fn get_dimension(&mut self) -> (Vector2,Vector2,Vector2,Vector2) {
+        (self.top_left, self.top_right, self.bot_left, self.bot_right)
+    }
+
+    // get type of GUI
+    pub fn get_id(&mut self) -> (GuiType) {
+        (self.id)
+    }
+}
+
+impl Selected for Gui {
+    fn move_pos(&mut self, vec: Vector2) {
+        self.move_pos(vec);
+    }
+}
+
+impl Commands for Gui {
+    fn move_pos(&mut self, vec: Vector2) {
+        self.move_pos(vec);
+    }
+}
+impl Score for Gui {
+    fn move_pos(&mut self, vec: Vector2) {
+        self.move_pos(vec);
+    }
+}
+impl Timer for Gui {
+    fn move_pos(&mut self, vec: Vector2) {
+        self.move_pos(vec);
+    }
 }

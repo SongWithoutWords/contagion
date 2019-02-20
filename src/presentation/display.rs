@@ -5,7 +5,7 @@ use crate::simulation::state::*;
 use glium::Surface;
 use glium::texture::texture2d::Texture2d;
 use enum_map::EnumMap;
-use crate::presentation::ui::gui::Gui;
+use crate::presentation::ui::gui::*;
 use crate::presentation::ui::gui::GuiType;
 use crate::presentation::ui::glium_text;
 use crate::presentation::ui::glium_text::FontTexture;
@@ -200,7 +200,7 @@ pub fn display(
 
                 // add more selection GUI to right
                 count += 1;
-                ui.move_pos(Vector2{x: 0.1 * (count as f64), y: 0.0});
+                Selected::move_pos(ui, Vector2{x: 0.1 * (count as f64), y: 0.0});
                 push_gui_vertices(&mut vertex_buffers_gui[GuiType::Selected], ui);
             }
         }
