@@ -41,7 +41,7 @@ pub fn create_window() -> (Sdl, SDL2Facade, EventPump) {
         .resizable()
         .build_glium()
         .unwrap();
-    
+
     // force vsync
     video_subsystem.gl_set_swap_interval(1);
 
