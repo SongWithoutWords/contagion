@@ -75,6 +75,20 @@ pub fn play_shotgun(){
     music::play_sound(&The_Sound::Gunshot, music::Repeat::Forever, music::MAX_VOLUME);
 
 }
+pub fn play_person_infected(){
+    music::play_sound(&The_Sound::PersonInfected, music::Repeat::Forever, music::MAX_VOLUME);
+
+}
+
+pub fn play_reload(){
+    music::play_sound(&The_Sound::Reload, music::Repeat::Forever, music::MAX_VOLUME);
+
+}
+
+pub fn play_zombie_dead(){
+    music::play_sound(&The_Sound::ZombieDeath, music::Repeat::Forever, music::MAX_VOLUME);
+
+}
 
 fn main() {
     // init
@@ -119,12 +133,10 @@ fn main() {
         music::bind_sound_file(The_Sound::ZombieDeath, "src/assets/zombie_dead.mp3");
         // music::play_sound()
         music::set_volume(music::MAX_VOLUME);
-        music::play_music(&Music::Background, music::Repeat::Forever);
-//        music::play_sound(&The_Sound::Gunshot, music::Repeat::Forever, music::MAX_VOLUME);
-        music::play_sound(&The_Sound::Reload, music::Repeat::Forever, music::MAX_VOLUME);
-//        music::play_sound(&The_Sound::ZombieDeath, music::Repeat::Forever, music::MAX_VOLUME);
-//        music::play_sound(&The_Sound::PersonInfected, music::Repeat::Forever, music::MAX_VOLUME);
-            play_shotgun();
+        play_shotgun();
+        play_reload();
+        play_person_infected();
+        play_zombie_dead();
 
         // main game loop
         'main_game_loop: loop {
