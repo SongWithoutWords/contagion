@@ -2,13 +2,12 @@ extern crate music;
 
 use rand::distributions::*;
 
-use crate::*;
 use crate::core::geo::circle::*;
 use crate::core::geo::intersect::segment_circle::*;
 use crate::core::geo::segment2::*;
+use crate::presentation::audio::sound_effects::*;
 
 use super::state::*;
-
 
 pub struct UpdateArgs {
     pub dt: Scalar
