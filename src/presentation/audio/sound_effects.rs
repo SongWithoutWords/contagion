@@ -24,13 +24,12 @@ pub fn load_sound_effects(){
     music::bind_sound_file(TheSound::ZombieDeath, "src/assets/zombie_dead.mp3");
 
 }
-// Plays the shotgun sound once every time it is called
-pub fn play_background() {
 
+// Plays the background music until the end of the program
+pub fn play_background() {
     // Play the Background sound
     music::play_music(&Music::Background, music::Repeat::Forever);
 }
-
 
 
 // Plays the shotgun sound once every time it is called
