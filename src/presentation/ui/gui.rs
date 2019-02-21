@@ -1,6 +1,7 @@
 use crate::core::vector::*;
+use std::path::Components;
 
-#[derive(Copy, Clone, Debug, Enum)]
+#[derive(Copy, Clone, Debug, Enum, PartialEq)]
 pub enum GuiType {
     Selected, // Bottom Middle
     Commands, // Bottom Right
@@ -8,6 +9,19 @@ pub enum GuiType {
     Timer,    // Top Middle
 }
 
+pub struct Component {
+    pub components: Vec<Gui>,
+}
+
+impl Component {
+    pub fn init_demo() -> Component {
+        let mut selected_ui = Gui::new(GuiType::Selected, 0.1, 0.1, Vector2{x: -0.9,y: -0.9});
+        let mut commands_ui = Gui::new(GuiType::Commands, 0.5, 0.5, Vector2{x: 0.75,y: -0.75});
+        Component {
+            components: vec![selected_ui, commands_ui],
+        }
+    }
+}
 
 pub struct Gui {
     pub id: GuiType,
@@ -43,15 +57,15 @@ impl Gui {
         self.bot_left.y += vec.y;
         self.bot_right.y += vec.y;
     }
-//
-//    // get dimension of the user interface
-//    // ordered top_left, top_right, bot_left, bot_right
-//    pub fn get_dimension(&mut self) -> (Vector2,Vector2,Vector2,Vector2) {
-//        (self.top_left, self.top_right, self.bot_left, self.bot_right)
-//    }
-//
-//    // get type of GUI
-//    pub fn get_id(&mut self) -> (GuiType) {
-//        (self.id)
-//    }
+
+    // get dimension of the user interface
+    // ordered top_left, top_right, bot_left, bot_right
+    pub fn get_dimension(&mut self) -> (Vector2,Vector2,Vector2,Vector2) {
+        (self.top_left, self.top_right, self.bot_left, self.bot_right)
+    }
+
+    // get type of GUI
+    pub fn get_id(&mut self) -> (GuiType) {
+        (self.id)
+    }
 }

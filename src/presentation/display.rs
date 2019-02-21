@@ -9,6 +9,7 @@ use crate::presentation::ui::gui::Gui;
 use crate::presentation::ui::gui::GuiType;
 use crate::presentation::ui::glium_text;
 use crate::presentation::ui::glium_text::FontTexture;
+use crate::presentation::ui::gui::Component;
 
 // Enum ordered by draw order
 #[derive(Copy, Clone, Debug, Enum)]
@@ -50,8 +51,8 @@ pub fn load_programs(window: &glium_sdl2::SDL2Facade) -> Programs {
             include_str!("graphics/shadow.fs.glsl"), None).unwrap(),
         gui_program: glium::Program::from_source(
             window,
-            include_str!("graphics/shadow.vs.glsl"),
-            include_str!("graphics/shadow.fs.glsl"), None).unwrap(),
+            include_str!("graphics/gui.vs.glsl"),
+            include_str!("graphics/gui.fs.glsl"), None).unwrap(),
     }
 }
 
@@ -170,7 +171,7 @@ pub fn display(
     textures: &Textures,
     params: &glium::DrawParameters,
     state: &State, camera_frame: Mat4,
-    ui: &mut Gui,
+    ui: &mut Component,
     font: &FontTexture,
     ) {
 
@@ -192,17 +193,28 @@ pub fn display(
 
 
     // Compute vertices for selection highlights
+    let mut selection_count = 0;
     {
-        let mut count = -1;
         for i in 0..state.is_selected.len() {
             if state.is_selected[i] {
                 push_sprite_vertices(&mut vertex_buffers[SpriteType::SelectionHighlight], &state.entities[i]);
-
                 // add more selection GUI to right
-                count += 1;
-                ui.move_pos(Vector2{x: 0.1 * (count as f64), y: 0.0});
-                push_gui_vertices(&mut vertex_buffers_gui[GuiType::Selected], ui);
+                selection_count += 1;
             }
+        }
+    }
+
+    // Computer vertices for GUI
+    let offset = 0.1;
+    for component in &mut ui.components {
+        if component.id == GuiType::Selected  {
+            for i in 0..selection_count {
+                // TODO: make selectetGUI move a bit to right when multiple entities are selected
+//                component.move_pos( Vector2{x: offset * (selection_count as f64), y: 0.0});
+                push_gui_vertices(&mut vertex_buffers_gui[GuiType::Selected], component);
+            }
+        } else {
+            push_gui_vertices(&mut vertex_buffers_gui[component.id], component);
         }
     }
 
@@ -244,7 +256,25 @@ pub fn display(
 
     // Render GUI
     for (_gui_type, vertex_buffer) in &vertex_buffers_gui {
-        let uniforms = uniform! {
+        if _gui_type == GuiType::Selected {
+            let uniforms = uniform! {
+                    matrix: [
+                        [1.0, 0.0, 0.0, 0.0],
+                        [0.0, 1.0, 0.0, 0.0],
+                        [0.0, 0.0, 1.0, 0.0],
+                        [0.0, 0.0, 0.0, 1.0f32],
+                    ],
+                    tex: &textures[SpriteType::Cop],
+                };
+            draw_sprites(
+                frame,
+                window,
+                &vertex_buffer,
+                &programs.sprite_program,
+                params,
+                &uniforms);
+        } else {
+            let uniforms = uniform! {
                     matrix: [
                         [1.0, 0.0, 0.0, 0.0],
                         [0.0, 1.0, 0.0, 0.0],
@@ -252,13 +282,14 @@ pub fn display(
                         [0.0, 0.0, 0.0, 1.0f32],
                     ]
                 };
-        draw_sprites(
-            frame,
-            window,
-            &vertex_buffer,
-            &programs.gui_program,
-            params,
-            &uniforms);
+            draw_sprites(
+                frame,
+                window,
+                &vertex_buffer,
+                &programs.gui_program,
+                params,
+                &uniforms);
+        }
     }
 
     // Render Text
