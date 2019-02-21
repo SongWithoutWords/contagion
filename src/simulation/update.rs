@@ -111,7 +111,8 @@ pub fn update(args: &UpdateArgs, state: &mut State) -> Vec<SoundEffect> {
             Some((_, i)) => {
                 state.entities[i].behaviour = Behaviour::Dead;
                 projectile.velocity = Vector2::zero();
-                sound_effects.push(SoundEffect::ZombieDeath);
+//                sound_effects.push(SoundEffect::ZombieDeath);
+                play_zombie_dead();
             }
         }
 
@@ -135,11 +136,13 @@ fn handle_collision(
 
         (Behaviour::Human, Behaviour::Zombie) | (Behaviour::Cop {..}, Behaviour::Zombie) => {
             entities[i].behaviour = Behaviour::Zombie;
-            sound_effects.push(SoundEffect::PersonInfected);
+//            sound_effects.push(SoundEffect::PersonInfected);
+            play_person_infected();
         },
         (Behaviour::Zombie, Behaviour::Human) | (Behaviour::Zombie, Behaviour::Cop {..}) => {
             entities[j].behaviour = Behaviour::Zombie;
-            sound_effects.push(SoundEffect::PersonInfected);
+//            sound_effects.push(SoundEffect::PersonInfected);
+            play_person_infected()
         },
         _ => ()
     }
@@ -203,7 +206,8 @@ fn update_cop(
                             });
 
                         // Append sound effect
-                        sound_effects.push(SoundEffect::Gunshot);
+//                        sound_effects.push(SoundEffect::Gunshot);
+                        play_shotgun();
 
                         Behaviour::Cop{
                             rounds_in_magazine: rounds_in_magazine - 1,

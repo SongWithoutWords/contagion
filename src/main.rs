@@ -72,21 +72,21 @@ fn init() -> Result<((Sdl, SDL2Facade, EventPump),
 }
 
 pub fn play_shotgun(){
-    music::play_sound(&The_Sound::Gunshot, music::Repeat::Forever, music::MAX_VOLUME);
+    music::play_sound(&The_Sound::Gunshot, music::Repeat::Times(1), music::MAX_VOLUME);
 
 }
 pub fn play_person_infected(){
-    music::play_sound(&The_Sound::PersonInfected, music::Repeat::Forever, music::MAX_VOLUME);
+    music::play_sound(&The_Sound::PersonInfected, music::Repeat::Times(1), music::MAX_VOLUME);
 
 }
 
 pub fn play_reload(){
-    music::play_sound(&The_Sound::Reload, music::Repeat::Forever, music::MAX_VOLUME);
+    music::play_sound(&The_Sound::Reload, music::Repeat::Times(1), music::MAX_VOLUME);
 
 }
 
 pub fn play_zombie_dead(){
-    music::play_sound(&The_Sound::ZombieDeath, music::Repeat::Forever, music::MAX_VOLUME);
+    music::play_sound(&The_Sound::ZombieDeath, music::Repeat::Times(1), music::MAX_VOLUME);
 
 }
 
@@ -125,7 +125,7 @@ fn main() {
 
     //let sdl = window.window.sdl_context.to_owned();
 
-    music::start_context::<Music, The_Sound, _>(&_sdl_context,16, || {
+    music::start_context::<Music, The_Sound, _>(&_sdl_context,100, || {
         music::bind_music_file(Music::Background, "src/assets/dark_rage.mp3");
         music::bind_sound_file(The_Sound::Gunshot, "src/assets/gunshot.mp3");
         music::bind_sound_file(The_Sound::Reload, "src/assets/Reload.mp3");
@@ -133,10 +133,6 @@ fn main() {
         music::bind_sound_file(The_Sound::ZombieDeath, "src/assets/zombie_dead.mp3");
         // music::play_sound()
         music::set_volume(music::MAX_VOLUME);
-        play_shotgun();
-        play_reload();
-        play_person_infected();
-        play_zombie_dead();
 
         // main game loop
         'main_game_loop: loop {
