@@ -2,7 +2,9 @@
 use crate::core::vector::*;
 use crate::core::scalar::Scalar;
 use crate::core::matrix::*;
+
 use glium_sdl2::SDL2Facade;
+
 use super::state::*;
 
 pub fn update_selected(_action_type: u32, state: &mut State, window: &SDL2Facade, camera_frame: Mat4, x_mouse: i32, y_mouse: i32) {
@@ -35,7 +37,7 @@ pub fn issue_police_order(order: PoliceOrder, state: &mut State, window: &SDL2Fa
             translate_mouse_to_camera(m_pos, window.window().size());
             translate_camera_to_world(m_pos, camera_frame);
             for i in 0..state.is_selected.len() {
-                if state.is_selected[i] == true {
+                if state.is_selected[i] {
                     match state.entities[i].behaviour {
                         Behaviour::Cop {ref mut state, ..} => {
                             *state = CopState::Moving{ waypoint: *m_pos }

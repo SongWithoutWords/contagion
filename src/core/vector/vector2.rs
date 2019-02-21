@@ -3,7 +3,7 @@ use crate::core::vector::Vector;
 
 use std::ops::*;
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
 pub struct Vector2 {
     pub x: Scalar,
     pub y: Scalar,
