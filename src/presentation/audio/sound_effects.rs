@@ -35,21 +35,21 @@ pub fn play_background() {
 
 // Plays the shotgun sound once every time it is called
 pub fn play_shotgun() {
-    music::play_sound(&TheSound::Gunshot, music::Repeat::Times(1), 0.1);
+    music::play_sound(&TheSound::Gunshot, music::Repeat::Times(0), 0.1);
 }
 
 // Plays the person_infected sound once every time it is called
 pub fn play_person_infected() {
-    music::play_sound(&TheSound::PersonInfected, music::Repeat::Times(1), 0.1);
+    music::play_sound(&TheSound::PersonInfected, music::Repeat::Times(0), 0.1);
 }
 
 // Plays the reload sound once every time it is called
 pub fn play_reload() {
-    music::play_sound(&TheSound::Reload, music::Repeat::Times(1), 0.1);
+    music::play_sound(&TheSound::Reload, music::Repeat::Times(0), 0.1);
 }
 
 // Plays the dead zombie sound once every time it is called
 pub fn play_zombie_dead() {
-    music::play_sound(&TheSound::ZombieDeath, music::Repeat::Times(1), 0.1);
+    music::play_sound(&TheSound::ZombieDeath, music::Repeat::Times(0), 0.1);
 }
 
