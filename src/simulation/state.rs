@@ -1,8 +1,10 @@
 use crate::core::vector::*;
 use crate::core::scalar::Scalar;
+use crate::core::geo::polygon::*;
 
 pub struct State {
     pub entities: Vec<Entity>,
+    pub buildings: Vec<Polygon>,
     pub is_selected: Vec<bool>,
     pub projectiles: Vec<Projectile>,
     pub rng: rand_xorshift::XorShiftRng,
@@ -38,10 +40,13 @@ impl Entity {
     }
 }
 pub const COP_RELOAD_COOLDOWN: Scalar = 10.0;
-pub const COP_AIM_COOLDOWN: Scalar = 2.0;
+pub const COP_AIM_TIME_MEAN: Scalar = 1.0;
+pub const COP_AIM_TIME_STD_DEV: Scalar = 1.0;
+pub const COP_ANGULAR_ACCURACY_STD_DEV: Scalar = 0.1;
+
 pub const COP_MAGAZINE_CAPACITY: i64 = 6;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq)]
 pub enum Behaviour {
     Cop {
         rounds_in_magazine: i64,
@@ -54,7 +59,7 @@ pub enum Behaviour {
 
 pub const COP_MIN_DISTANCE_FROM_WAYPOINT_SQUARED: Scalar = 0.01;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq)]
 pub enum CopState {
     Aiming {
         aim_time_remaining: Scalar,

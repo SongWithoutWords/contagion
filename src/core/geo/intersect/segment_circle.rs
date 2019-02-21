@@ -44,8 +44,7 @@ pub fn segment_circle_min_positive_intersect_time(s: &Segment2, c: &Circle) -> O
         Some(IntersectionTimes(t1, t2)) =>
             if 0.0 <= t1 && t1 <= 1.0 {
                 Some(t1)
-            } else
-            if 0.0 <= t2 && t2 <= 1.0 {
+            } else if 0.0 <= t2 && t2 <= 1.0 {
                 Some(t2)
             } else {
                 None
