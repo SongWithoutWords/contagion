@@ -75,9 +75,11 @@ fn main() {
     };
 
     let mut state = simulation::initial_state::initial_state(100, rand::random::<u32>());
-    let mut ui = presentation::ui::gui::Gui::new(presentation::ui::gui::GuiType::Selected, 0.1, 0.1, Vector2{x: -0.9,y: -0.9});
+    let mut component = presentation::ui::gui::Component::init_demo();
     let mut camera = presentation::camera::Camera::new();
+
     let mut audio_state = presentation::audio::sound_effects::AudioState::new();
+
     let mut last_frame = Instant::now();
     let mut game_paused = false;
 
@@ -143,7 +145,7 @@ fn main() {
         }
 
         let mut target = window.draw();
-        presentation::display::display(&mut target, &window, &programs, &textures, &params, &state, camera_frame, &mut ui, &font);
+        presentation::display::display(&mut target, &window, &programs, &textures, &params, &state, camera_frame, &mut component, &font);
         target.finish().unwrap();
     }
 }
