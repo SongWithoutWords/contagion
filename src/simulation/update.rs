@@ -1,6 +1,7 @@
 use crate::core::geo::circle::*;
 use crate::core::geo::segment2::*;
 use crate::core::geo::intersect::segment_circle::*;
+use crate::core::geo::polygon::*;
 use super::state::*;
 
 use rand::distributions::*;
@@ -45,7 +46,9 @@ pub fn update(args: &UpdateArgs, state: &mut State) -> Vec<SoundEffect> {
     // Check for collisions
     for i in 0..state.entities.len() {
         let p1 = state.entities[i].position;
+        let circle = Circle { center: p1, radius: ENTITY_RADIUS };
 
+        // Collisions with other entities
         for j in (i+1)..state.entities.len() {
             let p2 = state.entities[j].position;
 
@@ -55,6 +58,36 @@ pub fn update(args: &UpdateArgs, state: &mut State) -> Vec<SoundEffect> {
 
             if delta_length_squared < DOUBLE_ENTITY_RADIUS_SQUARED {
                 handle_collision(args, &mut state.entities, &mut sound_effects, i, j, &delta, delta_length_squared);
+            }
+        }
+
+        // Collisions with buildings
+        for j in 0..state.buildings.len() {
+            // Check if position is inside the building
+            let start = Vector2 { x: -100000.0, y: p1.y };
+            let end = Vector2 { x: p1.x, y: p1.y };
+            let mut overlap = state.buildings[j].num_intersects(start, end) % 2 == 1;
+            let inside = overlap;
+
+            // Don't bother doing this if we already know there's an overlap
+            if !inside {
+                // Check if one of the building's sides intersects the entity
+                for k in 0..state.buildings[j].num_sides() {
+                    let segment = Segment2 {
+                        p1: state.buildings[j].get(k),
+                        p2: state.buildings[j].get((k + 1) % state.buildings[j].num_sides())
+                    };
+
+                    if segment_circle_has_intersection(&segment, &circle) {
+                        overlap = true;
+                        break;
+                    }
+                }
+            }
+
+            if overlap {
+                handle_building_collision(args, &mut state.entities[i], &state.buildings[j], inside);
+                break;
             }
         }
     }
@@ -144,6 +177,43 @@ fn handle_collision(
     let velocity_change = *delta * (args.dt / delta_length_squared);
     entities[i].velocity -= velocity_change;
     entities[j].velocity += velocity_change;
+}
+
+fn handle_building_collision(
+    args: &UpdateArgs,
+    entity: &mut Entity,
+    building: &Polygon,
+    inside: bool) {
+
+    let mut dist = INFINITY;
+    let mut normal = Vector2::zero();
+    let normals = building.normals();
+
+    // Find the closest edge
+    for i in 0..building.num_sides() {
+        let seg_i = Segment2 {
+            p1: building.get(i),
+            p2: building.get((i + 1) % building.num_sides())
+        };
+        let dist_i = seg_i.dist_squared(entity.position);
+
+        if dist > dist_i {
+            dist = dist_i;
+            normal = normals[i];
+        }
+    }
+
+    let weighted_dist = ENTITY_RADIUS.powf(2.0).max(dist / ENTITY_RADIUS.powf(2.0));
+    const REBOUND_COEFFICIENT: f64 = ENTITY_RADIUS * 5.0;
+
+    // Push proportional to the overlap
+    let velocity_change = if inside {
+        normal * (args.dt * ENTITY_RADIUS.powf(2.0) * REBOUND_COEFFICIENT)
+    } else {
+        normal * (args.dt * (ENTITY_RADIUS.powf(2.0) - weighted_dist) * REBOUND_COEFFICIENT)
+    };
+
+    entity.velocity += velocity_change;
 }
 
 fn update_cop(
