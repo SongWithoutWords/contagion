@@ -1,0 +1,51 @@
+Many items are marked "optional" and may or may not be required
+- UI icons
+  - [ ] bullets icon for how much ammunition the selected cops have
+  - [ ] zombie icon for number of zombies in the world
+  - [ ] civilian icon for number of civilians in the world
+  - [ ] cop icon for number of cops in the world
+  - [ ] additional cop icon for number of cops selected (optional)
+  - [ ] reloading icon to let the player know when a cop is reloading (optional)
+- sprites
+  - cop
+    - [ ] cop torso and head (for all animations)
+      - [ ] wound/damage overlay for injury (optional)
+      - [ ] zombification overlay for infection (optional)
+    - [ ] cop left hand empty (for running, idle)
+    - [ ] cop right hand holding handgun (for running, idle, and reloading)
+    - [ ] cop both hands holding handgun (for aiming)
+    - [ ] cop left hand holding magazine (for reloading)
+    - [ ] cop right hand holding baton (for melee combat, optional)
+    - [ ] cop torso and head + both hands holding handgun (to use until we get an animation system)
+  - civilian
+    - [ ] civilian torso and head (for all animations)
+      - [ ] wound/damage overlay for injury (optional)
+      - [ ] zombification overlay for infection (optional)
+    - [ ] civilian left hand empty (for running, idle)
+    - [ ] civilian right hand empty (for running, idle)
+    - [ ] civilian left hand fist (for melee combat, optional)
+    - [ ] civilian right hand fist (for melee combat, optional)
+    - [ ] civilian torso and head + both hands empty (to use until we get an animation system)
+  - zombie
+    - [ ] zombie torso and head (for all animations)
+      - [ ] wound/damage overlay for injury (optional)
+    - [ ] zombie left hand reaching (for running, idle)
+    - [ ] zombie right hand reaching (for running, idle)
+    - [ ] zombie left hand clawing (for melee combat, optional)
+    - [ ] zombie right hand clawing (for melee combat, optional)
+    - [ ] zombie torso and head + both hands reaching (to use until we get an animation system)
+  - zombie cop (optional)
+    - [ ] torso and head (for all animations)
+      - [ ] wound/damage overlay for injury (optional)
+    - [ ] left hand reaching (for running, idle)
+    - [ ] right hand reaching (for running, idle)
+    - [ ] left hand clawing (for melee combat, optional)
+    - [ ] right hand clawing (for melee combat, optional)
+    - [ ] torso and head + both hands reaching (to use until we get an animation system)
+  - corpses
+    - [ ] zombie corpse
+    - [ ] civilian corpse (optional)
+    - [ ] cop corpse (optional)
+  - bullets
+    - [ ] bullet sprite
+    - [ ] bullet casing sprite (optional)
