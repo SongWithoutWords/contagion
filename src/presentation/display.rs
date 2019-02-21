@@ -38,7 +38,7 @@ pub fn load_textures(window: &glium_sdl2::SDL2Facade) -> Textures {
 pub struct Programs {
     sprite_program: glium::Program,
     shadow_program: glium::Program,
-    gui_program: glium::Program,
+    _gui_program: glium::Program,
     shape_program: glium::Program
 }
 pub fn load_programs(window: &glium_sdl2::SDL2Facade) -> Programs {
@@ -51,7 +51,7 @@ pub fn load_programs(window: &glium_sdl2::SDL2Facade) -> Programs {
             window,
             include_str!("graphics/shadow.vs.glsl"),
             include_str!("graphics/shadow.fs.glsl"), None).unwrap(),
-        gui_program: glium::Program::from_source(
+        _gui_program: glium::Program::from_source(
             window,
             include_str!("graphics/gui.vs.glsl"),
             include_str!("graphics/gui.fs.glsl"), None).unwrap(),
@@ -127,14 +127,6 @@ fn push_gui_vertices(buffer: &mut Vec<Vertex>, ui: &Gui) {
     let top_right =  ui.top_right;
     let bot_left  = ui.bot_left;
     let bot_right =  ui.bot_right;
-
-    // 0      1
-    // +------+
-    // |    / |
-    // |  /   |
-    // |/     |
-    // +------+
-    // 2      3
 
     let vertex0 = Vertex {
         position: top_left.as_f32_array(),
@@ -246,13 +238,19 @@ pub fn display(
     let mut vertex_buffers_gui = enum_map!{_ => vec!()};
     let mut vertex_buffers_building = vec!();
 
+    let mut cop_count = 0;
+    let mut human_count = 0;
+    let mut zombie_count = 0;
+    let mut _dead_count = 0;
+    let mut _magazine_count = 0;
+
     // Compute the vertices in world coordinates of all entities
     for entity in &state.entities {
         let sprite_type = match entity.behaviour {
-            Behaviour::Cop{..} => SpriteType::Cop,
-            Behaviour::Dead => SpriteType::Dead,
-            Behaviour::Human => SpriteType::Civilian,
-            Behaviour::Zombie => SpriteType::Zombie,
+            Behaviour::Cop{rounds_in_magazine, ..} => {_magazine_count = rounds_in_magazine; cop_count+=1; SpriteType::Cop},
+            Behaviour::Dead => {_dead_count+=1; SpriteType::Dead},
+            Behaviour::Human => {human_count+=1; SpriteType::Civilian},
+            Behaviour::Zombie => {zombie_count+=1; SpriteType::Zombie},
         };
         push_sprite_vertices(&mut vertex_buffers[sprite_type], entity);
     }
@@ -357,36 +355,53 @@ pub fn display(
                 &programs.sprite_program,
                 params,
                 &uniforms);
-        } else {
-            let uniforms = uniform! {
-                    matrix: [
-                        [1.0, 0.0, 0.0, 0.0],
-                        [0.0, 1.0, 0.0, 0.0],
-                        [0.0, 0.0, 1.0, 0.0],
-                        [0.0, 0.0, 0.0, 1.0f32],
-                    ]
-                };
-            draw_sprites(
-                frame,
-                window,
-                &vertex_buffer,
-                &programs.gui_program,
-                params,
-                &uniforms);
         }
+//        else {
+//            let uniforms = uniform! {
+//                    matrix: [
+//                        [1.0, 0.0, 0.0, 0.0],
+//                        [0.0, 1.0, 0.0, 0.0],
+//                        [0.0, 0.0, 1.0, 0.0],
+//                        [0.0, 0.0, 0.0, 1.0f32],
+//                    ]
+//                };
+//            draw_sprites(
+//                frame,
+//                window,
+//                &vertex_buffer,
+//                &programs.gui_program,
+//                params,
+//                &uniforms);
+//        }
     }
 
     // Render Text
+//    let system = glium_text::TextSystem::new(window);
+//    let text = glium_text::TextDisplay::new(&system, font, "This is a demo");
+//    let color = [1.0, 1.0, 0.0, 1.0f32];
+//    let text_width = text.get_width();
+//    let (w, h) = frame.get_dimensions();
+//    let matrix = [
+//        [1.0 / text_width, 0.0, 0.0, 0.0],
+//        [0.0, 1.0 * (w as f32) / (h as f32) / text_width, 0.0, 0.0],
+//        [0.0, 0.0, 1.0, 0.0],
+//        [-1.0, 0.85, 0.0, 1.0f32],
+//    ];
+//    glium_text::draw(&text, &system, frame, matrix, color);
+
     let system = glium_text::TextSystem::new(window);
-    let text = glium_text::TextDisplay::new(&system, font, "This is a demo");
+    let s = format!("Cop: {} / Civ: {} / Zombie: {}", cop_count, human_count, zombie_count);
+    let s_slice: &str = &s[..];
+    let text = glium_text::TextDisplay::new(&system, font, s_slice);
     let color = [1.0, 1.0, 0.0, 1.0f32];
-    let text_width = text.get_width();
+    let font_scale_down = 1.5;
+    let text_width = text.get_width() * font_scale_down;
     let (w, h) = frame.get_dimensions();
     let matrix = [
         [1.0 / text_width, 0.0, 0.0, 0.0],
         [0.0, 1.0 * (w as f32) / (h as f32) / text_width, 0.0, 0.0],
         [0.0, 0.0, 1.0, 0.0],
-        [-1.0, 0.85, 0.0, 1.0f32],
+        [0.3, 0.9, 0.0, 1.0f32],
     ];
     glium_text::draw(&text, &system, frame, matrix, color);
 }
