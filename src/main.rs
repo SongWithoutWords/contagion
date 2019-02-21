@@ -27,19 +27,22 @@ use crate::presentation::ui::glium_text;
 
 #[derive(Copy, Clone, Hash, PartialEq, Eq)]
 enum Music {
-    Piano,
+    Background,
 }
 
 #[derive(Copy, Clone, Hash, PartialEq, Eq)]
 enum The_Sound {
-    Ding,
+    Gunshot,
+    Reload,
+    PersonInfected,
+    ZombieDeath,
 }
 fn init() -> Result<((Sdl, SDL2Facade, EventPump),
                      presentation::display::Textures,
                      presentation::display::Programs,
                      SoundEffectSources,
                      glium_text::FontTexture),
-                    String> {
+    String> {
 
 
 
@@ -68,6 +71,11 @@ fn init() -> Result<((Sdl, SDL2Facade, EventPump),
     Ok((window_tuple, textures, programs, sound_effect_files, font))
 }
 
+pub fn play_shotgun(){
+    music::play_sound(&The_Sound::Gunshot, music::Repeat::Forever, music::MAX_VOLUME);
+
+}
+
 fn main() {
     // init
     let (window_tuple,
@@ -93,7 +101,7 @@ fn main() {
     let mut state = simulation::initial_state::initial_state(100, rand::random::<u32>());
     let mut ui = presentation::ui::gui::Gui::new(presentation::ui::gui::GuiType::Selected, 0.1, 0.1, Vector2{x: -0.9,y: -0.9});
     let mut camera = presentation::camera::Camera::new();
-  //  let mut audio_state = presentation::audio::sound_effects::AudioState::new();
+    //  let mut audio_state = presentation::audio::sound_effects::AudioState::new();
     let mut last_frame = Instant::now();
     let mut game_paused = false;
 
@@ -101,85 +109,91 @@ fn main() {
 
 
 
-   //let sdl = window.window.sdl_context.to_owned();
+    //let sdl = window.window.sdl_context.to_owned();
 
     music::start_context::<Music, The_Sound, _>(&_sdl_context,16, || {
-        music::bind_music_file(Music::Piano, "src/assets/person_infected.mp3");
-        music::bind_sound_file(The_Sound::Ding, "src/assets/gunshot.mp3");
+        music::bind_music_file(Music::Background, "src/assets/dark_rage.mp3");
+        music::bind_sound_file(The_Sound::Gunshot, "src/assets/gunshot.mp3");
+        music::bind_sound_file(The_Sound::Reload, "src/assets/Reload.mp3");
+        music::bind_sound_file(The_Sound::PersonInfected, "src/assets/person_infected.mp3");
+        music::bind_sound_file(The_Sound::ZombieDeath, "src/assets/zombie_dead.mp3");
         // music::play_sound()
         music::set_volume(music::MAX_VOLUME);
-        music::play_music(&Music::Piano, music::Repeat::Forever);
-        music::play_sound(&The_Sound::Ding, music::Repeat::Forever, music::MAX_VOLUME);
+        music::play_music(&Music::Background, music::Repeat::Forever);
+//        music::play_sound(&The_Sound::Gunshot, music::Repeat::Forever, music::MAX_VOLUME);
+        music::play_sound(&The_Sound::Reload, music::Repeat::Forever, music::MAX_VOLUME);
+//        music::play_sound(&The_Sound::ZombieDeath, music::Repeat::Forever, music::MAX_VOLUME);
+//        music::play_sound(&The_Sound::PersonInfected, music::Repeat::Forever, music::MAX_VOLUME);
+            play_shotgun();
+
+        // main game loop
+        'main_game_loop: loop {
 
 
-    // main game loop
-    'main_game_loop: loop {
 
+            // Compute delta time
+            let duration = last_frame.elapsed();
+            let delta_time = duration.as_secs() as Scalar + 1e-9 * duration.subsec_nanos() as Scalar;
+            last_frame = Instant::now();
+            let keyboard_state = event_pump.keyboard_state();
 
+            camera.update(&keyboard_state, delta_time);
 
-        // Compute delta time
-        let duration = last_frame.elapsed();
-        let delta_time = duration.as_secs() as Scalar + 1e-9 * duration.subsec_nanos() as Scalar;
-        last_frame = Instant::now();
-        let keyboard_state = event_pump.keyboard_state();
+            let camera_frame = camera.compute_matrix();
 
-        camera.update(&keyboard_state, delta_time);
-
-        let camera_frame = camera.compute_matrix();
-
-        // Event loop: polls for events sent to all windows
-        for event in event_pump.poll_iter() {
-            use sdl2::event::Event;
-            match event {
-                // Exit window if escape key pressed or quit event triggered
-                Event::Quit { .. } | Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
-                    break 'main_game_loop;
-                },
-                Event::KeyDown { keycode: Some(Keycode::P), .. } => {
-                    game_paused = ! game_paused;
-                },
-                Event::KeyDown { keycode: Some(Keycode::L), .. } => {
-                    println!("Debug info:");
-                    println!("  DT:               {:?}", delta_time);
-                    println!("  FPS:              {:?}", 1.0 / delta_time);
-                    println!("  Entity count:     {:?}", state.entities.len());
-                    println!("  Projectile count: {:?}", state.projectiles.len());
-                },
-                Event::MouseButtonDown {timestamp: _, window_id: _, which: _, mouse_btn, x, y } => {
-                    use sdl2::mouse::MouseButton;
-                    match mouse_btn {
-                        MouseButton::Left { .. } => {
-                            simulation::control::update_selected(0, &mut state, &window, camera_frame, x, y);
+            // Event loop: polls for events sent to all windows
+            for event in event_pump.poll_iter() {
+                use sdl2::event::Event;
+                match event {
+                    // Exit window if escape key pressed or quit event triggered
+                    Event::Quit { .. } | Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
+                        break 'main_game_loop;
+                    },
+                    Event::KeyDown { keycode: Some(Keycode::P), .. } => {
+                        game_paused = ! game_paused;
+                    },
+                    Event::KeyDown { keycode: Some(Keycode::L), .. } => {
+                        println!("Debug info:");
+                        println!("  DT:               {:?}", delta_time);
+                        println!("  FPS:              {:?}", 1.0 / delta_time);
+                        println!("  Entity count:     {:?}", state.entities.len());
+                        println!("  Projectile count: {:?}", state.projectiles.len());
+                    },
+                    Event::MouseButtonDown {timestamp: _, window_id: _, which: _, mouse_btn, x, y } => {
+                        use sdl2::mouse::MouseButton;
+                        match mouse_btn {
+                            MouseButton::Left { .. } => {
+                                simulation::control::update_selected(0, &mut state, &window, camera_frame, x, y);
                                 for i in 0..state.is_selected.len() {
                                     if state.is_selected[i] == true {
-                                    println!("selected: {:?}", state.is_selected[i]);
+                                        println!("selected: {:?}", state.is_selected[i]);
                                     }
                                 }
+                            }
+                            MouseButton::Right { .. } => {
+                                simulation::control::issue_police_order(simulation::control::PoliceOrder::Move, &mut state, &window, camera_frame, x, y);
+                            }
+                            _ => ()
                         }
-                        MouseButton::Right { .. } => {
-                            simulation::control::issue_police_order(simulation::control::PoliceOrder::Move, &mut state, &window, camera_frame, x, y);
-                        }
-                        _ => ()
+                    },
+                    Event::MouseWheel {timestamp: _, window_id: _, which: _, x: _, y, direction: _} => {
+                        camera.set_zoom(y);
                     }
-                },
-                Event::MouseWheel {timestamp: _, window_id: _, which: _, x: _, y, direction: _} => {
-                    camera.set_zoom(y);
+                    _ => ()
                 }
-                _ => ()
             }
-        }
 
-        if !game_paused {
-            let sound_effects = simulation::update::update(
-                &simulation::update::UpdateArgs { dt: delta_time },
-                &mut state);
-           // play_sound_effects(&sound_effect_files, &sound_effects, &mut audio_state);
-        }
+            if !game_paused {
+                let sound_effects = simulation::update::update(
+                    &simulation::update::UpdateArgs { dt: delta_time },
+                    &mut state);
+                // play_sound_effects(&sound_effect_files, &sound_effects, &mut audio_state);
+            }
 
-        let mut target = window.draw();
-        presentation::display::display(&mut target, &window, &programs, &textures, &params, &state, camera_frame, &mut ui, &font);
-        target.finish().unwrap();
-    }
+            let mut target = window.draw();
+            presentation::display::display(&mut target, &window, &programs, &textures, &params, &state, camera_frame, &mut ui, &font);
+            target.finish().unwrap();
+        }
 
     });
 }
