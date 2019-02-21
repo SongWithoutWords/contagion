@@ -29,6 +29,13 @@ pub fn vector2(x: Scalar, y: Scalar) -> Vector2 {
     Vector2{ x: x, y: y }
 }
 
+impl Neg for Vector2 {
+    type Output = Vector2;
+    fn neg(self) -> Self {
+        vector2(-self.x, -self.y)
+    }
+}
+
 impl Add for Vector2 {
     type Output = Self;
     fn add(self, rhs: Self) -> Self {
@@ -48,11 +55,6 @@ impl Mul<Scalar> for Vector2 {
     fn mul(self, rhs: Scalar) -> Self {
         Vector2 {x: self.x * rhs, y: self.y * rhs}
     }
-}
-
-impl Neg for Vector2 {
-    type Output = Self;
-    fn neg(self) -> Self { self.mul(-1.0) }
 }
 
 // Unfortunately not possible to do this more generally for all vectors, see link:
