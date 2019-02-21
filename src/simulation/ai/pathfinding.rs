@@ -1,7 +1,6 @@
 use crate::core::vector::*;
-
 use crate::simulation::ai::path::{Node, Edge, Path};
-use crate::simulation::ai::polygon::Polygon;
+use crate::core::geo::polygon::*;
 
 struct Graph {
     start: Node,

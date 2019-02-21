@@ -3,6 +3,8 @@ use crate::core::geo::segment2::*;
 use crate::core::geo::intersect::segment_circle::*;
 use super::state::*;
 
+use rand::distributions::*;
+
 pub struct UpdateArgs {
     pub dt: Scalar
 }
@@ -80,7 +82,7 @@ pub fn update(args: &UpdateArgs, state: &mut State) -> Vec<SoundEffect> {
 
             let entity = &state.entities[i];
 
-            if let Behaviour::Dead = entity.behaviour {
+            if entity.behaviour == Behaviour::Dead {
                 // Dead entities don't collide with bullets
                 continue;
             }
@@ -159,7 +161,19 @@ fn update_cop(
             match state {
                 CopState::Aiming { mut aim_time_remaining, target_index} => {
 
+                    if entities[target_index].behaviour == Behaviour::Dead {
+                        // Stop aiming if the target is already dead
+                        return Behaviour::Cop {
+                            rounds_in_magazine: rounds_in_magazine,
+                            state: CopState::Idle
+                        } ;
+                    }
                     // TODO: check if we can still see the target, and stop aiming if not
+
+                    let my_pos = entities[index].position;
+                    let target_pos = entities[target_index].position;
+                    let delta = target_pos - my_pos;
+                    entities[index].look_along_vector(delta, args.dt);
 
                     aim_time_remaining -= args.dt;
                     if aim_time_remaining > 0.0 {
@@ -170,10 +184,11 @@ fn update_cop(
                         }
                     }
                     else {
+                        let angular_deviation =
+                            Normal::new(0.0, COP_ANGULAR_ACCURACY_STD_DEV).sample(&mut sim_state.rng);
+
                         // Finished aiming, take the shot
-                        let my_pos:Vector2 = entities[index].position;
-                        let target_pos = entities[target_index].position;
-                        let delta_normal = (target_pos - my_pos).normalize();
+                        let delta_normal = delta.rotate_by(angular_deviation);
 
                         // Fire at the taget
                         sim_state.projectiles.push(
@@ -188,7 +203,7 @@ fn update_cop(
 
                         Behaviour::Cop{
                             rounds_in_magazine: rounds_in_magazine - 1,
-                            state: CopState::Aiming{aim_time_remaining, target_index: target_index}
+                            state: CopState::Idle,
                         }
                     }
                 },
@@ -200,8 +215,7 @@ fn update_cop(
                             state: CopState::Idle
                         }
                     } else {
-                        // todo: move towards the waypoint
-                        entities[index].velocity += delta.normalize_to(args.dt);
+                        entities[index].accelerate_along_vector(delta, args.dt);
                         Behaviour::Cop{
                             rounds_in_magazine: rounds_in_magazine,
                             state: CopState::Moving{ waypoint }
@@ -259,10 +273,12 @@ fn update_cop(
                         }
 
                         if min_distance_sqr < INFINITY {
+                            let aim_time_distribution =
+                                LogNormal::new(COP_AIM_TIME_MEAN, COP_AIM_TIME_STD_DEV);
                             Behaviour::Cop {
                                 rounds_in_magazine: rounds_in_magazine,
                                 state: CopState::Aiming {
-                                    aim_time_remaining: COP_AIM_COOLDOWN,
+                                    aim_time_remaining: aim_time_distribution.sample(&mut sim_state.rng),
                                     target_index: min_index
                                 }
                             }
@@ -306,7 +322,7 @@ fn simulate_zombie(args: &UpdateArgs, entities: &mut Vec<Entity>, index: usize) 
 
     if min_distance_sqr < INFINITY {
         // Accelerate towards the nearest target
-        entities[index].velocity += args.dt * min_delta.normalize();
+        entities[index].accelerate_along_vector(min_delta, args.dt);
     }
 }
 
@@ -337,6 +353,6 @@ fn simulate_human(args: &UpdateArgs, entities: &mut Vec<Entity>, index: usize) {
 
     if min_distance_sqr < INFINITY {
         // Accelerate away from the nearest zombie
-        entities[index].velocity -= min_delta.normalize_to(args.dt);
+        entities[index].accelerate_along_vector(-min_delta, args.dt);
     }
 }

@@ -1,3 +1,4 @@
+use std::ops::Neg;
 use std::ops::Add;
 use std::ops::Sub;
 use std::ops::Mul;
@@ -13,6 +14,7 @@ pub trait Vector
     : Clone
     + Copy
     + Sized
+    + Neg<Output = Self>
     + Add<Self, Output = Self>
     + Sub<Self, Output = Self>
     + Mul<Scalar, Output = Self>

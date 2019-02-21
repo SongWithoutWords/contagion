@@ -15,6 +15,14 @@ pub fn vector4(x: Scalar, y: Scalar, z: Scalar, w: Scalar) -> Vector4 {
     Vector4{ x: x, y: y, z: z, w: w }
 }
 
+
+impl Neg for Vector4 {
+    type Output = Self;
+    fn neg(self) -> Self {
+        vector4(-self.x, -self.y, -self.z, -self.w)
+    }
+}
+
 impl Add for Vector4 {
     type Output = Self;
     fn add(self, rhs: Self) -> Self {
