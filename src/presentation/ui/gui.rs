@@ -1,5 +1,4 @@
 use crate::core::vector::*;
-use std::path::Components;
 
 #[derive(Copy, Clone, Debug, Enum, PartialEq)]
 pub enum GuiType {
@@ -15,8 +14,8 @@ pub struct Component {
 
 impl Component {
     pub fn init_demo() -> Component {
-        let mut selected_ui = Gui::new(GuiType::Selected, 0.1, 0.1, Vector2{x: -0.9,y: -0.9});
-        let mut commands_ui = Gui::new(GuiType::Commands, 0.5, 0.5, Vector2{x: 0.75,y: -0.75});
+        let selected_ui = Gui::new(GuiType::Selected, 0.1, 0.1, Vector2{x: -0.9,y: -0.9});
+        let commands_ui = Gui::new(GuiType::Commands, 0.5, 0.5, Vector2{x: 0.75,y: -0.75});
         Component {
             components: vec![selected_ui, commands_ui],
         }

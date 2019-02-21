@@ -270,10 +270,10 @@ pub fn display(
     }
 
     // Computer vertices for GUI
-    let offset = 0.1;
+    let _offset = 0.1;
     for component in &mut ui.components {
         if component.id == GuiType::Selected  {
-            for i in 0..selection_count {
+            for _i in 0..selection_count {
                 // TODO: make selectetGUI move a bit to right when multiple entities are selected
 //                component.move_pos( Vector2{x: offset * (selection_count as f64), y: 0.0});
                 push_gui_vertices(&mut vertex_buffers_gui[GuiType::Selected], component);
