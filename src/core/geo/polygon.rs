@@ -1,6 +1,7 @@
 use crate::core::vector::*;
 
 // Could probably refactor this to be a Vec<Edge>
+// Polygon is an ordered vec of vertices (represented by Vector2)
 #[derive(Clone, Debug)]
 pub struct Polygon(pub Vec<Vector2>);
 
@@ -19,7 +20,7 @@ impl Polygon {
 
         for i in 0..self.num_sides() {
             let ab = self.0[(i + 1) % self.num_sides()] - self.0[i];
-            let ac = self.0[(i - 1) % self.num_sides()] - self.0[i];
+            let ac = self.0[if i < 1 { self.num_sides()-1 } else { i-1 }] - self.0[i];
             let n = Vector2 { x: ab.y, y: -ab.x };
             let d = n.dot(ac);
 
@@ -32,6 +33,11 @@ impl Polygon {
         }
 
         out
+    }
+
+    // Find the number of intersections with the line spanned by start and end
+    pub fn num_intersects(&self, start: Vector2, end: Vector2) -> usize {
+        self.intersects(start, end).len()
     }
 
     // Find the position of all intersections of the line spanned by start and end
