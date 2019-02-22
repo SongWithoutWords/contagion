@@ -73,7 +73,7 @@ fn main() {
     };
 
     let mut state = simulation::initial_state::initial_state(100, rand::random::<u32>());
-    let mut component = presentation::ui::gui::Component::init_demo();
+    let mut ui = presentation::ui::gui::Component::init_demo();
     let mut camera = presentation::camera::Camera::new();
 
     let mut last_frame = Instant::now();
@@ -150,7 +150,7 @@ fn main() {
             }
 
             let mut target = window.draw();
-            presentation::display::display(&mut target, &window, &programs, &textures, &params, &state, camera_frame, &mut component, &font);
+            presentation::display::display(&mut target, &window, &programs, &textures, &params, &state, camera_frame, &mut ui, &font);
             target.finish().unwrap();
         }
     });

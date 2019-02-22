@@ -1,6 +1,6 @@
 use crate::core::vector::*;
 
-#[derive(Copy, Clone, Debug, Enum, PartialEq)]
+#[derive(Copy, Clone, PartialEq)]
 pub enum GuiType {
     Selected, // Bottom Middle
     Commands, // Bottom Right
@@ -22,6 +22,7 @@ impl Component {
     }
 }
 
+#[derive(Copy, Clone)]
 pub struct Gui {
     pub id: GuiType,
     pub top_left: Vector2,

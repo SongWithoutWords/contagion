@@ -13,7 +13,7 @@ use crate::presentation::ui::glium_text::FontTexture;
 use crate::presentation::ui::gui::Component;
 
 // Enum ordered by draw order
-#[derive(Copy, Clone, Debug, Enum)]
+#[derive(Copy, Clone, Debug, Enum, PartialEq)]
 pub enum SpriteType {
     SelectionHighlight,
     Dead,
@@ -242,12 +242,12 @@ pub fn display(
     let mut human_count = 0;
     let mut zombie_count = 0;
     let mut _dead_count = 0;
-    let mut _magazine_count = 0;
+    let mut _magazine_count = vec!();
 
     // Compute the vertices in world coordinates of all entities
     for entity in &state.entities {
         let sprite_type = match entity.behaviour {
-            Behaviour::Cop{rounds_in_magazine, ..} => {_magazine_count = rounds_in_magazine; cop_count+=1; SpriteType::Cop},
+            Behaviour::Cop{..} => {cop_count+=1; SpriteType::Cop},
             Behaviour::Dead => {_dead_count+=1; SpriteType::Dead},
             Behaviour::Human => {human_count+=1; SpriteType::Civilian},
             Behaviour::Zombie => {zombie_count+=1; SpriteType::Zombie},
@@ -260,6 +260,10 @@ pub fn display(
     {
         for i in 0..state.is_selected.len() {
             if state.is_selected[i] {
+                match state.entities[i].behaviour {
+                    Behaviour::Cop{rounds_in_magazine, ..} => {_magazine_count.push(rounds_in_magazine)},
+                    _ => ()
+                };
                 push_sprite_vertices(&mut vertex_buffers[SpriteType::SelectionHighlight], &state.entities[i]);
                 // add more selection GUI to right
                 selection_count += 1;
@@ -268,17 +272,26 @@ pub fn display(
     }
 
     // Computer vertices for GUI
-    let _offset = 0.1;
+    let offset = 0.1;
     for component in &mut ui.components {
-        if component.id == GuiType::Selected  {
-            for _i in 0..selection_count {
-                // TODO: make selectetGUI move a bit to right when multiple entities are selected
-//                component.move_pos( Vector2{x: offset * (selection_count as f64), y: 0.0});
-                push_gui_vertices(&mut vertex_buffers_gui[GuiType::Selected], component);
-            }
-        } else {
-            push_gui_vertices(&mut vertex_buffers_gui[component.id], component);
-        }
+        match component.id {
+            GuiType::Selected => {
+                if selection_count < 1 {
+
+                } else {
+                    // might be useful later...
+                    // component.move_pos(Vector2 { x: offset * ((0) as f64), y: 0.0 });
+                    push_gui_vertices(&mut vertex_buffers_gui[SpriteType::Cop], component);
+                    for i in 0 .. (selection_count - 1) {
+                        let selected_ui = Gui::new(GuiType::Selected, 0.1, 0.1, Vector2{x: -0.9 + offset*(i as f64), y: -0.9});
+                        push_gui_vertices(&mut vertex_buffers_gui[SpriteType::Cop], &selected_ui);
+                    }
+                }
+            },
+            GuiType::Commands => (),
+            GuiType::Score => (),
+            GuiType::Timer => (),
+        };
     }
 
     // Compute vertices for buildings
@@ -338,7 +351,7 @@ pub fn display(
 
     // Render GUI
     for (_gui_type, vertex_buffer) in &vertex_buffers_gui {
-        if _gui_type == GuiType::Selected {
+        if _gui_type == SpriteType::Cop {
             let uniforms = uniform! {
                     matrix: [
                         [1.0, 0.0, 0.0, 0.0],
@@ -375,6 +388,7 @@ pub fn display(
 //        }
     }
 
+
     // Render Text
 //    let system = glium_text::TextSystem::new(window);
 //    let text = glium_text::TextDisplay::new(&system, font, "This is a demo");
@@ -390,9 +404,9 @@ pub fn display(
 //    glium_text::draw(&text, &system, frame, matrix, color);
 
     let system = glium_text::TextSystem::new(window);
-    let s = format!("Cop: {} / Civ: {} / Zombie: {}", cop_count, human_count, zombie_count);
-    let s_slice: &str = &s[..];
-    let text = glium_text::TextDisplay::new(&system, font, s_slice);
+    let text_display = format!("Cop: {} / Civ: {} / Zombie: {}", cop_count, human_count, zombie_count);
+    let str_slice: &str = &text_display[..];
+    let text = glium_text::TextDisplay::new(&system, font, str_slice);
     let color = [1.0, 1.0, 0.0, 1.0f32];
     let font_scale_down = 1.5;
     let text_width = text.get_width() * font_scale_down;
