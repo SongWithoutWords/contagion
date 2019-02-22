@@ -38,7 +38,7 @@ pub fn load_textures(window: &glium_sdl2::SDL2Facade) -> Textures {
 pub struct Programs {
     sprite_program: glium::Program,
     shadow_program: glium::Program,
-    _gui_program: glium::Program,
+    gui_program: glium::Program,
     shape_program: glium::Program
 }
 pub fn load_programs(window: &glium_sdl2::SDL2Facade) -> Programs {
@@ -51,7 +51,7 @@ pub fn load_programs(window: &glium_sdl2::SDL2Facade) -> Programs {
             window,
             include_str!("graphics/shadow.vs.glsl"),
             include_str!("graphics/shadow.fs.glsl"), None).unwrap(),
-        _gui_program: glium::Program::from_source(
+        gui_program: glium::Program::from_source(
             window,
             include_str!("graphics/gui.vs.glsl"),
             include_str!("graphics/gui.fs.glsl"), None).unwrap(),
@@ -73,7 +73,7 @@ implement_vertex!(Vertex, position, tex_coords);
 struct ColorVertex {
     position: [f32; 2],
     tex_coords: [f32; 2],
-    color: [f32; 3],
+    color: [f32; 4],
 }
 implement_vertex!(ColorVertex, position, tex_coords, color);
 
@@ -122,27 +122,35 @@ fn push_sprite_vertices(buffer: &mut Vec<Vertex>, entity: &Entity) {
 }
 
 // TODO: fix
-fn push_gui_vertices(buffer: &mut Vec<Vertex>, ui: &Gui) {
+fn push_gui_vertices(buffer: &mut Vec<ColorVertex>, ui: &Gui) {
     let top_left  =  ui.top_left;
     let top_right =  ui.top_right;
     let bot_left  = ui.bot_left;
     let bot_right =  ui.bot_right;
+    let mut color= [1.0, 1.0, 1.0, 1.0];
+    if ui.id == GuiType::SelectionDrag {
+        color = [0.105, 0.214, 0.124, 0.3]
+    }
 
-    let vertex0 = Vertex {
+    let vertex0 = ColorVertex {
         position: top_left.as_f32_array(),
-        tex_coords: [0.0, 1.0]
+        tex_coords: [0.0, 1.0],
+        color
     };
-    let vertex1 = Vertex {
+    let vertex1 = ColorVertex {
         position: top_right.as_f32_array(),
-        tex_coords: [1.0, 1.0]
+        tex_coords: [1.0, 1.0],
+        color
     };
-    let vertex2 = Vertex {
+    let vertex2 = ColorVertex {
         position: bot_left.as_f32_array(),
-        tex_coords: [0.0, 0.0]
+        tex_coords: [0.0, 0.0],
+        color
     };
-    let vertex3 = Vertex {
+    let vertex3 = ColorVertex {
         position: bot_right.as_f32_array(),
-        tex_coords: [1.0, 0.0]
+        tex_coords: [1.0, 0.0],
+        color
     };
     buffer.push(vertex0);
     buffer.push(vertex1);
@@ -153,7 +161,7 @@ fn push_gui_vertices(buffer: &mut Vec<Vertex>, ui: &Gui) {
 }
 
 // TODO: Assumes building is a rectangle and not an arbitrary polygon, consider generalizing
-fn push_building_vertices(buffer: &mut Vec<ColorVertex>, building: &Polygon, color: [f32; 3]) {
+fn push_building_vertices(buffer: &mut Vec<ColorVertex>, building: &Polygon, color: [f32; 4]) {
     let top_left = building.get(0);
     let top_right = building.get(1);
     let bot_right = building.get(2);
@@ -288,7 +296,15 @@ pub fn display(
                     }
                 }
             },
-            GuiType::Commands => (),
+            GuiType::SelectionDrag => {
+                // TODO: selection drag here / use mouse pos relative to viewport coord and set_dimension() from gui.rs
+                // example:
+//                 component.set_dimension(Vector2{x: -0.5, y: 0.5},
+//                                        Vector2{x: 0.5, y: 0.5},
+//                                        Vector2{x: -0.5, y: -0.5},
+//                                       Vector2{x: 0.5, y: -0.5});
+                 push_gui_vertices(&mut vertex_buffers_gui[SpriteType::SelectionHighlight], component);
+            },
             GuiType::Score => (),
             GuiType::Timer => (),
         };
@@ -296,7 +312,7 @@ pub fn display(
 
     // Compute vertices for buildings
     for building in &state.buildings {
-        let color = [0.1, 0.1, 0.1];
+        let color = [0.1, 0.1, 0.1, 1.0];
         push_building_vertices(&mut vertex_buffers_building, building, color);
     }
 
@@ -361,7 +377,7 @@ pub fn display(
                     ],
                     tex: &textures[SpriteType::Cop],
                 };
-            draw_sprites(
+            draw_color_sprites(
                 frame,
                 window,
                 &vertex_buffer,
@@ -369,23 +385,23 @@ pub fn display(
                 params,
                 &uniforms);
         }
-//        else {
-//            let uniforms = uniform! {
-//                    matrix: [
-//                        [1.0, 0.0, 0.0, 0.0],
-//                        [0.0, 1.0, 0.0, 0.0],
-//                        [0.0, 0.0, 1.0, 0.0],
-//                        [0.0, 0.0, 0.0, 1.0f32],
-//                    ]
-//                };
-//            draw_sprites(
-//                frame,
-//                window,
-//                &vertex_buffer,
-//                &programs.gui_program,
-//                params,
-//                &uniforms);
-//        }
+        else {
+            let uniforms = uniform! {
+                    matrix: [
+                        [1.0, 0.0, 0.0, 0.0],
+                        [0.0, 1.0, 0.0, 0.0],
+                        [0.0, 0.0, 1.0, 0.0],
+                        [0.0, 0.0, 0.0, 1.0f32],
+                    ]
+                };
+            draw_color_sprites(
+                frame,
+                window,
+                &vertex_buffer,
+                &programs.gui_program,
+                params,
+                &uniforms);
+        }
     }
 
 

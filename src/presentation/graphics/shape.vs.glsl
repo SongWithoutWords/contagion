@@ -2,11 +2,11 @@
 // Input attributes
 in vec2 position;
 in vec2 tex_coords;
-in vec3 color;
+in vec4 color;
 
 // Output
 out vec2 v_tex_coords;
-out vec3 v_color;
+out vec4 v_color;
 
 // Application data
 uniform mat4 matrix;
