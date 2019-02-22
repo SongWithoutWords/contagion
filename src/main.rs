@@ -10,7 +10,7 @@ extern crate rand_xorshift;
 extern crate sdl2;
 
 use std::fs::File;
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
 use glium::draw_parameters::Blend;
 use glium_sdl2::SDL2Facade;
@@ -80,7 +80,6 @@ fn main() {
 
     let mut last_frame = Instant::now();
     let mut game_paused = false;
-    let mut mouse_drag = false;
     let mut click_time = Instant::now();
 
 
@@ -124,9 +123,10 @@ fn main() {
                         println!("  Projectile count: {:?}", state.projectiles.len());
                     }
                     Event::MouseButtonDown { timestamp: _, window_id: _, which: _, mouse_btn: _, x, y } => {
-                        mouse_drag = true;
+                        control.mouse_drag = true;
                         let mouse_pos = Vector2 { x: x as f64, y: y as f64 };
                         control.update_drag_start(mouse_pos, &window);
+                        control.update_drag_end(mouse_pos, &window);
                     }
                     Event::MouseMotion {
                         timestamp: _,
@@ -137,13 +137,13 @@ fn main() {
                         y,
                         xrel: _,
                         yrel: _, } => {
-                        if mouse_drag {
+                        if control.mouse_drag {
                             let mouse_pos = Vector2 { x: x as f64, y: y as f64 };
                             control.update_drag_end(mouse_pos, &window);
                         }
                     }
                     Event::MouseButtonUp { timestamp: _, window_id: _, which: _, mouse_btn, x, y } => {
-                        mouse_drag = false;
+                        control.mouse_drag = false;
                         let mouse_pos = Vector2 { x: x as f64, y: y as f64 };
 
                         match mouse_btn {
@@ -156,7 +156,7 @@ fn main() {
                                     let delta_millisecond = 300;
                                     let duration = current_time.duration_since(click_time);
                                     if duration.as_secs() == 0 && duration.subsec_millis() < delta_millisecond {
-                                        control.double_click_select(&mut state, &window, camera_frame);
+                                        control.double_click_select(&mut state, camera_frame);
                                     } else {
                                         control.click_select(&mut state, &window, camera_frame, mouse_pos);
                                     }

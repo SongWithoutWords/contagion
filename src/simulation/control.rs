@@ -9,6 +9,7 @@ use glium_sdl2::SDL2Facade;
 use super::state::*;
 
 pub struct Control {
+    pub mouse_drag: bool,
     pub drag_start_mouse_coord: Vector2,
     pub drag_vertex_start: Vector2,
     pub drag_vertex_end: Vector2
@@ -17,6 +18,7 @@ pub struct Control {
 impl Control {
     pub fn new() -> Control {
         Control {
+            mouse_drag: false,
             drag_start_mouse_coord: Vector2::zero(),
             drag_vertex_start: Vector2::zero(),
             drag_vertex_end: Vector2::zero()
@@ -45,15 +47,18 @@ impl Control {
         }
     }
 
-    pub fn double_click_select(&mut self, state: &mut State, window: &SDL2Facade, camera_frame: Mat4) {
+    pub fn double_click_select(&mut self, state: &mut State, camera_frame: Mat4) {
         state.is_selected = vec![false; state.entities.len()];
         for i in 0..state.entities.len() {
             let entity = &mut state.entities[i];
             match entity.behaviour {
                 Behaviour::Cop {..} => {
-                    // TODO: check each police and check whether its inside the coordinate of the camera frame
-                    // let entity_pos = entity.position;
-                    state.is_selected[i] = true;
+                    let entity_pos = &mut Vector2{ x: entity.position.x, y: entity.position.y };
+                    translate_world_to_camera(entity_pos, camera_frame);
+                    if entity_pos.x <= 1.0 && entity_pos.x >= -1.0
+                        && entity_pos.y <= 1.0 && entity_pos.y >= -1.0 {
+                        state.is_selected[i] = true;
+                    }
                 }
                 _ => ()
             }
@@ -139,6 +144,13 @@ pub fn translate_camera_to_world(vec: &mut Vector2, matrix: Mat4) {
     let inverse_matrix = matrix.inverse_matrix4();
     let temp_vec2 = Vector2{x: vec.x, y: vec.y};
     let new_vec2 = inverse_matrix.multiply_vec2(temp_vec2);
+    vec.x = new_vec2.x;
+    vec.y = new_vec2.y;
+}
+
+pub fn translate_world_to_camera(vec: &mut Vector2, matrix: Mat4) {
+    let temp_vec2 = Vector2{x: vec.x, y: vec.y};
+    let new_vec2 = matrix.multiply_vec2(temp_vec2);
     vec.x = new_vec2.x;
     vec.y = new_vec2.y;
 }
