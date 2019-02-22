@@ -268,16 +268,14 @@ pub fn display(
     // Compute vertices for selection highlights
     let mut selection_count = 0;
     {
-        for i in 0..state.is_selected.len() {
-            if state.is_selected[i] {
-                match state.entities[i].behaviour {
-                    Behaviour::Cop{rounds_in_magazine, ..} => {_magazine_count.push(rounds_in_magazine)},
-                    _ => ()
-                };
-                push_sprite_vertices(&mut vertex_buffers[SpriteType::SelectionHighlight], &state.entities[i]);
-                // add more selection GUI to right
-                selection_count += 1;
-            }
+        for i in &state.selection {
+            match state.entities[*i].behaviour {
+                Behaviour::Cop { rounds_in_magazine, .. } => { _magazine_count.push(rounds_in_magazine) },
+                _ => ()
+            };
+            push_sprite_vertices(&mut vertex_buffers[SpriteType::SelectionHighlight], &state.entities[*i]);
+            // add more selection GUI to right
+            selection_count += 1;
         }
     }
 

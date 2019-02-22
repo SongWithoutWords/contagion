@@ -26,7 +26,7 @@ impl Control {
     }
 
     pub fn click_select(&mut self, state: &mut State, window: &SDL2Facade, camera_frame: Mat4, mouse_pos: Vector2) {
-        state.is_selected = vec![false; state.entities.len()];
+        state.selection.clear();
         let m_pos = &mut Vector2{ x : mouse_pos.x, y : mouse_pos.y};
         translate_mouse_to_camera(m_pos, window.window().size());
         translate_camera_to_world(m_pos, camera_frame);
@@ -39,7 +39,7 @@ impl Control {
                     let y_pos: Scalar = entity.position.y;
                     if m_pos.x <= x_pos + 0.5 && m_pos.x >= x_pos - 0.5
                         && m_pos.y <= y_pos + 0.5 && m_pos.y >= y_pos - 0.5 {
-                        state.is_selected[i] = true;
+                        state.selection.insert(i);
                     }
                 }
                 _ => ()
@@ -48,7 +48,7 @@ impl Control {
     }
 
     pub fn double_click_select(&mut self, state: &mut State, camera_frame: Mat4) {
-        state.is_selected = vec![false; state.entities.len()];
+        state.selection.clear();
         for i in 0..state.entities.len() {
             let entity = &mut state.entities[i];
             match entity.behaviour {
@@ -57,7 +57,7 @@ impl Control {
                     translate_world_to_camera(entity_pos, camera_frame);
                     if entity_pos.x <= 1.0 && entity_pos.x >= -1.0
                         && entity_pos.y <= 1.0 && entity_pos.y >= -1.0 {
-                        state.is_selected[i] = true;
+                        state.selection.insert(i);
                     }
                 }
                 _ => ()
@@ -66,7 +66,7 @@ impl Control {
     }
 
     pub fn drag_select(&mut self, state: &mut State, window: &SDL2Facade, camera_frame: Mat4, mouse_end: Vector2) {
-        state.is_selected = vec![false; state.entities.len()];
+        state.selection.clear();
         let m_start_pos = &mut Vector2{ x : self.drag_start_mouse_coord.x, y : self.drag_start_mouse_coord.y};
         let m_end_pos = &mut Vector2{ x : mouse_end.x, y : mouse_end.y};
         translate_mouse_to_camera(m_start_pos, window.window().size());
@@ -86,7 +86,7 @@ impl Control {
                 Behaviour::Cop {..} => {
                     let entity_pos = entity.position;
                     if check_bounding_box(*m_start_pos, *m_end_pos, entity_pos) {
-                        state.is_selected[i] = true;
+                        state.selection.insert(i);
                     }
                 }
                 _ => ()
@@ -101,14 +101,12 @@ impl Control {
                 let m_pos = &mut Vector2{ x: mouse_pos.x, y: mouse_pos.y };
                 translate_mouse_to_camera(m_pos, window.window().size());
                 translate_camera_to_world(m_pos, camera_frame);
-                for i in 0..state.is_selected.len() {
-                    if state.is_selected[i] {
-                        match state.entities[i].behaviour {
-                            Behaviour::Cop {ref mut state, ..} => {
-                                *state = CopState::Moving{ waypoint: *m_pos }
-                            }
-                            _ => ()
+                for i in &state.selection {
+                    match state.entities[*i].behaviour {
+                        Behaviour::Cop { ref mut state, .. } => {
+                            *state = CopState::Moving { waypoint: *m_pos }
                         }
+                        _ => ()
                     }
                 }
             }
