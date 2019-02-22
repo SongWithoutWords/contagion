@@ -44,22 +44,68 @@ impl Polygon {
     pub fn intersects(&self, start: Vector2, end: Vector2) -> Vec<Vector2> {
         let mut out = Vec::new();
 
-        let m1 = (start.y - end.y) / (start.x - end.x);
-        let b1 = start.y - m1 * start.x;
+        // Vertical line
+        if start.x == end.x {
+            // For each side...
+            for i in 0..self.num_sides() {
+                let p1 = self.get(i);
+                let p2 = self.get((i + 1) % self.num_sides());
 
-        for i in 0..self.num_sides()-1 {
-            let r = self.0[i];
-            let s = self.0[(i + 1) % self.num_sides()];
-            let m2 = (r.y - s.y) / (r.x - s.x);
-            let b2 = r.y - m2 * r.x;
+                // Lines aren't both vertical and line is within x range of the side i
+                if p1.x != p2.x && p1.x.min(p2.x) <= start.x && p1.x.max(p2.x) >= start.x {
+                    // Find the y that the lines intersect at
+                    let m = (p2.y - p1.y) / (p2.x - p1.x);
+                    let b = p1.y - m * p1.x;
+                    let intersect_y = m * start.x + b;
 
-            if m1*b2 - m2*b1 != 0.0 {
-                let x_intercept = (b2 - b1) / (m1 - m2);
-                let y_intercept = m1 * x_intercept + b1;
+                    // If it is in the y range of the line, push to output
+                    if start.y.min(end.y) <= intersect_y && start.y.max(end.y) >= intersect_y {
+                        out.push(Vector2 { x: start.x, y: intersect_y });
+                    }
+                }
+            }
+        } else {
+            // Find equation of input line
+            let m1 = (end.y - start.y) / (end.x - start.x);
+            let b1 = start.y - m1 * start.x;
 
-                if x_intercept >= start.x.min(end.x) && x_intercept <= start.x.max(end.x) &&
-                    y_intercept >= start.y.min(end.y) && y_intercept <= start.y.min(end.y) {
-                    out.push(Vector2 { x: x_intercept, y: y_intercept })
+            // For each side...
+            for i in 0..self.num_sides() {
+                let p1 = self.get(i);
+                let p2 = self.get((i + 1) % self.num_sides());
+
+                // Side is vertical
+                if p1.x == p2.x {
+                    // Ensure that side is in x range of input line
+                    if start.x.min(end.x) <= p1.x && start.x.max(end.x) >= p1.x {
+                        // Find the y that the lines intersect at
+                        let intersect_y = m1 * p1.x + b1;
+
+                        // If intersect is in the y range of the side, push to output
+                        if p1.y.min(p2.y) <= intersect_y && p1.y.max(p2.y) >= intersect_y {
+                            out.push(Vector2 { x: p1.x, y: intersect_y });
+                        }
+                    }
+                } else {
+                    // Find equation of the side
+                    let m2 = (p2.y - p1.y) / (p2.x - p1.x);
+                    let b2 = p1.y - m2 * p1.x;
+
+                    // Ensure side and line are not parallel
+                    if m1 != m2 {
+                        // Find x and y intersection
+                        let intersect_x = (b2 - b1) / (m1 - m2);
+                        let intersect_y = m1 * intersect_x + b1;
+
+                        // Make sure the intersection is on both the side and the line
+                        if intersect_x >= start.x.min(end.x) && intersect_x <= start.x.max(end.x) &&
+                            intersect_y >= start.y.min(end.y) && intersect_y <= start.y.min(end.y) &&
+                            p1.x.min(p2.x) <= intersect_x && p1.x.max(p2.x) >= intersect_x &&
+                            p1.y.min(p2.y) <= intersect_y && p1.y.max(p2.y) >= intersect_y {
+
+                            out.push(Vector2 { x: intersect_x, y: intersect_y })
+                        }
+                    }
                 }
             }
         }
