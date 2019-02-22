@@ -39,7 +39,7 @@ fn init() -> Result<((Sdl, SDL2Facade, EventPump),
 
     let font = glium_text::FontTexture::new(
         &window,
-        File::open("src/assets/CONSOLA.TTF").unwrap(),
+        File::open("assets/fonts/consola.ttf").unwrap(),
         30,
     ).unwrap();
     let textures = presentation::display::load_textures(&window);

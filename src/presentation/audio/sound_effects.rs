@@ -17,11 +17,11 @@ pub enum TheSound {
 
 pub fn load_sound_effects(){
     // Bind the enum variables with the actual mp3 files
-    music::bind_music_file(Music::Background, "src/assets/dark_rage.mp3");
-    music::bind_sound_file(TheSound::Gunshot, "src/assets/gunshot.mp3");
-    music::bind_sound_file(TheSound::Reload, "src/assets/Reload.mp3");
-    music::bind_sound_file(TheSound::PersonInfected, "src/assets/person_infected.mp3");
-    music::bind_sound_file(TheSound::ZombieDeath, "src/assets/zombie_dead.mp3");
+    music::bind_music_file(Music::Background, "assets/audio/music/dark_rage.mp3");
+    music::bind_sound_file(TheSound::Gunshot, "assets/audio/sfx/gunshot.mp3");
+    music::bind_sound_file(TheSound::Reload, "assets/audio/sfx/reload.mp3");
+    music::bind_sound_file(TheSound::PersonInfected, "assets/audio/sfx/person_infected.mp3");
+    music::bind_sound_file(TheSound::ZombieDeath, "assets/audio/sfx/zombie_dead.mp3");
 
 }
 

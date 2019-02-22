@@ -27,11 +27,11 @@ pub type Textures = EnumMap<SpriteType, Texture2d>;
 pub fn load_textures(window: &glium_sdl2::SDL2Facade) -> Textures {
     use crate::presentation::graphics::renderer::load_texture;
     enum_map! {
-        SpriteType::Cop                => load_texture(&window, "src/assets/police.png"),
-        SpriteType::Zombie             => load_texture(&window, "src/assets/zombie.png"),
-        SpriteType::Civilian           => load_texture(&window, "src/assets/citizen.png"),
-        SpriteType::Dead               => load_texture(&window, "src/assets/dead_zombie.png"),
-        SpriteType::SelectionHighlight => load_texture(&window, "src/assets/selection_highlight.png"),
+        SpriteType::Cop                => load_texture(&window, "assets/images/old/police.png"),
+        SpriteType::Zombie             => load_texture(&window, "assets/images/old/zombie.png"),
+        SpriteType::Civilian           => load_texture(&window, "assets/images/old/citizen.png"),
+        SpriteType::Dead               => load_texture(&window, "assets/images/old/dead_zombie.png"),
+        SpriteType::SelectionHighlight => load_texture(&window, "assets/images/other/selection_highlight.png"),
     }
 }
 
