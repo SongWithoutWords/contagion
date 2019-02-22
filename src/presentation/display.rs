@@ -2,6 +2,7 @@ use crate::core::vector::*;
 use crate::core::matrix::*;
 use crate::core::geo::polygon::*;
 use crate::simulation::state::*;
+use crate::simulation::control::*;
 
 use glium::Surface;
 use glium::texture::texture2d::Texture2d;
@@ -238,6 +239,7 @@ pub fn display(
     state: &State, camera_frame: Mat4,
     ui: &mut Component,
     font: &FontTexture,
+    control: &Control
     ) {
 
     frame.clear_color(0.2, 0.2, 0.2, 1.0);
