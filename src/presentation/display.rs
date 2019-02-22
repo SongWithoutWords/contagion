@@ -2,6 +2,7 @@ use crate::core::vector::*;
 use crate::core::matrix::*;
 use crate::core::geo::polygon::*;
 use crate::simulation::state::*;
+use crate::simulation::control::*;
 
 use glium::Surface;
 use glium::texture::texture2d::Texture2d;
@@ -238,6 +239,7 @@ pub fn display(
     state: &State, camera_frame: Mat4,
     ui: &mut Component,
     font: &FontTexture,
+    control: &Control
     ) {
 
     frame.clear_color(0.2, 0.2, 0.2, 1.0);
@@ -290,21 +292,25 @@ pub fn display(
                     // might be useful later...
                     // component.move_pos(Vector2 { x: offset * ((0) as f64), y: 0.0 });
                     push_gui_vertices(&mut vertex_buffers_gui[SpriteType::Cop], component);
-                    for i in 0 .. (selection_count - 1) {
+                    for i in 0 .. selection_count {
                         let selected_ui = Gui::new(GuiType::Selected, 0.1, 0.1, Vector2{x: -0.9 + offset*(i as f64), y: -0.9});
                         push_gui_vertices(&mut vertex_buffers_gui[SpriteType::Cop], &selected_ui);
                     }
                 }
             },
             GuiType::SelectionDrag => {
-                // TODO: selection drag here / use mouse pos relative to viewport coord and set_dimension() from gui.rs
-                // example:
-//                 component.set_dimension(Vector2{x: -0.5, y: 0.5},
-//                                        Vector2{x: 0.5, y: 0.5},
-//                                        Vector2{x: -0.5, y: -0.5},
-//                                       Vector2{x: 0.5, y: -0.5});
-                 push_gui_vertices(&mut vertex_buffers_gui[SpriteType::SelectionHighlight], component);
-            },
+                if control.mouse_drag {
+                    let rec_min_x = control.drag_vertex_start.x.min(control.drag_vertex_end.x);
+                    let rec_min_y = control.drag_vertex_start.y.min(control.drag_vertex_end.y);
+                    let rec_max_x = control.drag_vertex_start.x.max(control.drag_vertex_end.x);
+                    let rec_max_y = control.drag_vertex_start.y.max(control.drag_vertex_end.y);
+                    component.set_dimension(Vector2 { x: rec_min_x, y: rec_min_y },
+                                            Vector2 { x: rec_min_x, y: rec_max_y },
+                                            Vector2 { x: rec_max_x, y: rec_min_y },
+                                            Vector2 { x: rec_max_x, y: rec_max_y });
+                    push_gui_vertices(&mut vertex_buffers_gui[SpriteType::SelectionHighlight], component);
+                }
+            }
             GuiType::Score => (),
             GuiType::Timer => (),
         };
