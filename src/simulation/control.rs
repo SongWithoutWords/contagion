@@ -5,6 +5,9 @@ use crate::core::matrix::*;
 use crate::core::geo::intersect::rectangle_point::*;
 
 use glium_sdl2::SDL2Facade;
+use sdl2::event::Event;
+use std::time::Instant;
+use sdl2::mouse::MouseButton;
 
 use super::state::*;
 
@@ -12,7 +15,8 @@ pub struct Control {
     pub mouse_drag: bool,
     pub drag_start_mouse_coord: Vector2,
     pub drag_vertex_start: Vector2,
-    pub drag_vertex_end: Vector2
+    pub drag_vertex_end: Vector2,
+    pub last_click_time: Instant
 }
 
 impl Control {
@@ -21,7 +25,8 @@ impl Control {
             mouse_drag: false,
             drag_start_mouse_coord: Vector2::zero(),
             drag_vertex_start: Vector2::zero(),
-            drag_vertex_end: Vector2::zero()
+            drag_vertex_end: Vector2::zero(),
+            last_click_time: Instant::now()
         }
     }
 
@@ -130,6 +135,61 @@ impl Control {
 
         self.drag_vertex_end.x = drag_end_proj.x;
         self.drag_vertex_end.y = drag_end_proj.y;
+    }
+
+    pub fn handle_event(&mut self, event: Event, window: &SDL2Facade, camera_frame: Mat4, state: &mut State) {
+        match event {
+            Event::MouseButtonDown { timestamp: _, window_id: _, which: _, mouse_btn: _, x, y } => {
+                self.mouse_drag = true;
+                let mouse_pos = Vector2 { x: x as f64, y: y as f64 };
+                self.update_drag_start(mouse_pos, &window);
+                self.update_drag_end(mouse_pos, &window);
+            }
+            Event::MouseMotion {
+                timestamp: _,
+                window_id: _,
+                which: _,
+                mousestate: _,
+                x,
+                y,
+                xrel: _,
+                yrel: _, } => {
+                if self.mouse_drag {
+                    let mouse_pos = Vector2 { x: x as f64, y: y as f64 };
+                    self.update_drag_end(mouse_pos, &window);
+                }
+            }
+            Event::MouseButtonUp { timestamp: _, window_id: _, which: _, mouse_btn, x, y } => {
+                self.mouse_drag = false;
+                let mouse_pos = Vector2 { x: x as f64, y: y as f64 };
+
+                match mouse_btn {
+                    MouseButton::Left { .. } => {
+                        // Select one police if delta of drag is too small, else select all police in drag
+                        let delta = 1.0;
+
+                        if (mouse_pos.x - self.drag_start_mouse_coord.x).abs() <= delta && (mouse_pos.y - self.drag_start_mouse_coord.y).abs() <= delta {
+                            let current_time = Instant::now();
+                            let delta_millisecond = 300;
+                            let duration = current_time.duration_since(self.last_click_time);
+                            if duration.as_secs() == 0 && duration.subsec_millis() < delta_millisecond {
+                                self.double_click_select(state, camera_frame);
+                            } else {
+                                self.click_select(state, &window, camera_frame, mouse_pos);
+                            }
+                            self.last_click_time = current_time;
+                        } else {
+                            self.drag_select(state, &window, camera_frame, mouse_pos);
+                        }
+                    }
+                    MouseButton::Right { .. } => {
+                        self.issue_police_order(PoliceOrder::Move, state, &window, camera_frame, mouse_pos);
+                    }
+                    _ => ()
+                }
+            }
+            _ => ()
+        }
     }
 }
 

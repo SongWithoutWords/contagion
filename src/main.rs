@@ -80,7 +80,6 @@ fn main() {
 
     let mut last_frame = Instant::now();
     let mut game_paused = false;
-    let mut click_time = Instant::now();
 
 
     // Handle the sound effects for the game
@@ -122,60 +121,12 @@ fn main() {
                         println!("  Entity count:     {:?}", state.entities.len());
                         println!("  Projectile count: {:?}", state.projectiles.len());
                     }
-                    Event::MouseButtonDown { timestamp: _, window_id: _, which: _, mouse_btn: _, x, y } => {
-                        control.mouse_drag = true;
-                        let mouse_pos = Vector2 { x: x as f64, y: y as f64 };
-                        control.update_drag_start(mouse_pos, &window);
-                        control.update_drag_end(mouse_pos, &window);
-                    }
-                    Event::MouseMotion {
-                        timestamp: _,
-                        window_id: _,
-                        which: _,
-                        mousestate: _,
-                        x,
-                        y,
-                        xrel: _,
-                        yrel: _, } => {
-                        if control.mouse_drag {
-                            let mouse_pos = Vector2 { x: x as f64, y: y as f64 };
-                            control.update_drag_end(mouse_pos, &window);
-                        }
-                    }
-                    Event::MouseButtonUp { timestamp: _, window_id: _, which: _, mouse_btn, x, y } => {
-                        control.mouse_drag = false;
-                        let mouse_pos = Vector2 { x: x as f64, y: y as f64 };
-
-                        match mouse_btn {
-                            MouseButton::Left { .. } => {
-                                // Select one police if delta of drag is too small, else select all police in drag
-                                let delta = 1.0;
-
-                                if (mouse_pos.x - control.drag_start_mouse_coord.x).abs() <= delta && (mouse_pos.y - control.drag_start_mouse_coord.y).abs() <= delta {
-                                    let current_time = Instant::now();
-                                    let delta_millisecond = 300;
-                                    let duration = current_time.duration_since(click_time);
-                                    if duration.as_secs() == 0 && duration.subsec_millis() < delta_millisecond {
-                                        control.double_click_select(&mut state, camera_frame);
-                                    } else {
-                                        control.click_select(&mut state, &window, camera_frame, mouse_pos);
-                                    }
-                                    click_time = current_time;
-                                } else {
-                                    control.drag_select(&mut state, &window, camera_frame, mouse_pos);
-                                }
-                            }
-                            MouseButton::Right { .. } => {
-                                control.issue_police_order(simulation::control::PoliceOrder::Move, &mut state, &window, camera_frame, mouse_pos);
-                            }
-                            _ => ()
-                        }
-                    }
                     Event::MouseWheel { timestamp: _, window_id: _, which: _, x: _, y, direction: _ } => {
                         camera.set_zoom(y);
                     }
-
-                    _ => ()
+                    _ => {
+                        control.handle_event(event, &window, camera_frame, &mut state);
+                    }
                 }
             }
 
