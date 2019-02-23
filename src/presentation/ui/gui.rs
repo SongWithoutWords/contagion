@@ -1,11 +1,17 @@
 use crate::core::vector::*;
 
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub enum GuiType {
     Selected, // Bottom Middle
     SelectionDrag, // Bottom Right
     Score,    // Top Left
     Timer,    // Top Middle
+    Rect,
+    Menu {
+        _window_gui: Box<Gui>,
+        _buttons_gui: Box<Vec<Gui>>,
+    },
+    Button,
 }
 
 pub struct Component {
@@ -16,13 +22,17 @@ impl Component {
     pub fn init_demo() -> Component {
         let selected_ui = Gui::new(GuiType::Selected, 0.1, 0.1, Vector2{x: -0.9, y: -0.9});
         let drag_ui = Gui::new(GuiType::SelectionDrag, 0.0, 0.0, Vector2{x: 0.0, y: 0.0});
+        let box_ui = Gui::new(GuiType::Button, 0.3, 0.5, Vector2{x: 0.0, y: 0.0});
+        let button1 = Gui::new(GuiType::Button, 0.2, 0.05, Vector2{x: 0.0, y: 0.0});
+        let menu_ui = Gui::new(GuiType::Menu{ _window_gui: Box::new(box_ui), _buttons_gui: Box::new(vec!(button1))}, 0.1, 0.125, Vector2{x: -0.9, y: 0.9});
+
         Component {
-            components: vec![selected_ui, drag_ui],
+            components: vec![selected_ui, drag_ui, menu_ui],
         }
     }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Clone,PartialEq)]
 pub struct Gui {
     pub id: GuiType,
     pub top_left: Vector2,
@@ -71,8 +81,5 @@ impl Gui {
         self.bot_right = br;
     }
 
-    // get type of GUI
-    pub fn get_id(&mut self) -> (GuiType) {
-        (self.id)
-    }
+//
 }

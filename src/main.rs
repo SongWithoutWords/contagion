@@ -16,7 +16,7 @@ use glium::draw_parameters::Blend;
 use glium_sdl2::SDL2Facade;
 use sdl2::{EventPump, Sdl};
 use sdl2::keyboard::Keycode;
-use sdl2::mouse::MouseButton;
+//use sdl2::mouse::MouseButton;
 
 use crate::core::scalar:: *;
 use crate::core::vector:: *;

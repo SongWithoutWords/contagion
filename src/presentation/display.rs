@@ -21,6 +21,7 @@ pub enum SpriteType {
     Civilian,
     Zombie,
     Cop,
+    Menu,
 }
 
 pub type Textures = EnumMap<SpriteType, Texture2d>;
@@ -33,6 +34,7 @@ pub fn load_textures(window: &glium_sdl2::SDL2Facade) -> Textures {
         SpriteType::Civilian           => load_texture(&window, "assets/images/old/citizen.png"),
         SpriteType::Dead               => load_texture(&window, "assets/images/old/dead_zombie.png"),
         SpriteType::SelectionHighlight => load_texture(&window, "assets/images/other/selection_highlight.png"),
+        SpriteType::Menu                  => load_texture(&window, "assets/images/ui/menu_icon.png")
     }
 }
 
@@ -282,7 +284,7 @@ pub fn display(
     // Computer vertices for GUI
     let offset = 0.1;
     for component in &mut ui.components {
-        match component.id {
+        match &component.id {
             GuiType::Selected => {
                 if selection_count < 1 {
 
@@ -311,6 +313,11 @@ pub fn display(
             }
             GuiType::Score => (),
             GuiType::Timer => (),
+            GuiType::Rect => (),
+            GuiType::Menu{_window_gui, _buttons_gui} => {
+                push_gui_vertices(&mut vertex_buffers_gui[SpriteType::Menu], component);
+            },
+            GuiType::Button => (),
         };
     }
 
@@ -389,7 +396,24 @@ pub fn display(
                 params,
                 &uniforms);
         }
-        else {
+        else if _gui_type == SpriteType::Menu {
+            let uniforms = uniform! {
+                    matrix: [
+                        [1.0, 0.0, 0.0, 0.0],
+                        [0.0, 1.0, 0.0, 0.0],
+                        [0.0, 0.0, 1.0, 0.0],
+                        [0.0, 0.0, 0.0, 1.0f32],
+                    ],
+                    tex: &textures[SpriteType::Menu],
+                };
+            draw_color_sprites(
+                frame,
+                window,
+                &vertex_buffer,
+                &programs.sprite_program,
+                params,
+                &uniforms);
+        } else {
             let uniforms = uniform! {
                     matrix: [
                         [1.0, 0.0, 0.0, 0.0],
