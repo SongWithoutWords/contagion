@@ -22,6 +22,7 @@ pub enum SpriteType {
     Zombie,
     Cop,
     Menu,
+    MenuWindow
 }
 
 pub type Textures = EnumMap<SpriteType, Texture2d>;
@@ -34,7 +35,8 @@ pub fn load_textures(window: &glium_sdl2::SDL2Facade) -> Textures {
         SpriteType::Civilian           => load_texture(&window, "assets/images/old/citizen.png"),
         SpriteType::Dead               => load_texture(&window, "assets/images/old/dead_zombie.png"),
         SpriteType::SelectionHighlight => load_texture(&window, "assets/images/other/selection_highlight.png"),
-        SpriteType::Menu                  => load_texture(&window, "assets/images/ui/menu_icon.png")
+        SpriteType::Menu               => load_texture(&window, "assets/images/ui/menu_icon.png"),
+        SpriteType::MenuWindow         => load_texture(&window, "assets/images/ui/menu_icon.png"),
     }
 }
 
@@ -130,7 +132,7 @@ fn push_gui_vertices(buffer: &mut Vec<ColorVertex>, ui: &Gui) {
     let top_right =  ui.top_right;
     let bot_left  = ui.bot_left;
     let bot_right =  ui.bot_right;
-    let mut color= [1.0, 1.0, 1.0, 1.0];
+    let mut color= [0.0, 0.0, 0.0, 1.0];
     if ui.id == GuiType::SelectionDrag {
         color = [0.105, 0.214, 0.124, 0.3]
     }
@@ -316,6 +318,8 @@ pub fn display(
             GuiType::Rect => (),
             GuiType::Menu{_window_gui, _buttons_gui} => {
                 push_gui_vertices(&mut vertex_buffers_gui[SpriteType::Menu], component);
+                // TODO: if menu icon is clicked
+                push_gui_vertices(&mut vertex_buffers_gui[SpriteType::MenuWindow], _window_gui);
             },
             GuiType::Button => (),
         };
