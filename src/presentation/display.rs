@@ -22,7 +22,8 @@ pub enum SpriteType {
     Zombie,
     Cop,
     Menu,
-    MenuWindow
+    MenuWindow,
+    Button,
 }
 
 pub type Textures = EnumMap<SpriteType, Texture2d>;
@@ -37,6 +38,7 @@ pub fn load_textures(window: &glium_sdl2::SDL2Facade) -> Textures {
         SpriteType::SelectionHighlight => load_texture(&window, "assets/images/other/selection_highlight.png"),
         SpriteType::Menu               => load_texture(&window, "assets/images/ui/menu_icon.png"),
         SpriteType::MenuWindow         => load_texture(&window, "assets/images/ui/menu_icon.png"),
+        SpriteType::Button             => load_texture(&window, "assets/images/other/selection_highlight.png"),
     }
 }
 
@@ -135,6 +137,11 @@ fn push_gui_vertices(buffer: &mut Vec<ColorVertex>, ui: &Gui) {
     let mut color= [0.0, 0.0, 0.0, 1.0];
     if ui.id == GuiType::SelectionDrag {
         color = [0.105, 0.214, 0.124, 0.3]
+    }
+    else if ui.id == GuiType::Button {
+        color = [0.6, 0.7, 0.8, 0.0];
+    } else if ui.id == GuiType::Window {
+        color= [0.0, 0.0, 0.0, 0.7];
     }
 
     let vertex0 = ColorVertex {
@@ -257,6 +264,7 @@ pub fn display(
     let mut zombie_count = 0;
     let mut _dead_count = 0;
     let mut _magazine_count = vec!();
+    let mut _menu_buttons: Vec<(Vector2, Vector2, Vector2, Vector2)> = vec![];
 
     // Compute the vertices in world coordinates of all entities
     for entity in &state.entities {
@@ -315,11 +323,17 @@ pub fn display(
             }
             GuiType::Score => (),
             GuiType::Timer => (),
-            GuiType::Rect => (),
+            GuiType::Window => (),
             GuiType::Menu{_window_gui, _buttons_gui} => {
                 push_gui_vertices(&mut vertex_buffers_gui[SpriteType::Menu], component);
-                // TODO: if menu icon is clicked
-                push_gui_vertices(&mut vertex_buffers_gui[SpriteType::MenuWindow], _window_gui);
+                // TODO: if menu icon is clicked (uncomment to see menu)
+//                push_gui_vertices(&mut vertex_buffers_gui[SpriteType::MenuWindow], _window_gui);
+//                for i in 0.._buttons_gui.len() {
+//                    let button_dimensions = _buttons_gui[i].get_dimension();
+//                    _menu_buttons.push(button_dimensions);
+//                    push_gui_vertices(&mut vertex_buffers_gui[SpriteType::Button], &_buttons_gui[i]);
+//                }
+
             },
             GuiType::Button => (),
         };
@@ -381,15 +395,16 @@ pub fn display(
     }
 
     // Render GUI
+    let mat_gui = [
+        [1.0, 0.0, 0.0, 0.0],
+        [0.0, 1.0, 0.0, 0.0],
+        [0.0, 0.0, 1.0, 0.0],
+        [0.0, 0.0, 0.0, 1.0f32],
+    ];
     for (_gui_type, vertex_buffer) in &vertex_buffers_gui {
         if _gui_type == SpriteType::Cop {
             let uniforms = uniform! {
-                    matrix: [
-                        [1.0, 0.0, 0.0, 0.0],
-                        [0.0, 1.0, 0.0, 0.0],
-                        [0.0, 0.0, 1.0, 0.0],
-                        [0.0, 0.0, 0.0, 1.0f32],
-                    ],
+                    matrix: mat_gui,
                     tex: &textures[SpriteType::Cop],
                 };
             draw_color_sprites(
@@ -399,16 +414,21 @@ pub fn display(
                 &programs.sprite_program,
                 params,
                 &uniforms);
-        }
-        else if _gui_type == SpriteType::Menu {
+        } else if _gui_type == SpriteType::SelectionHighlight {
             let uniforms = uniform! {
-                    matrix: [
-                        [1.0, 0.0, 0.0, 0.0],
-                        [0.0, 1.0, 0.0, 0.0],
-                        [0.0, 0.0, 1.0, 0.0],
-                        [0.0, 0.0, 0.0, 1.0f32],
-                    ],
-                    tex: &textures[SpriteType::Menu],
+                    matrix: mat_gui,
+                };
+            draw_color_sprites(
+                frame,
+                window,
+                &vertex_buffer,
+                &programs.gui_program,
+                params,
+                &uniforms);
+        } else if _gui_type == SpriteType::Menu {
+            let uniforms = uniform! {
+                    matrix: mat_gui,
+                    tex: &textures[_gui_type],
                 };
             draw_color_sprites(
                 frame,
@@ -417,14 +437,20 @@ pub fn display(
                 &programs.sprite_program,
                 params,
                 &uniforms);
-        } else {
+        }  else if _gui_type == SpriteType::MenuWindow {
             let uniforms = uniform! {
-                    matrix: [
-                        [1.0, 0.0, 0.0, 0.0],
-                        [0.0, 1.0, 0.0, 0.0],
-                        [0.0, 0.0, 1.0, 0.0],
-                        [0.0, 0.0, 0.0, 1.0f32],
-                    ]
+                    matrix: mat_gui,
+                };
+            draw_color_sprites(
+                frame,
+                window,
+                &vertex_buffer,
+                &programs.gui_program,
+                params,
+                &uniforms);
+        } else if _gui_type == SpriteType::Button {
+            let uniforms = uniform! {
+                    matrix: mat_gui,
                 };
             draw_color_sprites(
                 frame,
@@ -437,19 +463,37 @@ pub fn display(
     }
 
 
+    // Render Menu Text
+    for _i in 0.._menu_buttons.len() {
+        let system = glium_text::TextSystem::new(window);
+        let text = glium_text::TextDisplay::new(&system, font, "Exit");
+        let color = [1.0, 1.0, 1.0, 1.0f32];
+        let text_width=text.get_width();
+        let text_height = 0.07;
+//        let (w, h) = frame.get_dimensions();
+        let button_width = (_menu_buttons[_i].1.x - _menu_buttons[_i].0.x) as f32;
+//        let button_height = (_menu_buttons[_i].0.y -_menu_buttons[_i].2.y) as f32;
+        let x_align = (_menu_buttons[_i].0.x) as f32;
+        let y_align = (_menu_buttons[_i].0.y) as f32;
+//        println!("x1: {}", _menu_buttons[_i].1.x);
+//        println!("x2: {}", _menu_buttons[_i].0.x);
+//        println!("y1: {}", _menu_buttons[_i].0.y);
+//        println!("y2: {}", _menu_buttons[_i].2.y);
+//        println!("height: {}", button_height);
+//        println!("width: {}", button_width);
+
+//        let (w, h) = frame.get_dimensions();
+        let matrix = [
+            [button_width / text_width , 0.0, 0.0, 0.0],
+            [0.0, text_height, 0.0, 0.0],
+            [0.0, 0.0, 1.0, 0.0],
+            [x_align, -y_align, 0.0, 1.0f32],
+        ];
+        glium_text::draw(&text, &system, frame, matrix, color);
+////        let menu_button = &menu_buttons[i];
+    }
+
     // Render Text
-//    let system = glium_text::TextSystem::new(window);
-//    let text = glium_text::TextDisplay::new(&system, font, "This is a demo");
-//    let color = [1.0, 1.0, 0.0, 1.0f32];
-//    let text_width = text.get_width();
-//    let (w, h) = frame.get_dimensions();
-//    let matrix = [
-//        [1.0 / text_width, 0.0, 0.0, 0.0],
-//        [0.0, 1.0 * (w as f32) / (h as f32) / text_width, 0.0, 0.0],
-//        [0.0, 0.0, 1.0, 0.0],
-//        [-1.0, 0.85, 0.0, 1.0f32],
-//    ];
-//    glium_text::draw(&text, &system, frame, matrix, color);
 
     let system = glium_text::TextSystem::new(window);
     let text_display = format!("Cop: {} / Civ: {} / Zombie: {}", cop_count, human_count, zombie_count);

@@ -1,15 +1,15 @@
 use crate::core::vector::*;
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum GuiType {
     Selected, // Bottom Middle
     SelectionDrag, // Bottom Right
     Score,    // Top Left
     Timer,    // Top Middle
-    Rect,
+    Window,
     Menu {
         _window_gui: Box<Gui>,
-        _buttons_gui: Box<Vec<Gui>>,
+        _buttons_gui: Vec<Box<Gui>>,
     },
     Button,
 }
@@ -22,9 +22,9 @@ impl Component {
     pub fn init_demo() -> Component {
         let selected_ui = Gui::new(GuiType::Selected, 0.1, 0.1, Vector2{x: -0.9, y: -0.9});
         let drag_ui = Gui::new(GuiType::SelectionDrag, 0.0, 0.0, Vector2{x: 0.0, y: 0.0});
-        let box_ui = Gui::new(GuiType::Button, 0.3, 0.5, Vector2{x: 0.0, y: 0.0});
+        let box_ui = Gui::new(GuiType::Window, 1.8, 1.8, Vector2{x: 0.0, y: 0.0});
         let button1 = Gui::new(GuiType::Button, 0.2, 0.05, Vector2{x: 0.0, y: 0.0});
-        let menu_ui = Gui::new(GuiType::Menu{ _window_gui: Box::new(box_ui), _buttons_gui: Box::new(vec!(button1))}, 0.1, 0.125, Vector2{x: -0.9, y: 0.9});
+        let menu_ui = Gui::new(GuiType::Menu{ _window_gui: Box::new(box_ui), _buttons_gui: vec![Box::new(button1)]}, 0.1, 0.125, Vector2{x: -0.9, y: 0.9});
 
         Component {
             components: vec![selected_ui, drag_ui, menu_ui],
@@ -32,7 +32,7 @@ impl Component {
     }
 }
 
-#[derive(Clone,PartialEq)]
+#[derive(Clone,PartialEq, Debug)]
 pub struct Gui {
     pub id: GuiType,
     pub top_left: Vector2,
@@ -70,8 +70,8 @@ impl Gui {
 
     // get dimension of the user interface
     // ordered top_left, top_right, bot_left, bot_right
-    pub fn get_dimension(&self) -> (&Vector2, &Vector2, &Vector2, &Vector2) {
-        (&self.top_left, &self.top_right, &self.bot_left, &self.bot_right)
+    pub fn get_dimension(&self) -> (Vector2, Vector2, Vector2, Vector2) {
+        (self.top_left, self.top_right, self.bot_left, self.bot_right)
     }
 
     pub fn set_dimension(&mut self, tl: Vector2, tr: Vector2, bl: Vector2, br: Vector2) {
