@@ -155,14 +155,13 @@ fn push_gui_vertices(buffer: &mut Vec<ColorVertex>, ui: &Gui) {
     let bot_left  = ui.bot_left;
     let bot_right =  ui.bot_right;
     let mut color= [0.0, 0.0, 0.0, 1.0];
-    if ui.id == GuiType::SelectionDrag {
-        color = [0.105, 0.214, 0.124, 0.3]
-    }
-    else if ui.id == GuiType::Button {
-        color = [0.6, 0.7, 0.8, 0.0];
-    } else if ui.id == GuiType::Window {
-        color= [0.0, 0.0, 0.0, 0.7];
-    }
+
+    match ui.id {
+        GuiType::SelectionDrag => {color = [0.105, 0.214, 0.124, 0.3]},
+        GuiType::Button{..} => {color = [0.6, 0.7, 0.8, 0.0];},
+        GuiType::Window => {color= [0.0, 0.0, 0.0, 0.7];},
+        _ => (),
+    };
 
     let vertex0 = ColorVertex {
         position: top_left.as_f32_array(),
@@ -278,6 +277,7 @@ pub fn display(
     let mut vertex_buffers = enum_map!{_ => vec!()};
     let mut vertex_buffers_gui = enum_map!{_ => vec!()};
     let mut vertex_buffers_building = vec!();
+    let mut text_buffers = vec!();
 
     let mut cop_count = 0;
     let mut human_count = 0;
@@ -285,6 +285,7 @@ pub fn display(
     let mut _dead_count = 0;
     let mut _magazine_count = vec!();
     let mut _menu_buttons: Vec<(Vector2, Vector2, Vector2, Vector2)> = vec![];
+
 
     // Compute the vertices in world coordinates of all projectiles
     for p in &state.projectiles {
@@ -376,12 +377,14 @@ pub fn display(
                     push_gui_vertices(&mut vertex_buffers_gui[SpriteType::MenuWindow], _window_gui);
                     for i in 0.._buttons_gui.len() {
                         let button_dimensions = _buttons_gui[i].get_dimension();
+                        text_buffers.push(_buttons_gui[i].clone());
+
                         _menu_buttons.push(button_dimensions);
                         push_gui_vertices(&mut vertex_buffers_gui[SpriteType::Button], &_buttons_gui[i]);
                     }
                 }
             },
-            GuiType::Button => (),
+            _ => (),
         };
     }
 
@@ -510,25 +513,25 @@ pub fn display(
 
 
     // Render Menu Text
-    for _i in 0.._menu_buttons.len() {
+    for _i in 0..text_buffers.len() {
         let system = glium_text::TextSystem::new(window);
-        let text = glium_text::TextDisplay::new(&system, font, "Exit");
+        let mut text_to_display = "".to_string();
+        match text_buffers[_i].id.clone() {
+            GuiType::Button {text} => {
+                text_to_display = text;
+            }
+            _ => ()
+        }
+        let text_display = format!("{}", text_to_display);
+        let str_slice: &str = &text_display[..];
+        let text = glium_text::TextDisplay::new(&system, font, str_slice);
         let color = [1.0, 1.0, 1.0, 1.0f32];
         let text_width=text.get_width();
         let text_height = 0.07;
-//        let (w, h) = frame.get_dimensions();
         let button_width = (_menu_buttons[_i].1.x - _menu_buttons[_i].0.x) as f32;
-//        let button_height = (_menu_buttons[_i].0.y -_menu_buttons[_i].2.y) as f32;
         let x_align = (_menu_buttons[_i].0.x) as f32;
         let y_align = (_menu_buttons[_i].0.y) as f32;
-//        println!("x1: {}", _menu_buttons[_i].1.x);
-//        println!("x2: {}", _menu_buttons[_i].0.x);
-//        println!("y1: {}", _menu_buttons[_i].0.y);
-//        println!("y2: {}", _menu_buttons[_i].2.y);
-//        println!("height: {}", button_height);
-//        println!("width: {}", button_width);
 
-//        let (w, h) = frame.get_dimensions();
         let matrix = [
             [button_width / text_width , 0.0, 0.0, 0.0],
             [0.0, text_height, 0.0, 0.0],
@@ -536,7 +539,6 @@ pub fn display(
             [x_align, -y_align, 0.0, 1.0f32],
         ];
         glium_text::draw(&text, &system, frame, matrix, color);
-////        let menu_button = &menu_buttons[i];
     }
 
     // Render Text
