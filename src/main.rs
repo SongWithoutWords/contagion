@@ -8,6 +8,7 @@ extern crate glium_sdl2;
 extern crate sdl2;
 #[macro_use] extern crate enum_map;
 extern crate image;
+extern crate num;
 extern crate rand;
 extern crate rand_xorshift;
 extern crate rodio;
@@ -79,7 +80,7 @@ fn main() {
     let mut camera = presentation::camera::Camera::new();
     let mut audio_state = presentation::audio::sound_effects::AudioState::new();
     let mut last_frame = Instant::now();
-    let mut game_paused = false;
+    let mut game_paused = true;
 
     // main game loop
     'main_game_loop: loop {

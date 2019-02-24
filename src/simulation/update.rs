@@ -185,7 +185,7 @@ fn handle_building_collision(
     building: &Polygon,
     inside: bool) {
 
-    let mut dist = INFINITY;
+    let mut distance_squared = INFINITY;
     let mut normal = Vector2::zero();
     let normals = building.normals();
 
@@ -197,23 +197,24 @@ fn handle_building_collision(
         };
         let dist_i = seg_i.dist_squared(entity.position);
 
-        if dist > dist_i {
-            dist = dist_i;
+        if distance_squared > dist_i {
+            distance_squared = dist_i;
             normal = normals[i];
         }
     }
 
-    let weighted_dist = ENTITY_RADIUS.powf(2.0).max(dist / ENTITY_RADIUS.powf(2.0));
-    const REBOUND_COEFFICIENT: f64 = ENTITY_RADIUS * 5.0;
+    const SPRING_CONSTANT: f64 = 32.0;
 
-    // Push proportional to the overlap
-    let velocity_change = if inside {
-        normal * (args.dt * ENTITY_RADIUS.powf(2.0) * REBOUND_COEFFICIENT)
+    let distance = distance_squared.sqrt();
+
+    if inside {
+        // If the entity is inside move them to the nearest edge
+        entity.position += (distance + ENTITY_RADIUS) * normal;
     } else {
-        normal * (args.dt * (ENTITY_RADIUS.powf(2.0) - weighted_dist) * REBOUND_COEFFICIENT)
-    };
-
-    entity.velocity += velocity_change;
+        // If the entity is overlapping, force them away from the edge
+        let overlap = ENTITY_RADIUS - distance;
+        entity.velocity += args.dt * SPRING_CONSTANT * overlap * normal
+    }
 }
 
 fn update_cop(
