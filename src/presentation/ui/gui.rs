@@ -24,6 +24,14 @@ pub enum GuiType {
     }
 }
 
+#[derive(Clone,PartialEq, Debug)]
+pub enum ActiveWindow {
+    Game,
+    Menu,
+    Instruction,
+}
+pub static mut CURRENT: ActiveWindow = ActiveWindow::Game;
+
 pub struct Component {
     pub components: Vec<Gui>
 }
@@ -33,33 +41,71 @@ impl Component {
         let selected_ui = Gui::new(GuiType::Selected, 0.1, 0.1, Vector2{x: -0.9, y: -0.9});
         let drag_ui = Gui::new(GuiType::SelectionDrag, 0.0, 0.0, Vector2{x: 0.0, y: 0.0});
         let box_ui = Gui::new(GuiType::Window, 1.8, 1.8, Vector2{x: 0.0, y: 0.0});
-//        let button1 = Gui::new(GuiType::Button{text: "Exit".to_string()}, 0.2, 0.05, Vector2{x: 0.0, y: 0.1});
-//        let button2 = Gui::new(GuiType::Button{text: "Instruction".to_string()}, 0.2, 0.05, Vector2{x: 0.0, y: -0.1});
-//        let menu_ui = Gui::new(GuiType::Menu{ _window_gui: Box::new(box_ui), _buttons_gui: vec![Box::new(button1), Box::new(button2)], active: false}, 0.1, 0.125, Vector2{x: -0.9, y: 0.9});
-        let menu_ui = Gui::new(GuiType::Menu{ _window_gui: Box::new(box_ui), _buttons_gui: vec![], active: false}, 0.1, 0.125, Vector2{x: -0.9, y: 0.9});
+        let button2 = Gui::new(GuiType::Button{text: "Instruction".to_string()}, 0.2, 0.05, Vector2{x: 0.0, y: -0.1});
+        let button1 = Gui::new(GuiType::Button{text: "Exit".to_string()}, 0.2, 0.05, Vector2{x: 0.0, y: 0.1});
+        let menu_ui = Gui::new(GuiType::Menu{ _window_gui: Box::new(box_ui), _buttons_gui: vec![Box::new(button1), Box::new(button2)], active: false}, 0.1, 0.125, Vector2{x: -0.9, y: 0.9});
+//        let menu_ui = Gui::new(GuiType::Menu{ _window_gui: Box::new(box_ui), _buttons_gui: vec![], active: false}, 0.1, 0.125, Vector2{x: -0.9, y: 0.9});
+        unsafe {
+            CURRENT = ActiveWindow::Game;
+        }
+
         Component {
             components: vec![selected_ui, drag_ui, menu_ui]
         }
     }
 
-    pub fn handle_event(&mut self, event: Event, control: &mut Control, window: &SDL2Facade, camera_frame: Mat4, state: &mut State, game_paused: &mut bool) {
+    pub fn handle_event(&mut self, event: Event, control: &mut Control, window: &SDL2Facade, camera_frame: Mat4, state: &mut State, game_paused: &mut bool, terminate: &mut bool) {
         // handle events for any menu laid on top of game
         for i in 0..self.components.len() {
             let component = &mut self.components[i];
             match component.id {
-                GuiType::Menu { _window_gui: _, _buttons_gui: _, ref mut active} => {
+                GuiType::Menu {ref mut _window_gui, ref mut _buttons_gui, ref mut active} => {
                     match event {
                         Event::MouseButtonUp { timestamp: _, window_id: _, which: _, mouse_btn: _, x, y } => {
-                            let mouse_pos = &mut Vector2 { x: x as f64, y: y as f64 };
-                            translate_mouse_to_camera(mouse_pos, window.window().size());
+                            unsafe {
+                                if CURRENT == ActiveWindow::Game {
+                                    let mouse_pos = &mut Vector2 { x: x as f64, y: y as f64 };
+                                    translate_mouse_to_camera(mouse_pos, window.window().size());
 
-                            let top_left = Vector2 { x : component.top_left.x, y: component.top_left.y};
-                            let bot_right = Vector2 { x : component.bot_right.x, y: component.bot_right.y};
-                            if check_bounding_box(top_left, bot_right, *mouse_pos) {
-                                *active = !*active;
-                                *game_paused = *active;
+                                    let top_left = Vector2 { x : component.top_left.x, y: component.top_left.y};
+                                    let bot_right = Vector2 { x : component.bot_right.x, y: component.bot_right.y};
+                                    if check_bounding_box(top_left, bot_right, *mouse_pos) {
+//                                        *active = !*active;
+                                        *game_paused = *active;
+                                        CURRENT = ActiveWindow::Menu;
+                                    }
+                                }
+                                else if CURRENT == ActiveWindow::Menu {
+                                    let buttons = _buttons_gui.clone();
+                                    let size = buttons.len();
+                                    for j in 0..size{
+                                        let button = buttons[j].clone();
+                                        let mouse_pos = &mut Vector2 { x: x as f64, y: y as f64 };
+                                        translate_mouse_to_camera(mouse_pos, window.window().size());
+
+                                        let top_left = Vector2 { x: button.top_left.x, y: button.top_left.y };
+                                        let bot_right = Vector2 { x: button.bot_right.x, y: button.bot_right.y };
+                                        if check_bounding_box(top_left, bot_right, *mouse_pos) {
+                                            let mut display_text = "".to_string();
+                                            match button.id.clone() {
+                                                GuiType::Button {text} => {
+                                                    display_text = text;
+                                                }
+                                                _ => ()
+                                            }
+                                            if display_text == "Instruction" {
+                                                println!("{:?}", button.id.clone());
+                                                CURRENT = ActiveWindow::Instruction;
+                                                *game_paused = *active;
+                                            } else if display_text == "Exit" {
+                                                println!("{:?}", button.id.clone());
+                                                *terminate = true;
+                                            }
+                                        }
+                                    }
+                                }
                             }
-                        }
+                        },
                         _ => ()
                     }
                 }

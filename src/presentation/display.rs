@@ -375,16 +375,21 @@ pub fn display(
             GuiType::Score => (),
             GuiType::Timer => (),
             GuiType::Window => (),
-            GuiType::Menu{_window_gui, _buttons_gui, active} => {
-                push_gui_vertices(&mut vertex_buffers_gui[SpriteType::Menu], component);
-                if *active {
-                    push_gui_vertices(&mut vertex_buffers_gui[SpriteType::MenuWindow], _window_gui);
-                    for i in 0.._buttons_gui.len() {
-                        let button_dimensions = _buttons_gui[i].get_dimension();
-                        text_buffers.push(_buttons_gui[i].clone());
+            GuiType::Menu{_window_gui, _buttons_gui, ..} => {
+                    push_gui_vertices(&mut vertex_buffers_gui[SpriteType::Menu], component);
+                unsafe {
+                    if CURRENT == ActiveWindow::Menu {
+                        push_gui_vertices(&mut vertex_buffers_gui[SpriteType::MenuWindow], _window_gui);
+                        let size = _buttons_gui.len();
+                        for i in 0..size {
+                            let button_dimensions = _buttons_gui[i].get_dimension();
+                            text_buffers.push(_buttons_gui[i].clone());
 
-                        _menu_buttons.push(button_dimensions);
-                        push_gui_vertices(&mut vertex_buffers_gui[SpriteType::Button], &_buttons_gui[i]);
+                            _menu_buttons.push(button_dimensions);
+                            push_gui_vertices(&mut vertex_buffers_gui[SpriteType::Button], &_buttons_gui[i]);
+                        }
+                    } else if CURRENT == ActiveWindow::Instruction {
+                        push_gui_vertices(&mut vertex_buffers_gui[SpriteType::MenuWindow], _window_gui);
                     }
                 }
             },
@@ -491,29 +496,42 @@ pub fn display(
                 params,
                 &uniforms);
         }  else if _gui_type == SpriteType::MenuWindow {
-//            if current_menu == SpriteType::InstructionMenu {
-            let uniforms = uniform! {
+            unsafe {
+                if CURRENT == ActiveWindow::Menu {
+                    let uniforms = uniform! {
+                        matrix: mat_gui,
+                    };
+                    draw_color_sprites(
+                        frame,
+                        window,
+                        &vertex_buffer,
+                        &programs.gui_program,
+                        params,
+                        &uniforms);
+                } else if CURRENT == ActiveWindow::Instruction {
+                    let uniforms = uniform! {
+                        matrix: mat_gui,
+                    };
+                    draw_color_sprites(
+                        frame,
+                        window,
+                        &vertex_buffer,
+                        &programs.gui_program,
+                        params,
+                        &uniforms);
+                    let uniforms = uniform! {
                     matrix: mat_gui,
-                };
-            draw_color_sprites(
-                frame,
-                window,
-                &vertex_buffer,
-                &programs.gui_program,
-                params,
-                &uniforms);
-
-                let uniforms = uniform! {
-                    matrix: mat_gui,
-                    tex: &textures[SpriteType::InstructionMenu]
-                };
-                draw_color_sprites(
-                    frame,
-                    window,
-                    &vertex_buffer,
-                    &programs.sprite_program,
-                    params,
-                    &uniforms);
+                        tex: &textures[SpriteType::InstructionMenu]
+                    };
+                    draw_color_sprites(
+                        frame,
+                        window,
+                        &vertex_buffer,
+                        &programs.sprite_program,
+                        params,
+                        &uniforms);
+                }
+            }
 //            } else {
 ////            }
         } else if _gui_type == SpriteType::Button {
@@ -532,10 +550,10 @@ pub fn display(
 
 
     // Render Menu Text
-    while text_buffers.len() > 0 {
+    for i in 0..text_buffers.len() {
         let system = glium_text::TextSystem::new(window);
         let mut text_to_display = "".to_string();
-        let button = text_buffers.pop().unwrap();
+        let button = text_buffers[i].clone();
         match button.id.clone() {
             GuiType::Button {text} => {
                 text_to_display = text;

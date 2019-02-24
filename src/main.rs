@@ -22,6 +22,7 @@ use crate::core::scalar:: *;
 use crate::core::vector:: *;
 use crate::presentation::audio::sound_effects:: *;
 use crate::presentation::ui::glium_text;
+use crate::presentation::ui::gui::{CURRENT,ActiveWindow};
 
 pub mod constants;
 pub mod core;
@@ -80,6 +81,7 @@ fn main() {
 
     let mut last_frame = Instant::now();
     let mut game_paused = false;
+    let mut terminate = false;
 
 
     // Handle the sound effects for the game
@@ -93,6 +95,9 @@ fn main() {
 
         // main game loop
         'main_game_loop: loop {
+            if terminate {
+                break 'main_game_loop
+            }
             // Compute delta time
             let duration = last_frame.elapsed();
             let delta_time = duration.as_secs() as Scalar + 1e-9 * duration.subsec_nanos() as Scalar;
@@ -109,12 +114,24 @@ fn main() {
                 match event {
                     // TODO: refactor into control
                     // Exit window if escape key pressed or quit event triggered
-                    Event::Quit { .. } | Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
+                    Event::Quit { .. } => {
                         break 'main_game_loop;
                     }
                     Event::KeyDown { keycode: Some(Keycode::P), .. } => {
                         game_paused = !game_paused;
-                    }
+                    },
+                    Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
+                        unsafe {
+                            if CURRENT == ActiveWindow::Menu {
+                                CURRENT = ActiveWindow::Game;
+                                game_paused = !game_paused;
+                            }
+                            else if CURRENT == ActiveWindow::Instruction {
+                                CURRENT = ActiveWindow::Menu;
+                            }
+                        }
+
+                    },
                     Event::KeyDown { keycode: Some(Keycode::L), .. } => {
                         println!("Debug info:");
                         println!("  DT:               {:?}", delta_time);
@@ -126,7 +143,7 @@ fn main() {
                         camera.set_zoom(y);
                     }
                     _ => {
-                        ui.handle_event(event, &mut control, &window, camera_frame, &mut state, &mut game_paused);
+                        ui.handle_event(event, &mut control, &window, camera_frame, &mut state, &mut game_paused, &mut terminate);
                     }
                 }
             }
