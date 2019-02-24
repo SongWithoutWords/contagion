@@ -107,6 +107,7 @@ fn main() {
             for event in event_pump.poll_iter() {
                 use sdl2::event::Event;
                 match event {
+                    // TODO: refactor into control
                     // Exit window if escape key pressed or quit event triggered
                     Event::Quit { .. } | Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
                         break 'main_game_loop;
@@ -125,7 +126,7 @@ fn main() {
                         camera.set_zoom(y);
                     }
                     _ => {
-                        control.handle_event(event, &window, camera_frame, &mut state);
+                        ui.handle_event(event, &mut control, &window, camera_frame, &mut state);
                     }
                 }
             }

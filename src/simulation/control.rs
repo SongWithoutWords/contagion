@@ -45,6 +45,7 @@ impl Control {
                     if m_pos.x <= x_pos + 0.5 && m_pos.x >= x_pos - 0.5
                         && m_pos.y <= y_pos + 0.5 && m_pos.y >= y_pos - 0.5 {
                         state.selection.insert(i);
+                        break;
                     }
                 }
                 _ => ()
@@ -52,17 +53,37 @@ impl Control {
         }
     }
 
-    pub fn double_click_select(&mut self, state: &mut State, camera_frame: Mat4) {
+    pub fn double_click_select(&mut self, state: &mut State, camera_frame: Mat4, mouse_pos: Vector2, window: &SDL2Facade) {
         state.selection.clear();
+        let m_pos = &mut Vector2{ x : mouse_pos.x, y : mouse_pos.y};
+        translate_mouse_to_camera(m_pos, window.window().size());
+        translate_camera_to_world(m_pos, camera_frame);
+
         for i in 0..state.entities.len() {
             let entity = &mut state.entities[i];
             match entity.behaviour {
                 Behaviour::Cop {..} => {
-                    let entity_pos = &mut Vector2{ x: entity.position.x, y: entity.position.y };
-                    translate_world_to_camera(entity_pos, camera_frame);
-                    if entity_pos.x <= 1.0 && entity_pos.x >= -1.0
-                        && entity_pos.y <= 1.0 && entity_pos.y >= -1.0 {
-                        state.selection.insert(i);
+                    let x_pos: Scalar = entity.position.x;
+                    let y_pos: Scalar = entity.position.y;
+                    if m_pos.x <= x_pos + 0.5 && m_pos.x >= x_pos - 0.5
+                        && m_pos.y <= y_pos + 0.5 && m_pos.y >= y_pos - 0.5 {
+
+                        for j in 0..state.entities.len() {
+                            let entity1 = &mut state.entities[j];
+                            match entity1.behaviour {
+                                Behaviour::Cop {..} => {
+                                    let entity_pos = &mut Vector2{ x: entity1.position.x, y: entity1.position.y };
+                                    translate_world_to_camera(entity_pos, camera_frame);
+                                    if entity_pos.x <= 1.0 && entity_pos.x >= -1.0
+                                        && entity_pos.y <= 1.0 && entity_pos.y >= -1.0 {
+                                        state.selection.insert(j);
+                                    }
+                                }
+                                _ => ()
+                            }
+                        }
+
+                        break;
                     }
                 }
                 _ => ()
@@ -173,7 +194,7 @@ impl Control {
                             let delta_millisecond = 300;
                             let duration = current_time.duration_since(self.last_click_time);
                             if duration.as_secs() == 0 && duration.subsec_millis() < delta_millisecond {
-                                self.double_click_select(state, camera_frame);
+                                self.double_click_select(state, camera_frame, mouse_pos, &window);
                             } else {
                                 self.click_select(state, &window, camera_frame, mouse_pos);
                             }

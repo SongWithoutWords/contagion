@@ -324,16 +324,16 @@ pub fn display(
             GuiType::Score => (),
             GuiType::Timer => (),
             GuiType::Window => (),
-            GuiType::Menu{_window_gui, _buttons_gui} => {
+            GuiType::Menu{_window_gui, _buttons_gui, active} => {
                 push_gui_vertices(&mut vertex_buffers_gui[SpriteType::Menu], component);
-                // TODO: if menu icon is clicked (uncomment to see menu)
-//                push_gui_vertices(&mut vertex_buffers_gui[SpriteType::MenuWindow], _window_gui);
-//                for i in 0.._buttons_gui.len() {
-//                    let button_dimensions = _buttons_gui[i].get_dimension();
-//                    _menu_buttons.push(button_dimensions);
-//                    push_gui_vertices(&mut vertex_buffers_gui[SpriteType::Button], &_buttons_gui[i]);
-//                }
-
+                if *active {
+                    push_gui_vertices(&mut vertex_buffers_gui[SpriteType::MenuWindow], _window_gui);
+                    for i in 0.._buttons_gui.len() {
+                        let button_dimensions = _buttons_gui[i].get_dimension();
+                        _menu_buttons.push(button_dimensions);
+                        push_gui_vertices(&mut vertex_buffers_gui[SpriteType::Button], &_buttons_gui[i]);
+                    }
+                }
             },
             GuiType::Button => (),
         };

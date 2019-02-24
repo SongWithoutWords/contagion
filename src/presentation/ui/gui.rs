@@ -1,4 +1,11 @@
 use crate::core::vector::*;
+use crate::simulation::state::State;
+use crate::core::matrix::Mat4;
+use crate::simulation::control::*;
+use crate::core::geo::intersect::rectangle_point::*;
+
+use glium_sdl2::SDL2Facade;
+use sdl2::event::Event;
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum GuiType {
@@ -10,12 +17,13 @@ pub enum GuiType {
     Menu {
         _window_gui: Box<Gui>,
         _buttons_gui: Vec<Box<Gui>>,
+        active: bool
     },
-    Button,
+    Button
 }
 
 pub struct Component {
-    pub components: Vec<Gui>,
+    pub components: Vec<Gui>
 }
 
 impl Component {
@@ -24,11 +32,58 @@ impl Component {
         let drag_ui = Gui::new(GuiType::SelectionDrag, 0.0, 0.0, Vector2{x: 0.0, y: 0.0});
         let box_ui = Gui::new(GuiType::Window, 1.8, 1.8, Vector2{x: 0.0, y: 0.0});
         let button1 = Gui::new(GuiType::Button, 0.2, 0.05, Vector2{x: 0.0, y: 0.0});
-        let menu_ui = Gui::new(GuiType::Menu{ _window_gui: Box::new(box_ui), _buttons_gui: vec![Box::new(button1)]}, 0.1, 0.125, Vector2{x: -0.9, y: 0.9});
+        let menu_ui = Gui::new(GuiType::Menu{ _window_gui: Box::new(box_ui), _buttons_gui: vec![Box::new(button1)], active: false}, 0.1, 0.125, Vector2{x: -0.9, y: 0.9});
 
         Component {
-            components: vec![selected_ui, drag_ui, menu_ui],
+            components: vec![selected_ui, drag_ui, menu_ui]
         }
+    }
+
+    pub fn handle_event(&mut self, event: Event, control: &mut Control, window: &SDL2Facade, camera_frame: Mat4, state: &mut State) {
+        // handle events for any menu laid on top of game
+        for i in 0..self.components.len() {
+            let component = &mut self.components[i];
+            match component.id {
+                GuiType::Menu { _window_gui: _, _buttons_gui: _, ref mut active} => {
+                    match event {
+                        Event::MouseButtonUp { timestamp: _, window_id: _, which: _, mouse_btn: _, x, y } => {
+                            let mouse_pos = &mut Vector2 { x: x as f64, y: y as f64 };
+                            translate_mouse_to_camera(mouse_pos, window.window().size());
+
+                            let top_left = Vector2 { x : component.top_left.x, y: component.top_left.y};
+                            let bot_right = Vector2 { x : component.bot_right.x, y: component.bot_right.y};
+                            if check_bounding_box(top_left, bot_right, *mouse_pos) {
+                                *active = !*active;
+                            }
+                        }
+                        _ => ()
+                    }
+                }
+                _ => ()
+            }
+        }
+
+        // if there are no active menu, handle events for control
+        if !check_active_menu(&mut self.components) {
+            control.handle_event(event, window, camera_frame, state);
+            return;
+        }
+
+        // TODO: handle events for any active menu
+//        match event {
+//            Event::MouseButtonDown { timestamp: _, window_id: _, which: _, mouse_btn: _, x, y } => {}
+//            Event::MouseMotion {
+//                timestamp: _,
+//                window_id: _,
+//                which: _,
+//                mousestate: _,
+//                x,
+//                y,
+//                xrel: _,
+//                yrel: _, } => {}
+//            Event::MouseButtonUp { timestamp: _, window_id: _, which: _, mouse_btn, x, y } => {}
+//            _ => ()
+//        }
     }
 }
 
@@ -80,6 +135,17 @@ impl Gui {
         self.bot_left = bl;
         self.bot_right = br;
     }
-
 //
+}
+
+fn check_active_menu(components: &mut Vec<Gui>) -> bool {
+    for i in 0..components.len() {
+        match components[i].id {
+            GuiType::Menu { _window_gui: _, _buttons_gui: _, ref mut active} => {
+                if *active { return true; }
+            }
+            _ => ()
+        }
+    }
+    return false;
 }
