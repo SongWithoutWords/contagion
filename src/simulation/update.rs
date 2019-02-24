@@ -64,8 +64,8 @@ pub fn update(args: &UpdateArgs, state: &mut State) -> Vec<SoundEffect> {
         // Collisions with buildings
         for j in 0..state.buildings.len() {
             // Check if position is inside the building
-            let start = Vector2 { x: -100000.0, y: p1.y };
-            let end = Vector2 { x: p1.x, y: p1.y };
+            let start = Vector2 { x: p1.x, y: p1.y };
+            let end   = Vector2 { x: p1.x, y: MAX };
             let mut overlap = state.buildings[j].num_intersects(start, end) % 2 == 1;
             let inside = overlap;
 
