@@ -126,7 +126,7 @@ fn main() {
                         camera.set_zoom(y);
                     }
                     _ => {
-                        ui.handle_event(event, &mut control, &window, camera_frame, &mut state);
+                        ui.handle_event(event, &mut control, &window, camera_frame, &mut state, &mut game_paused);
                     }
                 }
             }

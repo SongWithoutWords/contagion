@@ -42,7 +42,7 @@ impl Component {
         }
     }
 
-    pub fn handle_event(&mut self, event: Event, control: &mut Control, window: &SDL2Facade, camera_frame: Mat4, state: &mut State) {
+    pub fn handle_event(&mut self, event: Event, control: &mut Control, window: &SDL2Facade, camera_frame: Mat4, state: &mut State, game_paused: &mut bool) {
         // handle events for any menu laid on top of game
         for i in 0..self.components.len() {
             let component = &mut self.components[i];
@@ -57,6 +57,7 @@ impl Component {
                             let bot_right = Vector2 { x : component.bot_right.x, y: component.bot_right.y};
                             if check_bounding_box(top_left, bot_right, *mouse_pos) {
                                 *active = !*active;
+                                *game_paused = *active;
                             }
                         }
                         _ => ()
