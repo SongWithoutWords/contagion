@@ -19,10 +19,11 @@ use crate::presentation::ui::gui::Component;
 pub enum SpriteType {
     SelectionHighlight,
     Dead,
+    BulletCasing,
     Civilian,
     Zombie,
     Cop,
-    FlyingBullet,
+    BulletInAir,
     Menu,
     MenuWindow,
     Button,
@@ -37,9 +38,9 @@ pub fn load_textures(window: &glium_sdl2::SDL2Facade) -> Textures {
         SpriteType::Zombie             => load_texture(&window, "assets/images/old/zombie.png"),
         SpriteType::Civilian           => load_texture(&window, "assets/images/old/citizen.png"),
         SpriteType::Dead               => load_texture(&window, "assets/images/old/dead_zombie.png"),
+        SpriteType::BulletCasing       => load_texture(&window, "assets/images/other/bullet_casing_straight.png"),
         SpriteType::SelectionHighlight => load_texture(&window, "assets/images/other/selection_highlight.png"),
-        // SpriteType::FlyingBullet       => load_texture(&window, "assets/images/other/flying_bullet.png"),
-        SpriteType::FlyingBullet       => load_texture(&window, "assets/images/other/flying_bullet_long.png"),
+        SpriteType::BulletInAir        => load_texture(&window, "assets/images/other/flying_bullet_long.png"),
         SpriteType::Menu               => load_texture(&window, "assets/images/ui/menu_icon.png"),
         SpriteType::MenuWindow         => load_texture(&window, "assets/images/ui/menu_icon.png"),
         SpriteType::Button             => load_texture(&window, "assets/images/other/selection_highlight.png"),
@@ -98,8 +99,7 @@ fn push_sprite_vertices(buffer: &mut Vec<Vertex>, sprite: &Sprite) {
 
     let position = sprite.position;
     let up = sprite.radius * sprite.facing;
-    let right = vector2(up.y, -up.x);
-
+    let right = up.right(); //vector2(up.y, -up.x);
 
     let top_left  = position - right + up;
     let top_right = position + right + up;
@@ -278,12 +278,16 @@ pub fn display(
 
     // Compute the vertices in world coordinates of all projectiles
     for p in &state.projectiles {
+        let sprite_type = match p.kind {
+            ProjectileKind::Bullet => SpriteType::BulletInAir,
+            ProjectileKind::Casing => SpriteType::BulletCasing,
+        };
         let sprite = Sprite {
             position: p.position,
             facing: p.velocity.normalize(),
             radius: BULLET_RADIUS,
         };
-        push_sprite_vertices(&mut vertex_buffers[SpriteType::FlyingBullet], &sprite);
+        push_sprite_vertices(&mut vertex_buffers[sprite_type], &sprite);
     }
 
     // Compute the vertices in world coordinates of all entities

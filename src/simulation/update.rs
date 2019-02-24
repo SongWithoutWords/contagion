@@ -60,19 +60,28 @@ pub fn update(args: &UpdateArgs, state: &mut State) {
     for e in &mut state.entities {
         let displacement = args.dt * e.velocity;
         e.position += displacement;
-        e.velocity -= 0.5 * displacement;
+        e.velocity -= ENTITY_DRAG * displacement;
     }
 
-    // Remove motionless projectiles
+    // Remove motionless bullets
     state.projectiles.retain(
-        |p| p.velocity.length_squared() > MIN_PROJECTILE_SPEED
+        |p| p.kind != ProjectileKind::Bullet ||
+            p.velocity.length_squared() > BULLET_SPEED_MIN
     );
 
-    // Simulate projectiles
-    for projectile in &mut state.projectiles {
-        let displacement = args.dt * projectile.velocity;
+    // Update projectiles
+    for p in &mut state.projectiles {
 
-        let segment = Segment2 { p1: projectile.position, p2: projectile.position + displacement };
+        let displacement = args.dt * p.velocity;
+        p.velocity -= PROJECTILE_DRAG * displacement;
+
+        let segment = Segment2 { p1: p.position, p2: p.position + displacement };
+
+        p.position = segment.p2;
+
+        if p.kind != ProjectileKind::Bullet {
+            continue;
+        }
 
         let mut first_intersect_time_and_index = None;
         for i in 0..state.entities.len() {
@@ -102,12 +111,10 @@ pub fn update(args: &UpdateArgs, state: &mut State) {
             None => (),
             Some((_, i)) => {
                 state.entities[i].behaviour = Behaviour::Dead;
-                projectile.velocity = Vector2::zero();
+                p.velocity = Vector2::zero();
                 play_zombie_dead();
             }
         }
-
-        projectile.position = segment.p2;
     }
 }
 
@@ -177,12 +184,24 @@ fn update_cop(
                         // Finished aiming, take the shot
                         let delta_normal = delta.rotate_by(angular_deviation);
 
+                        // Spawn outside of the entity - don't want to shoot the entity itself
+                        let spawn_pos = entities[index].position +
+                            BULLET_SPAWN_DISTANCE_MULTIPLIER * ENTITY_RADIUS * delta_normal;
+
                         // Fire at the taget
                         sim_state.projectiles.push(
                             Projectile {
-                                // Spawn outside of the entity - don't want to shoot the entity itself
-                                position: entities[index].position + 1.125 * ENTITY_RADIUS * delta_normal,
+                                position: spawn_pos,
                                 velocity: BULLET_SPEED * delta_normal,
+                                kind: ProjectileKind::Bullet
+                            });
+
+                        sim_state.projectiles.push(
+                            Projectile {
+                                position: spawn_pos,
+                                // Casing ejects from the right of the weapon
+                                velocity: CASING_SPEED * delta_normal.right(),
+                                kind: ProjectileKind::Casing
                             });
 
                         play_shotgun();
