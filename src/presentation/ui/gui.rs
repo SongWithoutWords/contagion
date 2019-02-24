@@ -33,8 +33,8 @@ impl Component {
         let selected_ui = Gui::new(GuiType::Selected, 0.1, 0.1, Vector2{x: -0.9, y: -0.9});
         let drag_ui = Gui::new(GuiType::SelectionDrag, 0.0, 0.0, Vector2{x: 0.0, y: 0.0});
         let box_ui = Gui::new(GuiType::Window, 1.8, 1.8, Vector2{x: 0.0, y: 0.0});
-        let button1 = Gui::new(GuiType::Button{text: "Instruction".to_string()}, 0.2, 0.05, Vector2{x: 0.0, y: 0.1});
-        let button2 = Gui::new(GuiType::Button{text: "Exit".to_string()}, 0.2, 0.05, Vector2{x: 0.0, y: -0.1});
+        let button1 = Gui::new(GuiType::Button{text: "Exit".to_string()}, 0.2, 0.05, Vector2{x: 0.0, y: 0.1});
+        let button2 = Gui::new(GuiType::Button{text: "Instruction".to_string()}, 0.2, 0.05, Vector2{x: 0.0, y: -0.1});
         let menu_ui = Gui::new(GuiType::Menu{ _window_gui: Box::new(box_ui), _buttons_gui: vec![Box::new(button1), Box::new(button2)], active: false}, 0.1, 0.125, Vector2{x: -0.9, y: 0.9});
 
         Component {

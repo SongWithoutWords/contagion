@@ -3,6 +3,7 @@ use crate::core::vector::*;
 use crate::core::scalar::Scalar;
 use crate::core::matrix::*;
 use crate::core::geo::intersect::rectangle_point::*;
+use crate::presentation::display::*;
 
 use glium_sdl2::SDL2Facade;
 use sdl2::event::Event;
@@ -21,6 +22,7 @@ pub struct Control {
 
 impl Control {
     pub fn new() -> Control {
+
         Control {
             mouse_drag: false,
             drag_start_mouse_coord: Vector2::zero(),
