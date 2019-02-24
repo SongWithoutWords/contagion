@@ -27,6 +27,7 @@ pub enum SpriteType {
     Menu,
     MenuWindow,
     Button,
+    InstructionMenu,
 }
 
 pub type Textures = EnumMap<SpriteType, Texture2d>;
@@ -54,6 +55,8 @@ pub fn load_textures(window: &glium_sdl2::SDL2Facade) -> Textures {
             => load_texture(&window, "assets/images/ui/menu_icon.png"),
         SpriteType::Button
             => load_texture(&window, "assets/images/other/selection_highlight.png"),
+        SpriteType::InstructionMenu
+            => load_texture(&window, "assets/images/ui/instruction_menu_transparent.png")
     }
 }
 
@@ -285,6 +288,7 @@ pub fn display(
     let mut _dead_count = 0;
     let mut _magazine_count = vec!();
     let mut _menu_buttons: Vec<(Vector2, Vector2, Vector2, Vector2)> = vec![];
+    let current_menu: SpriteType = SpriteType::MenuWindow;
 
 
     // Compute the vertices in world coordinates of all projectiles
@@ -487,16 +491,30 @@ pub fn display(
                 params,
                 &uniforms);
         }  else if _gui_type == SpriteType::MenuWindow {
-            let uniforms = uniform! {
+            if current_menu == SpriteType::InstructionMenu {
+                let uniforms = uniform! {
+                    matrix: mat_gui,
+                    tex: &textures[SpriteType::InstructionMenu]
+                };
+                draw_color_sprites(
+                    frame,
+                    window,
+                    &vertex_buffer,
+                    &programs.sprite_program,
+                    params,
+                    &uniforms);
+            } else {
+                let uniforms = uniform! {
                     matrix: mat_gui,
                 };
-            draw_color_sprites(
-                frame,
-                window,
-                &vertex_buffer,
-                &programs.gui_program,
-                params,
-                &uniforms);
+                draw_color_sprites(
+                    frame,
+                    window,
+                    &vertex_buffer,
+                    &programs.gui_program,
+                    params,
+                    &uniforms);
+            }
         } else if _gui_type == SpriteType::Button {
             let uniforms = uniform! {
                     matrix: mat_gui,
