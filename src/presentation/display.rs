@@ -288,7 +288,7 @@ pub fn display(
     let mut _dead_count = 0;
     let mut _magazine_count = vec!();
     let mut _menu_buttons: Vec<(Vector2, Vector2, Vector2, Vector2)> = vec![];
-    let current_menu: SpriteType = SpriteType::MenuWindow;
+    let _current_menu: SpriteType = SpriteType::MenuWindow;
 
 
     // Compute the vertices in world coordinates of all projectiles
@@ -491,7 +491,18 @@ pub fn display(
                 params,
                 &uniforms);
         }  else if _gui_type == SpriteType::MenuWindow {
-            if current_menu == SpriteType::InstructionMenu {
+//            if current_menu == SpriteType::InstructionMenu {
+            let uniforms = uniform! {
+                    matrix: mat_gui,
+                };
+            draw_color_sprites(
+                frame,
+                window,
+                &vertex_buffer,
+                &programs.gui_program,
+                params,
+                &uniforms);
+
                 let uniforms = uniform! {
                     matrix: mat_gui,
                     tex: &textures[SpriteType::InstructionMenu]
@@ -503,18 +514,8 @@ pub fn display(
                     &programs.sprite_program,
                     params,
                     &uniforms);
-            } else {
-                let uniforms = uniform! {
-                    matrix: mat_gui,
-                };
-                draw_color_sprites(
-                    frame,
-                    window,
-                    &vertex_buffer,
-                    &programs.gui_program,
-                    params,
-                    &uniforms);
-            }
+//            } else {
+////            }
         } else if _gui_type == SpriteType::Button {
             let uniforms = uniform! {
                     matrix: mat_gui,
