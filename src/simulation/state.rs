@@ -76,7 +76,8 @@ pub enum CopState {
     Idle
 }
 
-pub const BULLET_SPEED: f64 = 50.0;
+pub const BULLET_RADIUS: f64 = 0.12;
+pub const BULLET_SPEED: f64 = 40.0;
 pub const MIN_PROJECTILE_SPEED: f64 = 0.1;
 
 pub struct Projectile {

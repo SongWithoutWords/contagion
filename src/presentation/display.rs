@@ -1,3 +1,4 @@
+use crate::core::scalar::*;
 use crate::core::vector::*;
 use crate::core::matrix::*;
 use crate::core::geo::polygon::*;
@@ -21,6 +22,7 @@ pub enum SpriteType {
     Civilian,
     Zombie,
     Cop,
+    FlyingBullet,
     Menu,
     MenuWindow,
     Button,
@@ -36,6 +38,8 @@ pub fn load_textures(window: &glium_sdl2::SDL2Facade) -> Textures {
         SpriteType::Civilian           => load_texture(&window, "assets/images/old/citizen.png"),
         SpriteType::Dead               => load_texture(&window, "assets/images/old/dead_zombie.png"),
         SpriteType::SelectionHighlight => load_texture(&window, "assets/images/other/selection_highlight.png"),
+        // SpriteType::FlyingBullet       => load_texture(&window, "assets/images/other/flying_bullet.png"),
+        SpriteType::FlyingBullet       => load_texture(&window, "assets/images/other/flying_bullet_long.png"),
         SpriteType::Menu               => load_texture(&window, "assets/images/ui/menu_icon.png"),
         SpriteType::MenuWindow         => load_texture(&window, "assets/images/ui/menu_icon.png"),
         SpriteType::Button             => load_texture(&window, "assets/images/other/selection_highlight.png"),
@@ -84,17 +88,23 @@ struct ColorVertex {
 }
 implement_vertex!(ColorVertex, position, tex_coords, color);
 
-fn push_sprite_vertices(buffer: &mut Vec<Vertex>, entity: &Entity) {
+struct Sprite {
+    position: Vector2,
+    facing: Vector2,
+    radius: Scalar,
+}
 
-    let position = entity.position;
-    let up = entity.get_facing_normal();
+fn push_sprite_vertices(buffer: &mut Vec<Vertex>, sprite: &Sprite) {
+
+    let position = sprite.position;
+    let up = sprite.radius * sprite.facing;
     let right = vector2(up.y, -up.x);
 
 
-    let top_left  = position - 0.5 * right + 0.5 * up;
-    let top_right = position + 0.5 * right + 0.5 * up;
-    let bot_left  = position - 0.5 * right - 0.5 * up;
-    let bot_right = position + 0.5 * right - 0.5 * up;
+    let top_left  = position - right + up;
+    let top_right = position + right + up;
+    let bot_left  = position - right - up;
+    let bot_right = position + right - up;
 
     // 0      1
     // +------+
@@ -266,6 +276,16 @@ pub fn display(
     let mut _magazine_count = vec!();
     let mut _menu_buttons: Vec<(Vector2, Vector2, Vector2, Vector2)> = vec![];
 
+    // Compute the vertices in world coordinates of all projectiles
+    for p in &state.projectiles {
+        let sprite = Sprite {
+            position: p.position,
+            facing: p.velocity.normalize(),
+            radius: BULLET_RADIUS,
+        };
+        push_sprite_vertices(&mut vertex_buffers[SpriteType::FlyingBullet], &sprite);
+    }
+
     // Compute the vertices in world coordinates of all entities
     for entity in &state.entities {
         let sprite_type = match entity.behaviour {
@@ -274,7 +294,12 @@ pub fn display(
             Behaviour::Human => {human_count+=1; SpriteType::Civilian},
             Behaviour::Zombie => {zombie_count+=1; SpriteType::Zombie},
         };
-        push_sprite_vertices(&mut vertex_buffers[sprite_type], entity);
+        let sprite = Sprite {
+            position: entity.position,
+            facing: entity.get_facing_normal(),
+            radius: 0.5,
+        };
+        push_sprite_vertices(&mut vertex_buffers[sprite_type], &sprite);
     }
 
     // Compute vertices for selection highlights
@@ -285,7 +310,14 @@ pub fn display(
                 Behaviour::Cop { rounds_in_magazine, .. } => { _magazine_count.push(rounds_in_magazine) },
                 _ => ()
             };
-            push_sprite_vertices(&mut vertex_buffers[SpriteType::SelectionHighlight], &state.entities[*i]);
+            let entity = &state.entities[*i];
+            let sprite = Sprite {
+                position: entity.position,
+                facing: entity.get_facing_normal(),
+                radius: 0.5,
+            };
+            push_sprite_vertices(&mut vertex_buffers[SpriteType::SelectionHighlight], &sprite);
+
             // add more selection GUI to right
             selection_count += 1;
         }
