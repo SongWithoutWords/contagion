@@ -70,8 +70,8 @@ impl Component {
                                     let top_left = Vector2 { x : component.top_left.x, y: component.top_left.y};
                                     let bot_right = Vector2 { x : component.bot_right.x, y: component.bot_right.y};
                                     if check_bounding_box(top_left, bot_right, *mouse_pos) {
-//                                        *active = !*active;
-                                        *game_paused = *active;
+                                        *active = !*active;
+                                        *game_paused = true;
                                         CURRENT = ActiveWindow::Menu;
                                     }
                                 }
@@ -96,7 +96,7 @@ impl Component {
                                             if display_text == "Instruction" {
                                                 println!("{:?}", button.id.clone());
                                                 CURRENT = ActiveWindow::Instruction;
-                                                *game_paused = *active;
+                                                *game_paused = true;
                                             } else if display_text == "Exit" {
                                                 println!("{:?}", button.id.clone());
                                                 *terminate = true;
