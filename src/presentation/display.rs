@@ -34,16 +34,26 @@ pub type Textures = EnumMap<SpriteType, Texture2d>;
 pub fn load_textures(window: &glium_sdl2::SDL2Facade) -> Textures {
     use crate::presentation::graphics::renderer::load_texture;
     enum_map! {
-        SpriteType::Cop                => load_texture(&window, "assets/images/old/police.png"),
-        SpriteType::Zombie             => load_texture(&window, "assets/images/old/zombie.png"),
-        SpriteType::Civilian           => load_texture(&window, "assets/images/old/citizen.png"),
-        SpriteType::Dead               => load_texture(&window, "assets/images/old/dead_zombie.png"),
-        SpriteType::BulletCasing       => load_texture(&window, "assets/images/other/bullet_casing_straight.png"),
-        SpriteType::SelectionHighlight => load_texture(&window, "assets/images/other/selection_highlight.png"),
-        SpriteType::BulletInAir        => load_texture(&window, "assets/images/other/flying_bullet_long.png"),
-        SpriteType::Menu               => load_texture(&window, "assets/images/ui/menu_icon.png"),
-        SpriteType::MenuWindow         => load_texture(&window, "assets/images/ui/menu_icon.png"),
-        SpriteType::Button             => load_texture(&window, "assets/images/other/selection_highlight.png"),
+        SpriteType::SelectionHighlight
+            => load_texture(&window, "assets/images/other/selection_highlight.png"),
+        SpriteType::Dead
+            => load_texture(&window, "assets/images/old/dead_zombie.png"),
+        SpriteType::BulletCasing
+            => load_texture(&window, "assets/images/other/bullet_casing_straight.png"),
+        SpriteType::Civilian
+            => load_texture(&window, "assets/images/old/citizen.png"),
+        SpriteType::Zombie
+            => load_texture(&window, "assets/images/old/zombie.png"),
+        SpriteType::Cop
+            => load_texture(&window, "assets/images/old/police.png"),
+        SpriteType::BulletInAir
+            => load_texture(&window, "assets/images/other/flying_bullet_long.png"),
+        SpriteType::Menu
+            => load_texture(&window, "assets/images/ui/menu_icon.png"),
+        SpriteType::MenuWindow
+            => load_texture(&window, "assets/images/ui/menu_icon.png"),
+        SpriteType::Button
+            => load_texture(&window, "assets/images/other/selection_highlight.png"),
     }
 }
 
