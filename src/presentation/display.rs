@@ -10,6 +10,7 @@ use glium::texture::texture2d::Texture2d;
 use enum_map::EnumMap;
 use crate::presentation::ui::gui::*;
 use crate::presentation::ui::gui::GuiType;
+use crate::presentation::ui::gui::ActiveMenu;
 use crate::presentation::ui::glium_text;
 use crate::presentation::ui::glium_text::FontTexture;
 use crate::presentation::ui::gui::Component;
@@ -377,15 +378,33 @@ pub fn display(
             GuiType::Window => (),
             GuiType::Menu{_window_gui, _buttons_gui, active} => {
                 push_gui_vertices(&mut vertex_buffers_gui[SpriteType::Menu], component);
-                if *active {
-                    push_gui_vertices(&mut vertex_buffers_gui[SpriteType::MenuWindow], _window_gui);
-                    for i in 0.._buttons_gui.len() {
-                        let button_dimensions = _buttons_gui[i].get_dimension();
-                        text_buffers.push(_buttons_gui[i].clone());
+                match active {
+                    Some(menu_type) => {
+                        match menu_type {
+                            ActiveMenu::GeneralMenu => {
+                                push_gui_vertices(&mut vertex_buffers_gui[SpriteType::MenuWindow], _window_gui);
+                                for i in 0.._buttons_gui.len() {
+                                    let button_dimensions = _buttons_gui[i].get_dimension();
+                                    text_buffers.push(_buttons_gui[i].clone());
 
-                        _menu_buttons.push(button_dimensions);
-                        push_gui_vertices(&mut vertex_buffers_gui[SpriteType::Button], &_buttons_gui[i]);
+                                    _menu_buttons.push(button_dimensions);
+                                    push_gui_vertices(&mut vertex_buffers_gui[SpriteType::Button], &_buttons_gui[i]);
+                                }
+                            }
+                            ActiveMenu::InstructionMenu => {
+                                push_gui_vertices(&mut vertex_buffers_gui[SpriteType::InstructionMenu], _window_gui);
+                                for i in 0.._buttons_gui.len() {
+                                    let button_dimensions = _buttons_gui[i].get_dimension();
+                                    text_buffers.push(_buttons_gui[i].clone());
+
+                                    _menu_buttons.push(button_dimensions);
+                                    push_gui_vertices(&mut vertex_buffers_gui[SpriteType::Button], &_buttons_gui[i]);
+                                }
+                            }
+                            _ => ()
+                        }
                     }
+                    _ => ()
                 }
             },
             _ => (),
@@ -515,6 +534,18 @@ pub fn display(
                     params,
                     &uniforms);
             }
+        } else if _gui_type == SpriteType::InstructionMenu {
+            let uniforms = uniform! {
+                    matrix: mat_gui,
+                    tex: &textures[SpriteType::InstructionMenu]
+                };
+            draw_color_sprites(
+                frame,
+                window,
+                &vertex_buffer,
+                &programs.sprite_program,
+                params,
+                &uniforms);
         } else if _gui_type == SpriteType::Button {
             let uniforms = uniform! {
                     matrix: mat_gui,

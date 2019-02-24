@@ -16,12 +16,49 @@ pub enum GuiType {
     Window,
     Menu {
         _window_gui: Box<Gui>,
-        _buttons_gui: Vec<Box<Gui>>,
-        active: bool
+        active: bool,
+        active_menu: ActiveMenu
     },
-    Button {
-        text: String
+    Button(Button)
+}
+
+type Callback = fn();
+
+struct Button {
+    text: String,
+    on_click: Callback,
+}
+
+impl Button {
+    pub fn new(text: String, on_click: Callback) -> Button {
+        Button {
+            text,
+            on_click
+        }
     }
+    fn set_callback(&mut self, c: Callback) {
+        self.on_click = c;
+    }
+    fn process_events(&self) {
+        (self.on_click)();
+    }
+}
+
+fn instruction_on_click() {
+    println!("instruction ");
+}
+
+fn exit_on_click() {
+    println!("exit ");
+}
+
+#[derive(Clone, PartialEq, Debug)]
+pub enum ActiveMenu {
+    GeneralMenu {
+        instruction_button: Gui,
+        exit_button: Gui,
+    },
+    InstructionMenu
 }
 
 pub struct Component {
@@ -33,9 +70,14 @@ impl Component {
         let selected_ui = Gui::new(GuiType::Selected, 0.1, 0.1, Vector2{x: -0.9, y: -0.9});
         let drag_ui = Gui::new(GuiType::SelectionDrag, 0.0, 0.0, Vector2{x: 0.0, y: 0.0});
         let box_ui = Gui::new(GuiType::Window, 1.8, 1.8, Vector2{x: 0.0, y: 0.0});
-        let button1 = Gui::new(GuiType::Button{text: "Instruction".to_string()}, 0.2, 0.05, Vector2{x: 0.0, y: 0.1});
-        let button2 = Gui::new(GuiType::Button{text: "Exit".to_string()}, 0.2, 0.05, Vector2{x: 0.0, y: -0.1});
-        let menu_ui = Gui::new(GuiType::Menu{ _window_gui: Box::new(box_ui), _buttons_gui: vec![Box::new(button1), Box::new(button2)], active: false}, 0.1, 0.125, Vector2{x: -0.9, y: 0.9});
+
+        let b1 = GuiType::Button::new("Instructions".to_string(), instruciton_on_click);
+        let b2 = GuiType::Button::new("Exit".to_string(), exit_on_click);
+        let inst_but = Gui::new(b1, 0.2, 0.05, Vector2{x: 0.0, y: 0.1});
+        let exit_but = Gui::new(b2, 0.2, 0.05, Vector2{x: 0.0, y: -0.1});
+
+        let menu = GuiType::Menu{ _window_gui: Box::new(box_ui), active: false, active_menu: ActiveMenu::GeneralMenu{instruction_button: inst_but, exit_button: exit_but} };
+        let menu_ui = Gui::new(GuiType::Menu{ _window_gui: Box::new(box_ui), active: false, active_menu: ActiveMenu}, 0.1, 0.125, Vector2{x: -0.9, y: 0.9});
 
         Component {
             components: vec![selected_ui, drag_ui, menu_ui]
@@ -43,11 +85,11 @@ impl Component {
     }
 
     pub fn handle_event(&mut self, event: Event, control: &mut Control, window: &SDL2Facade, camera_frame: Mat4, state: &mut State) {
-        // handle events for any menu laid on top of game
+        // handle events for hamburger menu icon
         for i in 0..self.components.len() {
             let component = &mut self.components[i];
             match component.id {
-                GuiType::Menu { _window_gui: _, _buttons_gui: _, ref mut active} => {
+                GuiType::Menu { _window_gui: _, active: ref mut active, active_menu: _} => {
                     match event {
                         Event::MouseButtonUp { timestamp: _, window_id: _, which: _, mouse_btn: _, x, y } => {
                             let mouse_pos = &mut Vector2 { x: x as f64, y: y as f64 };
@@ -72,21 +114,48 @@ impl Component {
             return;
         }
 
-        // TODO: handle events for any active menu
-//        match event {
-//            Event::MouseButtonDown { timestamp: _, window_id: _, which: _, mouse_btn: _, x, y } => {}
-//            Event::MouseMotion {
-//                timestamp: _,
-//                window_id: _,
-//                which: _,
-//                mousestate: _,
-//                x,
-//                y,
-//                xrel: _,
-//                yrel: _, } => {}
-//            Event::MouseButtonUp { timestamp: _, window_id: _, which: _, mouse_btn, x, y } => {}
-//            _ => ()
-//        }
+        for i in 0..self.components.len() {
+            let component = &mut self.components[i];
+            match component.id {
+                GuiType::Menu { _window_gui: ref mut w_gui, active: _, ref mut active_menu} => {
+                    match active_menu {
+                        ActiveMenu::GeneralMenu { ins_but, exit_but } => {
+                            match event {
+                                Event::MouseButtonUp { timestamp: _, window_id: _, which: _, mouse_btn, x, y } => {
+                                    let mouse_pos = &mut Vector2 { x: x as f64, y: y as f64 };
+                                    translate_mouse_to_camera(mouse_pos, window.window().size());
+
+                                    let top_left = Vector2 { x : ins_but.top_left.x, y: ins_but.top_left.y};
+                                    let bot_right = Vector2 { x : ins_but.bot_right.x, y: ins_but.bot_right.y};
+                                    if check_bounding_box(top_left, bot_right, *mouse_pos) {
+                                        match ins_but.id {
+                                            GuiType::Button { text: _, on_click} => {
+                                                on_click();
+                                            }
+                                            _ => ()
+                                        }
+                                    }
+
+                                    let top_left = Vector2 { x : exit_but.top_left.x, y: exit_but.top_left.y};
+                                    let bot_right = Vector2 { x : exit_but.bot_right.x, y: exit_but.bot_right.y};
+                                    if check_bounding_box(top_left, bot_right, *mouse_pos) {
+                                        match ins_but.id {
+                                            GuiType::Button { text: _, on_click} => {
+                                                on_click();
+                                            }
+                                            _ => ()
+                                        }
+                                    }
+                                }
+                                _ => ()
+                            }
+                        }
+                        _ => ()
+                    }
+                }
+                _ => ()
+            }
+        }
     }
 }
 
@@ -144,7 +213,7 @@ impl Gui {
 fn check_active_menu(components: &mut Vec<Gui>) -> bool {
     for i in 0..components.len() {
         match components[i].id {
-            GuiType::Menu { _window_gui: _, _buttons_gui: _, ref mut active} => {
+            GuiType::Menu { _window_gui: _, ref mut active, active_menu: _} => {
                 if *active { return true; }
             }
             _ => ()
