@@ -99,11 +99,11 @@ impl Polygon {
 
                         // Make sure the intersection is on both the side and the line
                         if intersect_x >= start.x.min(end.x) && intersect_x <= start.x.max(end.x) &&
-                            intersect_y >= start.y.min(end.y) && intersect_y <= start.y.min(end.y) &&
+                            intersect_y >= start.y.min(end.y) && intersect_y <= start.y.max(end.y) &&
                             p1.x.min(p2.x) <= intersect_x && p1.x.max(p2.x) >= intersect_x &&
                             p1.y.min(p2.y) <= intersect_y && p1.y.max(p2.y) >= intersect_y {
 
-                            out.push(Vector2 { x: intersect_x, y: intersect_y })
+                            out.push(Vector2 { x: intersect_x, y: intersect_y });
                         }
                     }
                 }
