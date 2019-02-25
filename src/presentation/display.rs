@@ -560,13 +560,16 @@ pub fn display(
             }
             _ => ()
         }
+//        println!("{:?}", button.id);
+//        println!("button dimension: {:?}", button.get_dimension());
         let text_display = format!("{}", text_to_display);
+//        println!("{:?}", text_display);
         let str_slice: &str = &text_display[..];
         let text = glium_text::TextDisplay::new(&system, font, str_slice);
         let color = [1.0, 1.0, 1.0, 1.0f32];
         let text_width=text.get_width();
         let text_height = 0.07;
-        let dimensions = _menu_buttons.pop().unwrap();
+        let dimensions = _menu_buttons[i];
         let button_width = (dimensions.1.x - dimensions.0.x) as f32;
         let x_align = (dimensions.0.x) as f32;
         let y_align = (dimensions.0.y) as f32;
@@ -575,7 +578,7 @@ pub fn display(
             [button_width / text_width , 0.0, 0.0, 0.0],
             [0.0, text_height, 0.0, 0.0],
             [0.0, 0.0, 1.0, 0.0],
-            [x_align, -y_align, 0.0, 1.0f32],
+            [x_align, y_align - 0.05, 0.0, 1.0f32],
         ];
         glium_text::draw(&text, &system, frame, matrix, color);
     }

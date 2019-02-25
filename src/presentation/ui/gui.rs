@@ -41,9 +41,9 @@ impl Component {
         let selected_ui = Gui::new(GuiType::Selected, 0.1, 0.1, Vector2{x: -0.9, y: -0.9});
         let drag_ui = Gui::new(GuiType::SelectionDrag, 0.0, 0.0, Vector2{x: 0.0, y: 0.0});
         let box_ui = Gui::new(GuiType::Window, 1.8, 1.8, Vector2{x: 0.0, y: 0.0});
-        let button2 = Gui::new(GuiType::Button{text: "Instruction".to_string()}, 0.2, 0.05, Vector2{x: 0.0, y: -0.1});
-        let button1 = Gui::new(GuiType::Button{text: "Exit".to_string()}, 0.2, 0.05, Vector2{x: 0.0, y: 0.1});
-        let menu_ui = Gui::new(GuiType::Menu{ _window_gui: Box::new(box_ui), _buttons_gui: vec![Box::new(button1), Box::new(button2)], active: false}, 0.1, 0.125, Vector2{x: -0.9, y: 0.9});
+        let button1 = Gui::new(GuiType::Button{text: "Exit".to_string()}, 0.2, 0.05, Vector2{x: 0.0, y: -0.1});
+        let button2 = Gui::new(GuiType::Button{text: "Instruction".to_string()}, 0.4, 0.05, Vector2{x: 0.0, y: 0.1});
+        let menu_ui = Gui::new(GuiType::Menu{ _window_gui: Box::new(box_ui), _buttons_gui: vec![Box::new(button2), Box::new(button1)], active: false}, 0.1, 0.125, Vector2{x: -0.9, y: 0.9});
 //        let menu_ui = Gui::new(GuiType::Menu{ _window_gui: Box::new(box_ui), _buttons_gui: vec![], active: false}, 0.1, 0.125, Vector2{x: -0.9, y: 0.9});
         unsafe {
             CURRENT = ActiveWindow::Game;
@@ -80,25 +80,34 @@ impl Component {
                                     let size = buttons.len();
                                     for j in 0..size{
                                         let button = buttons[j].clone();
+//                                        println!("{:?}", button.get_dimension());
                                         let mouse_pos = &mut Vector2 { x: x as f64, y: y as f64 };
                                         translate_mouse_to_camera(mouse_pos, window.window().size());
 
                                         let top_left = Vector2 { x: button.top_left.x, y: button.top_left.y };
                                         let bot_right = Vector2 { x: button.bot_right.x, y: button.bot_right.y };
-                                        if check_bounding_box(top_left, bot_right, *mouse_pos) {
+//                                        println!("ID: {:?}", button.id);
+//                                        println!("top_left: {:?}", top_left);
+//                                        println!("bot_right: {:?}", bot_right);
+//                                        println!("mouse position: {:?}", mouse_pos);
+                                        let check_within_bound = check_bounding_box(top_left, bot_right, *mouse_pos);
+//                                        println!("check within bound: {:?}", check_within_bound);
+                                        if  check_within_bound {
                                             let mut display_text = "".to_string();
-                                            match button.id.clone() {
+                                            match button.id {
                                                 GuiType::Button {text} => {
                                                     display_text = text;
                                                 }
                                                 _ => ()
                                             }
+//                                            println!("{:?}", display_text);
+
                                             if display_text == "Instruction" {
-                                                println!("{:?}", button.id.clone());
+//                                                println!("{:?}", button.id.clone());
                                                 CURRENT = ActiveWindow::Instruction;
                                                 *game_paused = true;
                                             } else if display_text == "Exit" {
-                                                println!("{:?}", button.id.clone());
+//                                                println!("{:?}", button.id.clone());
                                                 *terminate = true;
                                             }
                                         }
