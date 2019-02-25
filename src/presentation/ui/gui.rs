@@ -112,6 +112,32 @@ impl Component {
                                             }
                                         }
                                     }
+                                    let mouse_pos = &mut Vector2 { x: x as f64, y: y as f64 };
+                                    translate_mouse_to_camera(mouse_pos, window.window().size());
+
+                                    let top_left = Vector2 { x : _window_gui.top_left.x, y: _window_gui.top_left.y};
+                                    let bot_right = Vector2 { x : _window_gui.bot_right.x, y: _window_gui.bot_right.y};
+
+                                    if !check_bounding_box(top_left, bot_right, *mouse_pos) {
+                                        //println!("Mouse button up {}, {}, {}", top_left, bot_right, mouse_pos);
+                                        *active = false;
+                                        CURRENT = ActiveWindow::Game;
+                                        *game_paused = false;
+                                    }
+                                }
+                                else if CURRENT == ActiveWindow::Instruction {
+                                    let mouse_pos = &mut Vector2 { x: x as f64, y: y as f64 };
+                                    translate_mouse_to_camera(mouse_pos, window.window().size());
+
+                                    let top_left = Vector2 { x : _window_gui.top_left.x, y: _window_gui.top_left.y};
+                                    let bot_right = Vector2 { x : _window_gui.bot_right.x, y: _window_gui.bot_right.y};
+
+                                    if !check_bounding_box(top_left, bot_right, *mouse_pos) {
+                                        //println!("Mouse button up {}, {}, {}", top_left, bot_right, mouse_pos);
+                                        *active = false;
+                                        CURRENT = ActiveWindow::Game;
+                                        *game_paused = false;
+                                    }
                                 }
                             }
                         },
