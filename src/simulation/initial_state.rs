@@ -23,8 +23,8 @@ pub fn initial_state(entity_count: u32, random_seed: u32) -> State {
     let buildings = &mut state.buildings;
     let building_outlines = &mut state.building_outlines;
 
-   buildings.push(Polygon(vec![Vector2 { x: 7.5, y: 7.5 }, Vector2 { x: 15.0, y: 7.5 },
-                               Vector2 { x: 15.0, y: 15.0 }, Vector2 { x: 7.5, y: 15.0 }]));
+   buildings.push(Polygon(vec![Vector2 { x: 7.5, y: 7.5 }, Vector2 { x: 20.0, y: 7.5 },
+                               Vector2 { x: 20.0, y: 15.0 }, Vector2 { x: 7.5, y: 15.0 }]));
 
     // let mut rng = rand::thread_rng();
 //    for i in 0..entity_count {
