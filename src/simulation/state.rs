@@ -5,6 +5,7 @@ use crate::core::geo::polygon::*;
 pub struct State {
     pub entities: Vec<Entity>,
     pub buildings: Vec<Polygon>,
+    pub building_outlines: Vec<Polygon>,
     pub is_selected: Vec<bool>,
     pub projectiles: Vec<Projectile>,
     pub rng: rand_xorshift::XorShiftRng,

@@ -2,6 +2,7 @@ use crate::core::geo::circle::*;
 use crate::core::geo::segment2::*;
 use crate::core::geo::intersect::segment_circle::*;
 use crate::core::geo::polygon::*;
+use crate::simulation::ai::pathfinding::find_path;
 use super::state::*;
 
 use rand::distributions::*;
@@ -225,6 +226,8 @@ fn update_cop(
     behaviour: Behaviour) -> Behaviour {
 
     let entities = &mut sim_state.entities;
+    let buildings = &sim_state.buildings;
+    let building_outlines = &sim_state.buildings;
 
     match behaviour {
 
@@ -279,17 +282,42 @@ fn update_cop(
                     }
                 },
                 CopState::Moving { waypoint } => {
-                    let delta = waypoint - entities[index].position;
-                    if delta.length_squared() < COP_MIN_DISTANCE_FROM_WAYPOINT_SQUARED {
-                        Behaviour::Cop{
-                            rounds_in_magazine: rounds_in_magazine,
-                            state: CopState::Idle
-                        }
-                    } else {
-                        entities[index].accelerate_along_vector(delta, args.dt);
-                        Behaviour::Cop{
-                            rounds_in_magazine: rounds_in_magazine,
-                            state: CopState::Moving{ waypoint }
+                    println!("moving");
+                    match find_path(entities[index].position, waypoint, buildings, building_outlines) {
+                        None => {
+                            println!("no path");
+                            Behaviour::Cop {
+                                rounds_in_magazine: rounds_in_magazine,
+                                state: CopState::Idle
+                            }
+                        },
+                        Some(mut path) => {
+                            println!("some path");
+                            let mut delta;
+                            loop {
+                                return match path.pop() {
+                                    None => Behaviour::Cop{
+                                        rounds_in_magazine: rounds_in_magazine,
+                                        state: CopState::Idle
+                                    },
+                                    Some(node) => {
+                                        delta = node - entities[index].position;
+
+                                        if waypoint == node && delta.length_squared() < COP_MIN_DISTANCE_FROM_WAYPOINT_SQUARED {
+                                            Behaviour::Cop {
+                                                rounds_in_magazine: rounds_in_magazine,
+                                                state: CopState::Idle
+                                            }
+                                        } else {
+                                            entities[index].accelerate_along_vector(delta, args.dt);
+                                            Behaviour::Cop {
+                                                rounds_in_magazine: rounds_in_magazine,
+                                                state: CopState::Moving{ waypoint }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 },
