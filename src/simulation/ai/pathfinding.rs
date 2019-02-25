@@ -114,13 +114,20 @@ pub fn find_path(
                                     }
                                 }
                             }
-                            None => return None
+                            None => {
+                                println!("path doesn't have an end node for some reason");
+                                return None
+                            }
                         }
                     }
-                    None => return None
+                    None => {
+                        println!("frontier exhausted before finding solution");
+                        return None
+                    }
                 }
             }
 
+            println!("empty initial frontier");
             None
         }
     }
