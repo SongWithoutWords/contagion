@@ -53,4 +53,18 @@ impl Path {
             None => 0.0
         }
     }
+
+    pub fn to_vec(&self) -> Vec<Vector2> {
+        let mut out = vec!();
+
+        if self.edges.len() > 0 {
+            out.push(self.edges[0].start.pos);
+
+            for i in 0..self.edges.len() {
+                out.push(self.edges[i].end.pos);
+            }
+        }
+
+        out
+    }
 }
