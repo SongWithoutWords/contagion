@@ -62,7 +62,8 @@ pub fn initial_state(entity_count: u32, random_seed: u32) -> State {
 
         for j in 0..buildings[i].num_sides() {
             let norm_sum = norms[j] + norms[if j < 1 { buildings[i].num_sides() - 1 } else { j - 1 }];
-            outlines.push(norm_sum * ENTITY_RADIUS * 1.1);
+            let offset = norm_sum * ENTITY_RADIUS * 1.1;
+            outlines.push(offset + buildings[i].get(j));
         }
 
         building_outlines.push(Polygon(outlines));

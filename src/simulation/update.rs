@@ -226,7 +226,7 @@ fn update_cop(
     behaviour: Behaviour) -> Behaviour {
     let entities = &mut sim_state.entities;
     let buildings = &sim_state.buildings;
-    let building_outlines = &sim_state.buildings;
+    let building_outlines = &sim_state.building_outlines;
 
     match behaviour {
         Behaviour::Cop { rounds_in_magazine, state } => {

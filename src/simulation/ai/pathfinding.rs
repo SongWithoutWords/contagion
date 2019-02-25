@@ -76,11 +76,14 @@ pub fn find_path(
                 }
             }
 
+            println!("init frontier: {:?}", frontier);
+
             while frontier.len() > 0 {
                 frontier.sort_unstable_by(|a, b| b.partial_cmp(a).unwrap());
 
                 match frontier.pop() {
                     Some(mut path) => {
+                        println!("examining path: {:?}", path);
                         // Check if end of the path is the goal node
                         match path.edges.last() {
                             Some(edge) => {
