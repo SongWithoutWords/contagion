@@ -72,25 +72,16 @@ pub fn find_path(
             // Add paths to the frontier based on outline of closest obstacle
             for j in 0..outlines[i].num_sides() {
                 if obstacles[i].intersects(start_pos, outlines[i].get(j)).len() == 0 {
-                    println!("from {:?} to {:?}", start_pos, outlines[i].get(j));
                     frontier.push(Path::from_edge(graph.add_edge(start_pos, outlines[i].get(j))));
                 }
             }
 
-            println!("init frontier: {:?}", frontier);
-            let mut count = 0;
-
             while frontier.len() > 0 {
                 // Sort frontier so that path with lowest f-stat is last (so it can be popped)
                 frontier.sort_unstable_by(|a, b| b.partial_cmp(a).unwrap());
-                println!("\nfrontier {:?}: ", count);
-                for n in 0..frontier.len() {
-                    println!("{:?}, {:?}", frontier[n].f_stat(), frontier[n]);
-                }
 
                 match frontier.pop() {
                     Some(mut path) => {
-                        println!("examining path cost={:?}: {:?}", path.f_stat(), path);
                         // Check if end of the path is the goal node
                         match path.edges.last() {
                             Some(edge) => {
@@ -101,7 +92,7 @@ pub fn find_path(
                                 // Find all intersections between current edge and goal
                                 intersections = vec!();
                                 for j in 0..obstacles.len() {
-                                    for intersect in obstacles[j].intersects(start_pos, end_pos) {
+                                    for intersect in obstacles[j].intersects(edge.end.pos, end_pos) {
                                         intersections.push((intersect, j));
                                     }
                                 }
@@ -116,7 +107,6 @@ pub fn find_path(
                                         // Add paths to the frontier based on outline of closest obstacle
                                         for k in 0..outlines[j].num_sides() {
                                             if edge.end.pos != outlines[j].get(k) && obstacles[j].intersects(edge.end.pos, outlines[j].get(k)).len() == 0 {
-                                                println!("adding line to {:?}", outlines[j].get(k));
                                                 let mut new_path = path.clone();
                                                 new_path.append_edge(graph.add_edge(edge.end.pos, outlines[j].get(k)));
                                                 frontier.push(new_path);
@@ -125,23 +115,12 @@ pub fn find_path(
                                     }
                                 }
                             }
-                            None => {
-                                println!("path doesn't have an end node for some reason");
-                                return None
-                            }
+                            None => return None
                         }
                     }
-                    None => {
-                        println!("frontier exhausted before finding solution");
-                        return None
-                    }
+                    None => return None
                 }
-
-                count += 1;
-                if count >= 2 { break; }
             }
-
-            println!("empty initial frontier");
             None
         }
     }
