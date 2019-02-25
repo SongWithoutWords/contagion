@@ -1,106 +1,54 @@
-extern crate rodio;
+extern crate music;
 
-use std::convert::AsRef;
-use std::fs::File;
-use std::io;
-use std::io::BufReader;
-use std::io::Read;
-use std::sync::Arc;
 
-use rodio::Sink;
-use rodio::Source;
-
-use crate::simulation::update::SoundEffect;
-
-pub struct Sound (Arc<Vec<u8>>);
-
-impl AsRef<[u8]> for Sound {
-    fn as_ref(&self) -> &[u8] {
-        &self.0
-    }
+#[derive(Copy, Clone, Hash, PartialEq, Eq)]
+pub enum Music {
+    Background,
 }
 
-// Adapted from
-// https://github.com/tomaka/rodio/issues/141
-impl Sound {
-    pub fn load(filename: &str) -> io::Result<Sound> {
-        let mut buf = Vec::new();
-        let mut file = File::open(filename)?;
-        file.read_to_end(&mut buf)?;
-        Ok(Sound(Arc::new(buf)))
-    }
-    pub fn cursor(self: &Self) -> io::Cursor<Sound> {
-        io::Cursor::new(Sound(self.0.clone()))
-    }
-    pub fn decoder(self: &Self) -> rodio::Decoder<io::Cursor<Sound>> {
-        rodio::Decoder::new(self.cursor()).unwrap()
-    }
+#[derive(Copy, Clone, Hash, PartialEq, Eq)]
+pub enum TheSound {
+    Gunshot,
+    Reload,
+    PersonInfected,
+    ZombieDeath,
 }
 
-pub struct SoundEffectSources {
-    pub gunshot: Sound,
-    pub reload: Sound,
-    pub person_infected: Sound,
-    pub zombie_dead: Sound,
+
+pub fn load_sound_effects(){
+    // Bind the enum variables with the actual mp3 files
+    music::bind_music_file(Music::Background, "assets/audio/music/dark_rage.mp3");
+    music::bind_sound_file(TheSound::Gunshot, "assets/audio/sfx/gunshot.mp3");
+    music::bind_sound_file(TheSound::Reload, "assets/audio/sfx/reload.mp3");
+    music::bind_sound_file(TheSound::PersonInfected, "assets/audio/sfx/person_infected.mp3");
+    music::bind_sound_file(TheSound::ZombieDeath, "assets/audio/sfx/zombie_dead.mp3");
+
 }
 
-// this is the maximum number of concurrent sound effects
-pub const SOUND_EFFECT_SINK_COUNT: usize = 8;
-pub struct AudioState {
-    device: rodio::Device,
-    ambient_sink: Sink,
-    sound_effect_sinks: Vec<Sink>,
-    index_of_least_recently_used: usize,
-}
-impl AudioState {
-    pub fn new() -> Self {
-        let device = rodio::default_output_device().unwrap();
-
-        let ambient_file = File::open("src/assets/dark_rage.ogg").unwrap();
-        let ambient_source = rodio::Decoder::new(BufReader::new(ambient_file)).unwrap();
-        let ambient_sink = Sink::new(&device);
-        ambient_sink.append(ambient_source.repeat_infinite());
-
-        let sinks = (0..SOUND_EFFECT_SINK_COUNT).map(|_| Sink::new(&device)).collect();
-
-        AudioState {
-            device: device,
-            ambient_sink: ambient_sink,
-            sound_effect_sinks: sinks,
-            index_of_least_recently_used: 0,
-        }
-    }
+// Plays the background music until the end of the program
+pub fn play_background() {
+    // Play the Background sound
+    music::play_music(&Music::Background, music::Repeat::Forever);
 }
 
-pub fn load_sound_effect_files() -> SoundEffectSources {
 
-    // Loading sound files here
-    SoundEffectSources {
-        gunshot: Sound::load("src/assets/gunshot.ogg").unwrap(),
-        reload: Sound::load("src/assets/reload.ogg").unwrap(),
-        person_infected: Sound::load("src/assets/person_infected.ogg").unwrap(),
-        zombie_dead: Sound::load("src/assets/zombie_dead.ogg").unwrap(),
-    }
+// Plays the shotgun sound once every time it is called
+pub fn play_shotgun() {
+    music::play_sound(&TheSound::Gunshot, music::Repeat::Times(0), 0.5);
 }
 
-pub fn play_sound_effects(
-    sources: &SoundEffectSources,
-    sounds: &Vec<SoundEffect>,
-    state: &mut AudioState
-) {
-    for sound in sounds {
-
-        let source = match sound {
-            SoundEffect::Gunshot => &sources.gunshot,
-            SoundEffect::PersonInfected => &sources.person_infected,
-            SoundEffect::Reload => &sources.reload,
-            SoundEffect::ZombieDeath => &sources.zombie_dead,
-        };
-
-        state.sound_effect_sinks[state.index_of_least_recently_used] = Sink::new(&state.device);
-        state.sound_effect_sinks[state.index_of_least_recently_used].append(source.decoder());
-
-        state.index_of_least_recently_used += 1;
-        state.index_of_least_recently_used %= SOUND_EFFECT_SINK_COUNT;
-    }
+// Plays the person_infected sound once every time it is called
+pub fn play_person_infected() {
+    music::play_sound(&TheSound::PersonInfected, music::Repeat::Times(0), 0.5);
 }
+
+// Plays the reload sound once every time it is called
+pub fn play_reload() {
+    music::play_sound(&TheSound::Reload, music::Repeat::Times(0), 0.5);
+}
+
+// Plays the dead zombie sound once every time it is called
+pub fn play_zombie_dead() {
+    music::play_sound(&TheSound::ZombieDeath, music::Repeat::Times(0), 0.5);
+}
+

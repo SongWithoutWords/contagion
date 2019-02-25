@@ -58,8 +58,8 @@ pub fn load_texture(window: &glium_sdl2::SDL2Facade, path: &str) -> glium::textu
     (texture)
 }
 
-use sdl2::ttf;
-pub fn create_font() {
-    let ttf_context = ttf::init().unwrap();
-    let _font = ttf_context.load_font("src/assets/ConsolaMono.ttf", 50).unwrap();
-}
+// use sdl2::ttf;
+// pub fn create_font() {
+    // let ttf_context = ttf::init().unwrap();
+    // let _font = ttf_context.load_font("assets/consola.ttf", 50).unwrap();
+// }

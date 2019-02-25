@@ -4,7 +4,7 @@ use crate::simulation::ai::path::{Node, Edge, Path};
 use crate::core::geo::polygon::*;
 
 struct Graph {
-    start: Node,
+    _start: Node,
     goal: Node,
     edges: Vec<Edge>
 }
@@ -15,7 +15,7 @@ impl Graph {
         let end_node = Node { pos: end_pos, h: 0 };
 
         Graph {
-            start: start_node,
+            _start: start_node,
             goal: end_node,
             edges: Vec::new()
         }

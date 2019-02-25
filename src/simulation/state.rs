@@ -2,16 +2,19 @@ use crate::core::vector::*;
 use crate::core::scalar::Scalar;
 use crate::core::geo::polygon::*;
 
+use std::collections::HashSet;
+
 pub struct State {
     pub entities: Vec<Entity>,
     pub buildings: Vec<Polygon>,
     pub building_outlines: Vec<Polygon>,
-    pub is_selected: Vec<bool>,
+    pub selection: HashSet<usize>,
     pub projectiles: Vec<Projectile>,
     pub rng: rand_xorshift::XorShiftRng,
 }
 
 pub const ENTITY_RADIUS: Scalar = 0.5;
+pub const ENTITY_DRAG: Scalar = 1.0;
 
 pub struct Entity {
     pub position: Vector2,
@@ -75,10 +78,23 @@ pub enum CopState {
     Idle
 }
 
-pub const BULLET_SPEED: f64 = 50.0;
-pub const MIN_PROJECTILE_SPEED: f64 = 0.1;
+pub const PROJECTILE_DRAG: Scalar = 1.0;
 
+#[derive(Copy, Clone, PartialEq)]
 pub struct Projectile {
     pub position: Vector2,
     pub velocity: Vector2,
+    pub kind: ProjectileKind,
+}
+
+pub const BULLET_RADIUS: Scalar = 0.12;
+pub const BULLET_SPEED: Scalar = 40.0;
+pub const BULLET_SPEED_MIN: Scalar = 0.1;
+pub const BULLET_SPAWN_DISTANCE_MULTIPLIER: Scalar = 1.25;
+pub const CASING_SPEED: Scalar = 1.0;
+
+#[derive(Copy, Clone, PartialEq)]
+pub enum ProjectileKind {
+    Bullet,
+    Casing,
 }

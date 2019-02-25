@@ -1,5 +1,6 @@
 use rand::*;
 use rand_xorshift::XorShiftRng;
+use std::collections::HashSet;
 use crate::core::vector::*;
 use crate::core::scalar::*;
 use crate::core::geo::polygon::*;
@@ -13,7 +14,7 @@ pub fn initial_state(entity_count: u32, random_seed: u32) -> State {
         entities: vec!(),
         buildings: vec!(),
         building_outlines: vec!(),
-        is_selected: vec!(),
+        selection: HashSet::new(),
         projectiles: vec!(),
         rng: XorShiftRng::seed_from_u64(random_seed as u64)
     };

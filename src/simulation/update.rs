@@ -1,33 +1,32 @@
-use crate::core::geo::circle::*;
-use crate::core::geo::segment2::*;
-use crate::core::geo::intersect::segment_circle::*;
-use crate::core::geo::polygon::*;
-use crate::simulation::ai::pathfinding::find_path;
-use super::state::*;
+extern crate music;
 
 use rand::distributions::*;
+
+use crate::core::geo::circle::*;
+use crate::core::geo::intersect::segment_circle::*;
+use crate::core::geo::polygon::*;
+use crate::core::geo::segment2::*;
+
+use crate::simulation::ai::pathfinding::find_path;
+
+use crate::presentation::audio::sound_effects::*;
+
+use super::state::*;
 
 pub struct UpdateArgs {
     pub dt: Scalar
 }
 
-pub enum SoundEffect {
-    Gunshot,
-    Reload,
-    PersonInfected,
-    ZombieDeath,
-}
 
-pub fn update(args: &UpdateArgs, state: &mut State) -> Vec<SoundEffect> {
+pub fn update(args: &UpdateArgs, state: &mut State) {
 
-    let mut sound_effects = vec!();
 
     // Apply individual behaviours
     for i in 0..state.entities.len() {
         match &state.entities[i].behaviour {
-            b @ Behaviour::Cop{..} => {
+            b @ Behaviour::Cop { .. } => {
                 // simulate_cop(args, &mut entities, i),
-                let behaviour = update_cop(&args, state, &mut sound_effects, i, b.clone());
+                let behaviour = update_cop(&args, state, i, b.clone());
                 state.entities[i].behaviour = behaviour
             }
             Behaviour::Dead =>
@@ -50,7 +49,7 @@ pub fn update(args: &UpdateArgs, state: &mut State) -> Vec<SoundEffect> {
         let circle = Circle { center: p1, radius: ENTITY_RADIUS };
 
         // Collisions with other entities
-        for j in (i+1)..state.entities.len() {
+        for j in (i + 1)..state.entities.len() {
             let p2 = state.entities[j].position;
 
             let delta = p2 - p1;
@@ -58,7 +57,7 @@ pub fn update(args: &UpdateArgs, state: &mut State) -> Vec<SoundEffect> {
             let delta_length_squared = delta.length_squared();
 
             if delta_length_squared < DOUBLE_ENTITY_RADIUS_SQUARED {
-                handle_collision(args, &mut state.entities, &mut sound_effects, i, j, &delta, delta_length_squared);
+                handle_collision(args, &mut state.entities, i, j, &delta, delta_length_squared);
             }
         }
 
@@ -97,23 +96,31 @@ pub fn update(args: &UpdateArgs, state: &mut State) -> Vec<SoundEffect> {
     for e in &mut state.entities {
         let displacement = args.dt * e.velocity;
         e.position += displacement;
-        e.velocity -= 0.5 * displacement;
+        e.velocity -= ENTITY_DRAG * displacement;
     }
 
-    // Remove motionless projectiles
+    // Remove motionless bullets
     state.projectiles.retain(
-        |p| p.velocity.length_squared() > MIN_PROJECTILE_SPEED
+        |p| p.kind != ProjectileKind::Bullet ||
+            p.velocity.length_squared() > BULLET_SPEED_MIN
     );
 
-    // Simulate projectiles
-    for projectile in &mut state.projectiles {
-        let displacement = args.dt * projectile.velocity;
+    // Update projectiles
+    for p in &mut state.projectiles {
 
-        let segment = Segment2 { p1: projectile.position, p2: projectile.position + displacement };
+        let displacement = args.dt * p.velocity;
+        p.velocity -= PROJECTILE_DRAG * displacement;
+
+        let segment = Segment2 { p1: p.position, p2: p.position + displacement };
+
+        p.position = segment.p2;
+
+        if p.kind != ProjectileKind::Bullet {
+            continue;
+        }
 
         let mut first_intersect_time_and_index = None;
         for i in 0..state.entities.len() {
-
             let entity = &state.entities[i];
 
             if entity.behaviour == Behaviour::Dead {
@@ -128,10 +135,10 @@ pub fn update(args: &UpdateArgs, state: &mut State) -> Vec<SoundEffect> {
             match (first_intersect_time_and_index, this_min_intersection) {
                 (None, Some(this)) => {
                     first_intersect_time_and_index = Some((this, i))
-                },
+                }
                 (Some((min, _)), Some(this)) if this < min => {
                     first_intersect_time_and_index = Some((this, i))
-                },
+                }
                 _ => ()
             }
         }
@@ -140,21 +147,16 @@ pub fn update(args: &UpdateArgs, state: &mut State) -> Vec<SoundEffect> {
             None => (),
             Some((_, i)) => {
                 state.entities[i].behaviour = Behaviour::Dead;
-                projectile.velocity = Vector2::zero();
-                sound_effects.push(SoundEffect::ZombieDeath);
+                p.velocity = Vector2::zero();
+                play_zombie_dead();
             }
         }
-
-        projectile.position = segment.p2;
     }
-
-    sound_effects
 }
 
 fn handle_collision(
     args: &UpdateArgs,
     entities: &mut Vec<Entity>,
-    sound_effects: &mut Vec<SoundEffect>,
     i: usize,
     j: usize,
     delta: &Vector2,
@@ -162,15 +164,14 @@ fn handle_collision(
 
     // Spread the infection from zombies to others
     match (&entities[i].behaviour, &entities[j].behaviour) {
-
-        (Behaviour::Human, Behaviour::Zombie) | (Behaviour::Cop {..}, Behaviour::Zombie) => {
+        (Behaviour::Human, Behaviour::Zombie) | (Behaviour::Cop { .. }, Behaviour::Zombie) => {
             entities[i].behaviour = Behaviour::Zombie;
-            sound_effects.push(SoundEffect::PersonInfected);
-        },
-        (Behaviour::Zombie, Behaviour::Human) | (Behaviour::Zombie, Behaviour::Cop {..}) => {
+            play_person_infected();
+        }
+        (Behaviour::Zombie, Behaviour::Human) | (Behaviour::Zombie, Behaviour::Cop { .. }) => {
             entities[j].behaviour = Behaviour::Zombie;
-            sound_effects.push(SoundEffect::PersonInfected);
-        },
+            play_person_infected()
+        }
         _ => ()
     }
 
@@ -221,26 +222,22 @@ fn handle_building_collision(
 fn update_cop(
     args: &UpdateArgs,
     sim_state: &mut State,
-    sound_effects: &mut Vec<SoundEffect>,
     index: usize,
     behaviour: Behaviour) -> Behaviour {
-
     let entities = &mut sim_state.entities;
     let buildings = &sim_state.buildings;
     let building_outlines = &sim_state.buildings;
 
     match behaviour {
-
-        Behaviour::Cop { rounds_in_magazine, state} => {
+        Behaviour::Cop { rounds_in_magazine, state } => {
             match state {
-                CopState::Aiming { mut aim_time_remaining, target_index} => {
-
+                CopState::Aiming { mut aim_time_remaining, target_index } => {
                     if entities[target_index].behaviour == Behaviour::Dead {
                         // Stop aiming if the target is already dead
                         return Behaviour::Cop {
                             rounds_in_magazine: rounds_in_magazine,
-                            state: CopState::Idle
-                        } ;
+                            state: CopState::Idle,
+                        };
                     }
                     // TODO: check if we can still see the target, and stop aiming if not
 
@@ -252,35 +249,45 @@ fn update_cop(
                     aim_time_remaining -= args.dt;
                     if aim_time_remaining > 0.0 {
                         // Taking aim, do nothing
-                        Behaviour::Cop{
+                        Behaviour::Cop {
                             rounds_in_magazine: rounds_in_magazine,
-                            state: CopState::Aiming{aim_time_remaining, target_index: target_index}
+                            state: CopState::Aiming { aim_time_remaining, target_index: target_index },
                         }
-                    }
-                    else {
+                    } else {
                         let angular_deviation =
                             Normal::new(0.0, COP_ANGULAR_ACCURACY_STD_DEV).sample(&mut sim_state.rng);
 
                         // Finished aiming, take the shot
                         let delta_normal = delta.rotate_by(angular_deviation);
 
+                        // Spawn outside of the entity - don't want to shoot the entity itself
+                        let spawn_pos = entities[index].position +
+                            BULLET_SPAWN_DISTANCE_MULTIPLIER * ENTITY_RADIUS * delta_normal;
+
                         // Fire at the taget
                         sim_state.projectiles.push(
                             Projectile {
-                                // Spawn outside of the entity - don't want to shoot the entity itself
-                                position: entities[index].position + 1.125 * ENTITY_RADIUS * delta_normal,
-                                velocity: BULLET_SPEED * delta_normal
+                                position: spawn_pos,
+                                velocity: BULLET_SPEED * delta_normal,
+                                kind: ProjectileKind::Bullet
                             });
 
-                        // Append sound effect
-                        sound_effects.push(SoundEffect::Gunshot);
+                        sim_state.projectiles.push(
+                            Projectile {
+                                position: spawn_pos,
+                                // Casing ejects from the right of the weapon
+                                velocity: CASING_SPEED * delta_normal.right(),
+                                kind: ProjectileKind::Casing
+                            });
 
-                        Behaviour::Cop{
+                        play_shotgun();
+
+                        Behaviour::Cop {
                             rounds_in_magazine: rounds_in_magazine - 1,
                             state: CopState::Idle,
                         }
                     }
-                },
+                }
                 CopState::Moving { waypoint } => {
                     println!("moving");
                     match find_path(entities[index].position, waypoint, buildings, building_outlines) {
@@ -320,30 +327,29 @@ fn update_cop(
                             }
                         }
                     }
-                },
+                }
                 CopState::Reloading { mut reload_time_remaining } => {
                     reload_time_remaining -= args.dt;
                     if reload_time_remaining > 0.0 {
                         // Reloading, do nothing
-                        Behaviour::Cop{
+                        Behaviour::Cop {
                             rounds_in_magazine: rounds_in_magazine,
-                            state: CopState::Reloading{reload_time_remaining: reload_time_remaining}
+                            state: CopState::Reloading { reload_time_remaining: reload_time_remaining },
                         }
-                    }
-                    else {
+                    } else {
                         // Finished reloading, replenish rounds
-                        Behaviour::Cop{
+                        Behaviour::Cop {
                             rounds_in_magazine: COP_MAGAZINE_CAPACITY,
-                            state: CopState::Idle
+                            state: CopState::Idle,
                         }
                     }
-                },
+                }
                 CopState::Idle => {
                     // Reload if you don't have ammo
                     if rounds_in_magazine <= 0 {
-                        Behaviour::Cop{
+                        Behaviour::Cop {
                             rounds_in_magazine: rounds_in_magazine,
-                            state: CopState::Reloading{reload_time_remaining: COP_RELOAD_COOLDOWN}
+                            state: CopState::Reloading { reload_time_remaining: COP_RELOAD_COOLDOWN },
                         }
                     }
                     // Look for target if you do have ammo
@@ -378,24 +384,22 @@ fn update_cop(
                                 rounds_in_magazine: rounds_in_magazine,
                                 state: CopState::Aiming {
                                     aim_time_remaining: aim_time_distribution.sample(&mut sim_state.rng),
-                                    target_index: min_index
-                                }
+                                    target_index: min_index,
+                                },
                             }
-                        }
-                        else {
+                        } else {
                             // Remain in idle state
                             behaviour
                         }
                     }
                 }
             }
-        },
+        }
         _ => panic!("Entity at index should be a cop!")
     }
 }
 
 fn simulate_zombie(args: &UpdateArgs, entities: &mut Vec<Entity>, index: usize) {
-
     let my_pos = entities[index].position;
 
     let mut min_delta = Vector2::zero();
@@ -405,7 +409,7 @@ fn simulate_zombie(args: &UpdateArgs, entities: &mut Vec<Entity>, index: usize) 
         match entities[i].behaviour {
 
             // Chase humans and cops
-            Behaviour::Cop{..} | Behaviour::Human => {
+            Behaviour::Cop { .. } | Behaviour::Human => {
                 let delta = entities[i].position - my_pos;
                 let distance_sqr = delta.length_squared();
                 if distance_sqr < min_distance_sqr {
@@ -426,7 +430,6 @@ fn simulate_zombie(args: &UpdateArgs, entities: &mut Vec<Entity>, index: usize) 
 }
 
 fn simulate_human(args: &UpdateArgs, entities: &mut Vec<Entity>, index: usize) {
-
     let my_pos = entities[index].position;
 
     let mut min_delta = Vector2::zero();
