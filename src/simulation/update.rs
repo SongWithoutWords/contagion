@@ -227,17 +227,26 @@ fn update_cop(
                         }
                     }
                 }
-                CopState::Reloading { mut reload_time_remaining } => {
-                    reload_time_remaining -= args.dt;
+                CopState::Reloading { reload_time_remaining } => {
+                    let half_reload_time = 0.5 * COP_RELOAD_COOLDOWN;
+                    let new_reload_time_remaining = reload_time_remaining - args.dt;
+
+                    // Play the reload sound when half-done reloading
+                    if reload_time_remaining > half_reload_time &&
+                        half_reload_time > new_reload_time_remaining {
+                        play_reload();
+                    }
+
                     if reload_time_remaining > 0.0 {
                         // Reloading, do nothing
                         Behaviour::Cop {
                             rounds_in_magazine: rounds_in_magazine,
-                            state: CopState::Reloading { reload_time_remaining: reload_time_remaining },
+                            state: CopState::Reloading {
+                                reload_time_remaining: new_reload_time_remaining
+                            },
                         }
                     } else {
                         // Finished reloading, replenish rounds
-                        play_reload();
                         Behaviour::Cop {
                             rounds_in_magazine: COP_MAGAZINE_CAPACITY,
                             state: CopState::Idle,
