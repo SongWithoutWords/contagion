@@ -237,6 +237,7 @@ fn update_cop(
                         }
                     } else {
                         // Finished reloading, replenish rounds
+                        play_reload();
                         Behaviour::Cop {
                             rounds_in_magazine: COP_MAGAZINE_CAPACITY,
                             state: CopState::Idle,
