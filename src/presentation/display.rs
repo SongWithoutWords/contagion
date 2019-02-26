@@ -30,37 +30,47 @@ pub enum SpriteType {
     InstructionMenu,
 }
 
-pub type Textures = EnumMap<SpriteType, Texture2d>;
+// pub type Textures = EnumMap<SpriteType, Texture2d>;
+pub struct Textures {
+    sprite_textures: EnumMap<SpriteType, Texture2d>,
+    background_texture: Texture2d,
+
+}
 
 pub fn load_textures(window: &glium_sdl2::SDL2Facade) -> Textures {
     use crate::presentation::graphics::renderer::load_texture;
-    enum_map! {
-        SpriteType::SelectionHighlight
-            => load_texture(&window, "assets/images/other/selection_highlight.png"),
-        SpriteType::Dead
-            => load_texture(&window, "assets/images/old/dead_zombie.png"),
-        SpriteType::BulletCasing
-            => load_texture(&window, "assets/images/other/bullet_casing_straight.png"),
-        SpriteType::Civilian
-            => load_texture(&window, "assets/images/old/citizen.png"),
-        SpriteType::Zombie
-            => load_texture(&window, "assets/images/old/zombie.png"),
-        SpriteType::Cop
-            => load_texture(&window, "assets/images/old/police.png"),
-        SpriteType::BulletInAir
-            => load_texture(&window, "assets/images/other/flying_bullet_long.png"),
-        SpriteType::Menu
-            => load_texture(&window, "assets/images/ui/menu_icon.png"),
-        SpriteType::MenuWindow
-            => load_texture(&window, "assets/images/ui/menu_icon.png"),
-        SpriteType::Button
-            => load_texture(&window, "assets/images/other/selection_highlight.png"),
-        SpriteType::InstructionMenu
-            => load_texture(&window, "assets/images/ui/instruction_menu_transparent.png")
+
+    Textures {
+        sprite_textures: enum_map! {
+            SpriteType::SelectionHighlight
+                => load_texture(window, "assets/images/other/selection_highlight.png"),
+            SpriteType::Dead
+                => load_texture(window, "assets/images/old/dead_zombie.png"),
+            SpriteType::BulletCasing
+                => load_texture(window, "assets/images/other/bullet_casing_straight.png"),
+            SpriteType::Civilian
+                => load_texture(window, "assets/images/old/citizen.png"),
+            SpriteType::Zombie
+                => load_texture(window, "assets/images/old/zombie.png"),
+            SpriteType::Cop
+                => load_texture(window, "assets/images/old/police.png"),
+            SpriteType::BulletInAir
+                => load_texture(window, "assets/images/other/flying_bullet_long.png"),
+            SpriteType::Menu
+                => load_texture(window, "assets/images/ui/menu_icon.png"),
+            SpriteType::MenuWindow
+                => load_texture(window, "assets/images/ui/menu_icon.png"),
+            SpriteType::Button
+                => load_texture(window, "assets/images/other/selection_highlight.png"),
+            SpriteType::InstructionMenu
+                => load_texture(window, "assets/images/ui/instruction_menu_transparent.png")
+        },
+        background_texture: load_texture(&window, "assets/images/background_concrete.png")
     }
 }
 
 pub struct Programs {
+    background_program: glium::Program,
     sprite_program: glium::Program,
     shadow_program: glium::Program,
     gui_program: glium::Program,
@@ -68,6 +78,10 @@ pub struct Programs {
 }
 pub fn load_programs(window: &glium_sdl2::SDL2Facade) -> Programs {
     Programs {
+        background_program: glium::Program::from_source(
+            window,
+            include_str!("graphics/background.vs.glsl"),
+            include_str!("graphics/background.fs.glsl"), None).unwrap(),
         sprite_program: glium::Program::from_source(
             window,
             include_str!("graphics/sprite.vs.glsl"),
@@ -86,6 +100,12 @@ pub fn load_programs(window: &glium_sdl2::SDL2Facade) -> Programs {
             include_str!("graphics/shape.fs.glsl"), None).unwrap(),
     }
 }
+
+#[derive(Copy, Clone)]
+struct VertexPosition {
+    position: [f32; 2],
+}
+implement_vertex!(VertexPosition, position);
 
 #[derive(Copy, Clone)]
 struct Vertex {
@@ -263,6 +283,60 @@ fn draw_color_sprites<U>(
         params).unwrap();
 }
 
+
+fn draw_background(
+    frame: &mut glium::Frame,
+    window: &glium_sdl2::SDL2Facade,
+    textures: &Textures,
+    programs: &Programs,
+    camera_frame: [[f32; 4]; 4],
+    params: &glium::DrawParameters)
+{
+    // This is about as large as you can get without introducing artifacts
+    // due to floating point imprecision
+    let extent = 1e5;
+
+    let top_left = VertexPosition {
+        position: [-extent,  extent],
+    };
+    let top_right = VertexPosition {
+        position: [ extent,  extent],
+    };
+    let bot_left = VertexPosition {
+        position: [-extent, -extent],
+    };
+    let bot_right = VertexPosition {
+        position: [ extent, -extent],
+    };
+
+    // tl    tr
+    //  +----+
+    //  |  / |
+    //  | /  |
+    //  +----+
+    // bl    br
+
+    let vertices = vec!(
+        top_left,
+        top_right,
+        bot_left,
+        top_right,
+        bot_right,
+        bot_left,
+    );
+
+    let uniforms = uniform! {
+        matrix: camera_frame,
+        tex: &textures.background_texture,
+    };
+    frame.draw(
+        &glium::VertexBuffer::new(window, &vertices).unwrap(),
+        &glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList),
+        &programs.background_program,
+        &uniforms,
+        params).unwrap();
+}
+
 pub fn display(
     frame: &mut glium::Frame,
     window: &glium_sdl2::SDL2Facade,
@@ -276,6 +350,10 @@ pub fn display(
     ) {
 
     frame.clear_color(0.2, 0.2, 0.2, 1.0);
+
+    let camera_frame = camera_frame.as_f32_array();
+
+    draw_background(frame, window, textures, programs, camera_frame, params);
 
     let mut vertex_buffers = enum_map!{_ => vec!()};
     let mut vertex_buffers_gui = enum_map!{_ => vec!()};
@@ -403,15 +481,13 @@ pub fn display(
         push_building_vertices(&mut vertex_buffers_building, building, color);
     }
 
-    let camera_frame = camera_frame.as_f32_array();
-
     // Render shadows
     use crate::presentation::display::SpriteType::*;
     for sprite_type in &[Cop, Civilian, Dead, Zombie] {
 
         let uniforms = uniform! {
             matrix: camera_frame,
-            tex: &textures[*sprite_type],
+            tex: &textures.sprite_textures[*sprite_type],
             height: match sprite_type { Dead => 0.5, _ => 1.0 } as f32
         };
         draw_sprites(
@@ -428,7 +504,7 @@ pub fn display(
 
         let uniforms = uniform! {
             matrix: camera_frame,
-            tex: &textures[sprite_type],
+            tex: &textures.sprite_textures[sprite_type],
         };
         draw_sprites(
             frame,
@@ -463,7 +539,7 @@ pub fn display(
         if _gui_type == SpriteType::Cop {
             let uniforms = uniform! {
                     matrix: mat_gui,
-                    tex: &textures[SpriteType::Cop],
+                    tex: &textures.sprite_textures[SpriteType::Cop],
                 };
             draw_color_sprites(
                 frame,
@@ -486,7 +562,7 @@ pub fn display(
         } else if _gui_type == SpriteType::Menu {
             let uniforms = uniform! {
                     matrix: mat_gui,
-                    tex: &textures[_gui_type],
+                    tex: &textures.sprite_textures[_gui_type],
                 };
             draw_color_sprites(
                 frame,
@@ -521,7 +597,7 @@ pub fn display(
                         &uniforms);
                     let uniforms = uniform! {
                     matrix: mat_gui,
-                        tex: &textures[SpriteType::InstructionMenu]
+                        tex: &textures.sprite_textures[SpriteType::InstructionMenu]
                     };
                     draw_color_sprites(
                         frame,
