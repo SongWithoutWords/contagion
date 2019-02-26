@@ -1,1 +1,0 @@
-pub const INIT_HUMAN_COUNT: u32 = 100;
