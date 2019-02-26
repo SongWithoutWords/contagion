@@ -4,7 +4,12 @@ use rand::distributions::*;
 
 use crate::core::geo::circle::*;
 use crate::core::geo::intersect::segment_circle::*;
+use crate::core::geo::polygon::*;
 use crate::core::geo::segment2::*;
+
+use crate::simulation::ai::pathfinding::find_path;
+use crate::simulation::ai::path::Path;
+
 use crate::presentation::audio::sound_effects::*;
 
 use super::state::*;
@@ -33,7 +38,7 @@ pub fn update(args: &UpdateArgs, state: &mut State) {
                 simulate_human(args, &mut state.entities, i),
             Behaviour::Zombie =>
             // Chase humans and cops!
-                simulate_zombie(args, &mut state.entities, i)
+                simulate_zombie(args, state, i)
         }
     }
 
@@ -42,7 +47,9 @@ pub fn update(args: &UpdateArgs, state: &mut State) {
     // Check for collisions
     for i in 0..state.entities.len() {
         let p1 = state.entities[i].position;
+        let circle = Circle { center: p1, radius: ENTITY_RADIUS };
 
+        // Collisions with other entities
         for j in (i + 1)..state.entities.len() {
             let p2 = state.entities[j].position;
 
@@ -52,6 +59,36 @@ pub fn update(args: &UpdateArgs, state: &mut State) {
 
             if delta_length_squared < DOUBLE_ENTITY_RADIUS_SQUARED {
                 handle_collision(args, &mut state.entities, i, j, &delta, delta_length_squared);
+            }
+        }
+
+        // Collisions with buildings
+        for j in 0..state.buildings.len() {
+            // Check if position is inside the building
+            let start = Vector2 { x: p1.x, y: p1.y };
+            let end   = Vector2 { x: p1.x, y: MAX };
+            let mut overlap = state.buildings[j].num_intersects(start, end) % 2 == 1;
+            let inside = overlap;
+
+            // Don't bother doing this if we already know there's an overlap
+            if !inside {
+                // Check if one of the building's sides intersects the entity
+                for k in 0..state.buildings[j].num_sides() {
+                    let segment = Segment2 {
+                        p1: state.buildings[j].get(k),
+                        p2: state.buildings[j].get((k + 1) % state.buildings[j].num_sides())
+                    };
+
+                    if segment_circle_has_intersection(&segment, &circle) {
+                        overlap = true;
+                        break;
+                    }
+                }
+            }
+
+            if overlap {
+                handle_building_collision(args, &mut state.entities[i], &state.buildings[j], inside);
+                break;
             }
         }
     }
@@ -145,12 +182,53 @@ fn handle_collision(
     entities[j].velocity += velocity_change;
 }
 
+fn handle_building_collision(
+    args: &UpdateArgs,
+    entity: &mut Entity,
+    building: &Polygon,
+    inside: bool) {
+
+    let mut distance_squared = INFINITY;
+    let mut normal = Vector2::zero();
+    let normals = building.normals();
+
+    // Find the closest edge
+    for i in 0..building.num_sides() {
+        let seg_i = Segment2 {
+            p1: building.get(i),
+            p2: building.get((i + 1) % building.num_sides())
+        };
+        let dist_i = seg_i.dist_squared(entity.position);
+
+        if distance_squared > dist_i {
+            distance_squared = dist_i;
+            normal = normals[i];
+        }
+    }
+
+    const SPRING_CONSTANT: f64 = 32.0;
+
+    let distance = distance_squared.sqrt();
+
+    if inside {
+        // If the entity is inside move them to the nearest edge
+        entity.position += (distance + ENTITY_RADIUS) * normal;
+    } else {
+        // If the entity is overlapping, force them away from the edge
+        let overlap = ENTITY_RADIUS - distance;
+        entity.velocity += args.dt * SPRING_CONSTANT * overlap * normal
+    }
+}
+
 fn update_cop(
     args: &UpdateArgs,
     sim_state: &mut State,
     index: usize,
     behaviour: Behaviour) -> Behaviour {
+
     let entities = &mut sim_state.entities;
+    let buildings = &sim_state.buildings;
+    let building_outlines = &sim_state.building_outlines;
 
     match behaviour {
         Behaviour::Cop { rounds_in_magazine, state } => {
@@ -213,17 +291,36 @@ fn update_cop(
                     }
                 }
                 CopState::Moving { waypoint } => {
-                    let delta = waypoint - entities[index].position;
-                    if delta.length_squared() < COP_MIN_DISTANCE_FROM_WAYPOINT_SQUARED {
-                        Behaviour::Cop {
-                            rounds_in_magazine: rounds_in_magazine,
-                            state: CopState::Idle,
-                        }
-                    } else {
-                        entities[index].accelerate_along_vector(delta, args.dt);
-                        Behaviour::Cop {
-                            rounds_in_magazine: rounds_in_magazine,
-                            state: CopState::Moving { waypoint },
+                    match find_path(entities[index].position, waypoint, buildings, building_outlines) {
+                        None => {
+                            Behaviour::Cop {
+                                rounds_in_magazine: rounds_in_magazine,
+                                state: CopState::Idle
+                            }
+                        },
+                        Some(path) => {
+                            match path.to_vec().get(1) {
+                                None => Behaviour::Cop {
+                                    rounds_in_magazine: rounds_in_magazine,
+                                    state: CopState::Idle
+                                },
+                                Some(&node) => {
+                                    let delta = node - entities[index].position;
+
+                                    if waypoint == node && delta.length_squared() < COP_MIN_DISTANCE_FROM_WAYPOINT_SQUARED {
+                                        Behaviour::Cop {
+                                            rounds_in_magazine: rounds_in_magazine,
+                                            state: CopState::Idle
+                                        }
+                                    } else {
+                                        entities[index].accelerate_along_vector(delta, args.dt);
+                                        Behaviour::Cop {
+                                            rounds_in_magazine: rounds_in_magazine,
+                                            state: CopState::Moving { waypoint }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -308,22 +405,28 @@ fn update_cop(
     }
 }
 
-fn simulate_zombie(args: &UpdateArgs, entities: &mut Vec<Entity>, index: usize) {
+fn simulate_zombie(args: &UpdateArgs, sim_state: &mut State, index: usize) {
+
+    let entities = &mut sim_state.entities;
+    let buildings = &sim_state.buildings;
+    let building_outlines = &sim_state.building_outlines;
+
     let my_pos = entities[index].position;
 
-    let mut min_delta = Vector2::zero();
-    let mut min_distance_sqr = INFINITY;
+    let mut min_path: Option<Path> = None;
+    let mut min_cost = INFINITY;
 
     for i in 0..entities.len() {
         match entities[i].behaviour {
 
             // Chase humans and cops
             Behaviour::Cop { .. } | Behaviour::Human => {
-                let delta = entities[i].position - my_pos;
-                let distance_sqr = delta.length_squared();
-                if distance_sqr < min_distance_sqr {
-                    min_delta = delta;
-                    min_distance_sqr = distance_sqr;
+                match find_path(my_pos, entities[i].position, buildings, building_outlines) {
+                    None => (),
+                    Some(path) => if path.cost < min_cost {
+                        min_cost = path.cost;
+                        min_path = Some(path);
+                    }
                 }
             }
 
@@ -332,9 +435,17 @@ fn simulate_zombie(args: &UpdateArgs, entities: &mut Vec<Entity>, index: usize) 
         }
     }
 
-    if min_distance_sqr < INFINITY {
-        // Accelerate towards the nearest target
-        entities[index].accelerate_along_vector(min_delta, args.dt);
+    match min_path {
+        None => (),
+        Some(path) => {
+            match path.to_vec().get(1) {
+                None => (),
+                Some(&node) => {
+                    let delta = node - my_pos;
+                    entities[index].accelerate_along_vector(delta, args.dt);
+                }
+            }
+        }
     }
 }
 

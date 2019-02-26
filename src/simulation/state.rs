@@ -7,6 +7,7 @@ use std::collections::HashSet;
 pub struct State {
     pub entities: Vec<Entity>,
     pub buildings: Vec<Polygon>,
+    pub building_outlines: Vec<Polygon>,
     pub selection: HashSet<usize>,
     pub projectiles: Vec<Projectile>,
     pub rng: rand_xorshift::XorShiftRng,

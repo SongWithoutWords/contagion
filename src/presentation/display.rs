@@ -481,6 +481,22 @@ pub fn display(
         push_building_vertices(&mut vertex_buffers_building, building, color);
     }
 
+//    let camera_frame = camera_frame.as_f32_array();
+
+    // Render buildings
+    {
+        let uniforms = uniform! {
+            matrix: camera_frame
+        };
+        draw_color_sprites(
+            frame,
+            window,
+            &vertex_buffers_building,
+            &programs.shape_program,
+            params,
+            &uniforms);
+    }
+
     // Render shadows
     use crate::presentation::display::SpriteType::*;
     for sprite_type in &[Cop, Civilian, Dead, Zombie] {
@@ -511,19 +527,6 @@ pub fn display(
             window,
             &vertex_buffer,
             &programs.sprite_program,
-            params,
-            &uniforms);
-    }
-
-    {
-        let uniforms = uniform! {
-            matrix: camera_frame
-        };
-        draw_color_sprites(
-            frame,
-            window,
-            &vertex_buffers_building,
-            &programs.shape_program,
             params,
             &uniforms);
     }

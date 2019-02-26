@@ -4,6 +4,7 @@ extern crate enum_map;
 extern crate glium;
 extern crate glium_sdl2;
 extern crate image;
+extern crate num;
 extern crate music;
 extern crate rand;
 extern crate rand_xorshift;
@@ -82,7 +83,6 @@ fn main() {
     let mut last_frame = Instant::now();
     let mut game_paused = false;
     let mut terminate = false;
-
 
     // Handle the sound effects for the game
     music::start_context::<Music, TheSound, _>(&_sdl_context, 200, || {
