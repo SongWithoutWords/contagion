@@ -30,6 +30,12 @@ pub fn update(args: &UpdateArgs, state: &mut State) {
 
         // Collisions with other entities
         for j in (i + 1)..state.entities.len() {
+
+            // Do not collide with dead entities
+            if state.entities[j].behaviour == Behaviour::Dead {
+                continue;
+            }
+
             let p2 = state.entities[j].position;
 
             let delta = p2 - p1;
