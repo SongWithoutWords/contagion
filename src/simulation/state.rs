@@ -46,7 +46,7 @@ impl Entity {
 
 pub const COP_MOVEMENT_FORCE: Scalar = 1.0;
 pub const CIVILIAN_MOVEMENT_FORCE: Scalar = 1.0;
-pub const ZOMBIE_MOVEMENT_FORCE: Scalar = 1.2;
+pub const ZOMBIE_MOVEMENT_FORCE: Scalar = 1.5;
 
 pub const COP_RELOAD_COOLDOWN: Scalar = 4.0;
 pub const COP_AIM_TIME_MEAN: Scalar = 1.0;
