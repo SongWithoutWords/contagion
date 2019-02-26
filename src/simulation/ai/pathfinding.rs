@@ -46,7 +46,7 @@ pub fn find_path(
     start_pos: Vector2,
     end_pos: Vector2,
     obstacles: &Vec<Polygon>,
-    outlines: &Vec<Polygon>) -> Option<Vec<Vector2>> {
+    outlines: &Vec<Polygon>) -> Option<Path> {
 
     // Initialize the graph representing the viable paths from start to end
     let mut graph = Graph::new(start_pos, end_pos);
@@ -64,7 +64,12 @@ pub fn find_path(
     match get_min_index_by_dist(start_pos, intersections) {
 
         // Nothing between start and end, answer is a straight line
-        None => return Some(vec![start_pos, end_pos]),
+//        None => return Some(vec![start_pos, end_pos]),
+        None => return Some(Path::from_edge(Edge {
+            start: Node { pos: start_pos, h: euclidean_dist(start_pos, end_pos) },
+            end: Node { pos: end_pos, h: 0.0 },
+            cost: euclidean_dist(start_pos, end_pos)
+        })),
         Some(i) => {
             // Initializing the frontier
             let mut frontier = vec!();
@@ -86,7 +91,7 @@ pub fn find_path(
                         match path.edges.last() {
                             Some(edge) => {
                                 if edge.end.pos == end_pos {
-                                    return Some(path.to_vec())
+                                    return Some(path)
                                 }
 
                                 // Find all intersections between current edge and goal

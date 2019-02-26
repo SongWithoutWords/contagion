@@ -58,6 +58,12 @@ pub fn initial_state(entity_count: u32, random_seed: u32) -> State {
         entities.push(Entity { position, velocity, facing_angle, behaviour });
 //    }
 
+    let m = 7.0;
+    let n = 0.0;
+    let pos = vector2(m, n);
+    let b = Behaviour::Zombie;
+    entities.push(Entity { position: pos, velocity, facing_angle, behaviour: b});
+
     // Generate outlines around all buildings for building A* pathfinding graphs
     for i in 0..buildings.len() {
         let mut outlines = vec!();
