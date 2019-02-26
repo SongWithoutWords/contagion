@@ -11,8 +11,8 @@ struct Graph {
 
 impl Graph {
     fn new(start_pos: Vector2, end_pos: Vector2) -> Self {
-        let start_node = Node { pos: start_pos, h: euclidean_dist(start_pos, end_pos) as u64 };
-        let end_node = Node { pos: end_pos, h: 0 };
+        let start_node = Node { pos: start_pos, h: euclidean_dist(start_pos, end_pos) };
+        let end_node = Node { pos: end_pos, h: 0.0 };
 
         Graph {
             _start: start_node,
@@ -29,9 +29,9 @@ impl Graph {
             Some(edge) => *edge,
             None => {
                 let edge = Edge {
-                    start: Node { pos: start_pos, h: euclidean_dist(start_pos, self.goal.pos) as u64 },
-                    end: Node { pos: end_pos, h: euclidean_dist(end_pos, self.goal.pos) as u64 },
-                    cost: euclidean_dist(start_pos, end_pos) as u64
+                    start: Node { pos: start_pos, h: euclidean_dist(start_pos, self.goal.pos) },
+                    end: Node { pos: end_pos, h: euclidean_dist(end_pos, self.goal.pos) },
+                    cost: euclidean_dist(start_pos, end_pos)
                 };
                 self.edges.push(edge);
 
@@ -64,7 +64,7 @@ pub fn find_path(
     match get_min_index_by_dist(start_pos, intersections) {
 
         // Nothing between start and end, answer is a straight line
-        None => return Some(vec![end_pos]),
+        None => return Some(vec![start_pos, end_pos]),
         Some(i) => {
             // Initializing the frontier
             let mut frontier = vec!();

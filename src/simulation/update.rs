@@ -302,11 +302,10 @@ fn update_cop(
                                     rounds_in_magazine: rounds_in_magazine,
                                     state: CopState::Idle
                                 },
-                                Some(node) => {
-                                    println!("{:?}", *node);
-                                    let delta = *node - entities[index].position;
+                                Some(&node) => {
+                                    let delta = node - entities[index].position;
 
-                                    if waypoint == *node && delta.length_squared() < COP_MIN_DISTANCE_FROM_WAYPOINT_SQUARED {
+                                    if waypoint == node && delta.length_squared() < COP_MIN_DISTANCE_FROM_WAYPOINT_SQUARED {
                                         Behaviour::Cop {
                                             rounds_in_magazine: rounds_in_magazine,
                                             state: CopState::Idle

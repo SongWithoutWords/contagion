@@ -6,20 +6,20 @@ use crate::core::vector::Vector2;
 #[derive(Clone, Copy, Debug)]
 pub struct Node {
     pub pos: Vector2,
-    pub h: u64
+    pub h: Scalar
 }
 
 #[derive(Clone, Copy, Debug)]
 pub struct Edge {
     pub start: Node,
     pub end: Node,
-    pub cost: u64
+    pub cost: Scalar
 }
 
 #[derive(Clone, Debug)]
 pub struct Path {
     pub edges: Vec<Edge>,
-    pub cost: u64
+    pub cost: Scalar
 }
 
 impl PartialOrd for Path {
