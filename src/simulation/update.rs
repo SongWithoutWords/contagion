@@ -115,7 +115,7 @@ pub fn update(args: &UpdateArgs, state: &mut State) {
         let displacement = args.dt * p.velocity;
         p.velocity -= PROJECTILE_DRAG * displacement;
 
-        let segment = Segment2 { p1: p.position, p2: p.position + displacement };
+        let mut segment = Segment2 { p1: p.position, p2: p.position + displacement };
 
         p.position = segment.p2;
 
@@ -145,6 +145,18 @@ pub fn update(args: &UpdateArgs, state: &mut State) {
                 }
                 _ => ()
             }
+        }
+
+        match first_intersect_time_and_index {
+            Some((time, _)) => {
+                segment.p2 = segment.p1 + time * (segment.p2 - segment.p1);
+            }
+            None => ()
+        }
+
+        if !can_see(&state.buildings, segment.p1, segment.p2) {
+            first_intersect_time_and_index = None;
+            p.velocity = Vector2::zero();
         }
 
         match first_intersect_time_and_index {
