@@ -1,4 +1,5 @@
 use crate::core::vector::*;
+use crate::core::scalar::*;
 
 // Could probably refactor this to be a Vec<Edge>
 // Polygon is an ordered vec of vertices (represented by Vector2)
@@ -111,5 +112,9 @@ impl Polygon {
         }
 
         out
+    }
+
+    pub fn contains_point(&self, pos: Vector2) -> bool {
+        self.num_intersects(pos, Vector2 { x: pos.x, y: MAX }) % 2 == 1
     }
 }

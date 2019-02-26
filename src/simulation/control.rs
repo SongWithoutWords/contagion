@@ -3,9 +3,7 @@ use crate::core::vector::*;
 use crate::core::scalar::*;
 use crate::core::matrix::*;
 use crate::core::geo::intersect::rectangle_point::*;
-use crate::core::geo::polygon::*;
 use crate::core::geo::segment2::*;
-//use crate::presentation::display::*;
 
 use glium_sdl2::SDL2Facade;
 use sdl2::event::Event;
@@ -136,12 +134,12 @@ impl Control {
 
                 // Check if m_pos is inside a building
                 for building in buildings {
-                    if building.contains_point(m_pos) {
+                    if building.contains_point(*m_pos) {
                         let mut distance_squared = INFINITY;
                         let mut normal = Vector2::zero();
                         let normals = building.normals();
 
-                        for i in 0..buildings[i].num_sides() {
+                        for i in 0..building.num_sides() {
                             let seg_i = Segment2 {
                                 p1: building.get(i),
                                 p2: building.get((i + 1) % building.num_sides())
