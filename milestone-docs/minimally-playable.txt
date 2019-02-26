@@ -40,6 +40,8 @@ implementation of one or more features from subsequent milestones.
 - Zoom into and out of cursor
 
 * ADDITIONAL FEATURES DELIVERED *
+- Graceful termination
+- Sustain progressive, non-repetitive gameplay using all required features for 2 min
 - GUI structure and rendering(HUD, menu)
 - Text rendering
 - Controls for menu
