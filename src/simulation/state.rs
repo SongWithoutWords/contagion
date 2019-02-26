@@ -97,7 +97,7 @@ pub struct Projectile {
 
 pub const BULLET_RADIUS: Scalar = 0.12;
 pub const BULLET_SPEED: Scalar = 40.0;
-pub const BULLET_SPEED_MIN: Scalar = 0.1;
+pub const BULLET_SPEED_MIN: Scalar = 10.0;
 pub const BULLET_SPAWN_DISTANCE_MULTIPLIER: Scalar = 1.25;
 pub const CASING_SPEED: Scalar = 1.0;
 
