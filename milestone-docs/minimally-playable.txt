@@ -1,0 +1,53 @@
+Team 12 Minimally Playable Game Submission
+
+Note: we are using a late day and are not submitting our minimally playable game until Monday, February 25th.
+
+Please checkout the minimally playable tag to evaluate our submission
+- We will add this tag for our submission on Monday, February 25th.
+
+Link to project: https://github.com/SongWithoutWords/contagion
+
+For this milestones you should continue to support all required skeletal game features. You
+should augment those with core gameplay logic, incorporate additional assets and features that
+allow for non-repetitive gameplay, introduce basic user help, and perform playability testing.
+(75%) Milestone requirements:
+- Sustain progressive, non-repetitive gameplay using all required features for 2 min or
+more (assume that you can provide users with oral instruction).
+- You should implement state and decision tree driven (possibly randomized) response to
+user input and game state (create a decision tree data structure and reuse it for multiple
+entities)
+- Provide extended sprite and background assets set as well as corresponding actions.
+- Provide basic user tutorial/help.
+- Stable game code supporting continuing execution and graceful termination.
+(25%) Creative: You should implement one or more additional creative elements. These can
+include additional assets, rendering effects, complex gameplay logic, or pre-emptive
+implementation of one or more features from subsequent milestones.
+
+* PROPOSED DEVELOPMENT PLAN *
+- Presentation with basic sprites
+- Basic game setup (main menu, frontend UI flow)
+- A basic city map with static structures
+- Collision detection between entities and static structures
+- Pathfinding of entities around static structures
+- Can band-select and issue orders to multiple police, or double-click to select all police on screen
+- Can issue specific attack orders to individual police
+
+* PLANNED FEATURES NOT DELIVERED *
+- Basic game setup (main menu)
+- Can issue specific attack orders to individual police (We don't currently have any specific attack orders)
+
+* COMPLETED PLANNED FEATURES FROM SKELETAL GAME DELIVERABLE*
+- Zoom into and out of cursor
+
+* ADDITIONAL FEATURES DELIVERED *
+- GUI structure and rendering(HUD, menu)
+- Text rendering
+- Controls for menu
+- Fully implemented code for handling Audio (200+ sound effects can be played concurrently)
+- Cops take an exponentially distributed amount of time to aim at their target (gunfire sounds more realistic this way than with log-normal distribution)
+- Bullets fire with a random angular deviation that is normally distributed
+- Gunshots eject bullet casings which are subject to velocity and drag
+- Display sprites for bullets in flight
+- Cops do not aim or fire through buildings
+
+
