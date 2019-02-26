@@ -58,11 +58,24 @@ pub fn initial_state(entity_count: u32, random_seed: u32) -> State {
         entities.push(Entity { position, velocity, facing_angle, behaviour });
     }
 
-    // buildings.push(Polygon(vec![
-    //     Vector2 { x: -5.0, y: -5.0 },
-    //     Vector2 { x: -5.0, y: 5.0 },
-    //     Vector2 { x: 5.0, y: 5.0 },
-    //     Vector2 { x: 5.0, y: -5.0 }]));
+    // Generate some buildings
+    let mut building_x = -side_length_of_spawn_area;
+    while building_x <= side_length_of_spawn_area {
+        let mut building_y = -side_length_of_spawn_area;
+
+        while building_y <= side_length_of_spawn_area {
+            buildings.push(Polygon(vec![
+                Vector2 { x: building_x, y: building_y },
+                Vector2 { x: building_x + 10.0, y: building_y },
+                Vector2 { x: building_x + 10.0, y: building_y + 10.0 },
+                Vector2 { x: building_x, y: building_y + 10.0 }
+            ]));
+
+            building_y += 20.0;
+        }
+
+        building_x += 20.0;
+    }
 
     // Generate outlines around all buildings for building A* pathfinding graphs
     for i in 0..buildings.len() {
