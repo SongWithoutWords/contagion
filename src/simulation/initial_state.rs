@@ -31,11 +31,6 @@ pub fn initial_state(entity_count: u32, random_seed: u32) -> State {
     let buildings = &mut state.buildings;
     let building_outlines = &mut state.building_outlines;
 
-   buildings.push(Polygon(vec![
-       Vector2 { x: -5.0, y: -5.0 },
-       Vector2 { x: -5.0, y: 5.0 },
-       Vector2 { x: 5.0, y: 5.0 },
-       Vector2 { x: 5.0, y: -5.0 }]));
     // We want the spawn area to be proportional to the number of entities
     // let side_length_of_spawn_area = 3.0 * entity_count_fp.sqrt();
     let side_length_of_spawn_area = 30.0;
@@ -62,6 +57,12 @@ pub fn initial_state(entity_count: u32, random_seed: u32) -> State {
         };
         entities.push(Entity { position, velocity, facing_angle, behaviour });
     }
+
+    // buildings.push(Polygon(vec![
+    //     Vector2 { x: -5.0, y: -5.0 },
+    //     Vector2 { x: -5.0, y: 5.0 },
+    //     Vector2 { x: 5.0, y: 5.0 },
+    //     Vector2 { x: 5.0, y: -5.0 }]));
 
     // Generate outlines around all buildings for building A* pathfinding graphs
     for i in 0..buildings.len() {
