@@ -33,7 +33,7 @@ pub fn initial_state(entity_count: u32, random_seed: u32) -> State {
 
     // We want the spawn area to be proportional to the number of entities
     // let side_length_of_spawn_area = 3.0 * entity_count_fp.sqrt();
-    let side_length_of_spawn_area = 30.0;
+    let side_length_of_spawn_area = 50.0;
 
     for i in 0..entity_count {
         // TODO: need to optimize this later with housing units and two entities shouldn't be placed on same tile
@@ -59,11 +59,11 @@ pub fn initial_state(entity_count: u32, random_seed: u32) -> State {
     }
 
     // Generate some buildings
-    let mut building_x = -side_length_of_spawn_area;
-    while building_x <= side_length_of_spawn_area {
-        let mut building_y = -side_length_of_spawn_area;
+    let mut building_x = 0.0;
+    while building_x < side_length_of_spawn_area {
+        let mut building_y = 0.0;
 
-        while building_y <= side_length_of_spawn_area {
+        while building_y < side_length_of_spawn_area {
             buildings.push(Polygon(vec![
                 Vector2 { x: building_x, y: building_y },
                 Vector2 { x: building_x + 10.0, y: building_y },
