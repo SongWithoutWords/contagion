@@ -6,10 +6,14 @@ use crate::core::scalar::*;
 use crate::core::geo::polygon::*;
 use super::state::*;
 
+const PORTION_OF_ENTITIES_ZOMBIE: f32 = 0.2;
+const PORTION_OF_ENTITIES_COP: f32 = 0.05;
+
 pub fn initial_state(entity_count: u32, random_seed: u32) -> State {
-    let human_count: u32 = (entity_count as f32 * 0.8) as u32;
-    let cop_count: u32 = (entity_count as f32 * 0.18) as u32;
-    let zombie_count = entity_count - (human_count + cop_count);
+    let entity_count_f32 = entity_count as f32;
+    let zombie_count: u32 = ((entity_count_f32 * PORTION_OF_ENTITIES_ZOMBIE) as u32).min(1);
+    let cop_count: u32 = ((entity_count_f32 * PORTION_OF_ENTITIES_COP) as u32).min(1);
+    let human_count = (entity_count - (zombie_count + cop_count)).min(1);
     let mut state = State {
         entities: vec!(),
         buildings: vec!(),
@@ -29,40 +33,28 @@ pub fn initial_state(entity_count: u32, random_seed: u32) -> State {
        Vector2 { x: 5.0, y: 5.0 },
        Vector2 { x: 5.0, y: -5.0 }]));
 
-    // let mut rng = rand::thread_rng();
-//    for i in 0..entity_count {
+    for i in 0..entity_count {
         // TODO: need to optimize this later with housing units and two entities shouldn't be placed on same tile
         let x = -7.0;//state.rng.gen_range(0.0, 25 as Scalar);
         let y = 0.0;//state.rng.gen_range(0.0, 25 as Scalar);
         let facing_angle = state.rng.gen_range(0.0, 1 as Scalar);
         let position = vector2(x, y);
         let velocity = Vector2::zero();
-//        // spawn 80% humans
-//        let behaviour = if i < human_count {
-//            Behaviour::Human
-//        } // spawn 18% cops
-//        else if  i >= human_count && i < (entity_count - zombie_count) {
-//            Behaviour::Cop {
-//                rounds_in_magazine: COP_MAGAZINE_CAPACITY,
-//                state: CopState::Idle
-//            }
-//        }
-//        // spawn rest zombie
-//        else {
-//            Behaviour::Zombie
-//        };
-        let behaviour = Behaviour::Cop {
-            rounds_in_magazine: COP_MAGAZINE_CAPACITY,
-            state: CopState::Idle
+
+        let behaviour = if i < cop_count {
+            Behaviour::Cop {
+                rounds_in_magazine: COP_MAGAZINE_CAPACITY,
+                state: CopState::Idle
+            }
+        }
+        else if i < cop_count + zombie_count {
+            Behaviour::Zombie
+        }
+        else {
+            Behaviour::Human
         };
         entities.push(Entity { position, velocity, facing_angle, behaviour });
-//    }
-
-    let m = 7.0;
-    let n = 0.0;
-    let pos = vector2(m, n);
-    let b = Behaviour::Zombie;
-    entities.push(Entity { position: pos, velocity, facing_angle, behaviour: b});
+    }
 
     // Generate outlines around all buildings for building A* pathfinding graphs
     for i in 0..buildings.len() {
