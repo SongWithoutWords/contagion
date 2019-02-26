@@ -481,8 +481,6 @@ pub fn display(
         push_building_vertices(&mut vertex_buffers_building, building, color);
     }
 
-//    let camera_frame = camera_frame.as_f32_array();
-
     // Render buildings
     {
         let uniforms = uniform! {

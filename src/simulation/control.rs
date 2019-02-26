@@ -1,8 +1,10 @@
 
 use crate::core::vector::*;
-use crate::core::scalar::Scalar;
+use crate::core::scalar::*;
 use crate::core::matrix::*;
 use crate::core::geo::intersect::rectangle_point::*;
+use crate::core::geo::polygon::*;
+use crate::core::geo::segment2::*;
 //use crate::presentation::display::*;
 
 use glium_sdl2::SDL2Facade;
@@ -129,6 +131,38 @@ impl Control {
                 let m_pos = &mut Vector2{ x: mouse_pos.x, y: mouse_pos.y };
                 translate_mouse_to_camera(m_pos, window.window().size());
                 translate_camera_to_world(m_pos, camera_frame);
+
+                let buildings = &state.buildings;
+
+                // Check if m_pos is inside a building
+                for building in buildings {
+                    if building.contains_point(m_pos) {
+                        let mut distance_squared = INFINITY;
+                        let mut normal = Vector2::zero();
+                        let normals = building.normals();
+
+                        for i in 0..buildings[i].num_sides() {
+                            let seg_i = Segment2 {
+                                p1: building.get(i),
+                                p2: building.get((i + 1) % building.num_sides())
+                            };
+                            let dist_i = seg_i.dist_squared(*m_pos);
+
+                            if distance_squared > dist_i {
+                                distance_squared = dist_i;
+                                normal = normals[i];
+                            }
+                        }
+
+                        // Offset waypoint to be outside the closest edge
+                        let offset = (distance_squared.sqrt() + ENTITY_RADIUS * 1.1) * normal;
+                        m_pos.x = m_pos.x + offset.x;
+                        m_pos.y = m_pos.y + offset.y;
+
+                        break;
+                    }
+                }
+
                 for i in &state.selection {
                     match state.entities[*i].behaviour {
                         Behaviour::Cop { ref mut state, .. } => {
