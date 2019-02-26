@@ -42,7 +42,7 @@ impl Entity {
         self.velocity += vector.normalize_to(delta_time);
     }
 }
-pub const COP_RELOAD_COOLDOWN: Scalar = 10.0;
+pub const COP_RELOAD_COOLDOWN: Scalar = 4.0;
 pub const COP_AIM_TIME_MEAN: Scalar = 1.0;
 pub const COP_AIM_TIME_STD_DEV: Scalar = 1.0;
 pub const COP_ANGULAR_ACCURACY_STD_DEV: Scalar = 0.1;
