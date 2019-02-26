@@ -38,11 +38,16 @@ impl Entity {
     pub fn look_at_point(&mut self, point: Vector2, delta_time: Scalar) {
         self.look_along_vector(point - self.position, delta_time);
     }
-    pub fn accelerate_along_vector(&mut self, vector: Vector2, delta_time: Scalar) {
+    pub fn accelerate_along_vector(&mut self, vector: Vector2, delta_time: Scalar, force: Scalar) {
         self.look_along_vector(vector, delta_time);
-        self.velocity += vector.normalize_to(delta_time);
+        self.velocity += delta_time * force * vector.normalize();
     }
 }
+
+pub const COP_MOVEMENT_FORCE: Scalar = 1.0;
+pub const CIVILIAN_MOVEMENT_FORCE: Scalar = 1.0;
+pub const ZOMBIE_MOVEMENT_FORCE: Scalar = 1.2;
+
 pub const COP_RELOAD_COOLDOWN: Scalar = 4.0;
 pub const COP_AIM_TIME_MEAN: Scalar = 1.0;
 

@@ -343,7 +343,7 @@ fn update_cop(
                                             state: CopState::Idle
                                         }
                                     } else {
-                                        entities[index].accelerate_along_vector(delta, args.dt);
+                                        entities[index].accelerate_along_vector(delta, args.dt, COP_MOVEMENT_FORCE);
                                         Behaviour::Cop {
                                             rounds_in_magazine: rounds_in_magazine,
                                             state: CopState::Moving { waypoint }
@@ -480,7 +480,7 @@ fn simulate_zombie(args: &UpdateArgs, sim_state: &mut State, index: usize) {
                 None => (),
                 Some(&node) => {
                     let delta = node - my_pos;
-                    entities[index].accelerate_along_vector(delta, args.dt);
+                    entities[index].accelerate_along_vector(delta, args.dt, ZOMBIE_MOVEMENT_FORCE);
                 }
             }
         }
@@ -513,6 +513,6 @@ fn simulate_human(args: &UpdateArgs, entities: &mut Vec<Entity>, index: usize) {
 
     if min_distance_sqr < INFINITY {
         // Accelerate away from the nearest zombie
-        entities[index].accelerate_along_vector(-min_delta, args.dt);
+        entities[index].accelerate_along_vector(-min_delta, args.dt, CIVILIAN_MOVEMENT_FORCE);
     }
 }
