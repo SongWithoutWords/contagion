@@ -21,26 +21,6 @@ pub struct UpdateArgs {
 
 pub fn update(args: &UpdateArgs, state: &mut State) {
 
-    // Apply individual behaviours
-    for i in 0..state.entities.len() {
-        match &state.entities[i].behaviour {
-            b @ Behaviour::Cop { .. } => {
-                // simulate_cop(args, &mut entities, i),
-                let behaviour = update_cop(&args, state, i, b.clone());
-                state.entities[i].behaviour = behaviour
-            }
-            Behaviour::Dead =>
-            // Do nothing
-                (),
-            Behaviour::Human =>
-            // Run from zombies!
-                simulate_human(args, &mut state.entities, i),
-            Behaviour::Zombie =>
-            // Chase humans and cops!
-                simulate_zombie(args, state, i)
-        }
-    }
-
     const DOUBLE_ENTITY_RADIUS_SQUARED: f64 = 4.0 * ENTITY_RADIUS * ENTITY_RADIUS;
 
     // Check for collisions
@@ -87,6 +67,26 @@ pub fn update(args: &UpdateArgs, state: &mut State) {
                 handle_building_collision(args, &mut state.entities[i], &state.buildings[j], inside);
                 break;
             }
+        }
+    }
+
+    // Apply individual behaviours
+    for i in 0..state.entities.len() {
+        match &state.entities[i].behaviour {
+            b @ Behaviour::Cop { .. } => {
+                // simulate_cop(args, &mut entities, i),
+                let behaviour = update_cop(&args, state, i, b.clone());
+                state.entities[i].behaviour = behaviour
+            }
+            Behaviour::Dead =>
+            // Do nothing
+                (),
+            Behaviour::Human =>
+            // Run from zombies!
+                simulate_human(args, &mut state.entities, i),
+            Behaviour::Zombie =>
+            // Chase humans and cops!
+                simulate_zombie(args, state, i)
         }
     }
 
