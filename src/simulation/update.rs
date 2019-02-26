@@ -278,7 +278,7 @@ fn update_cop(
 
                         if min_distance_sqr < INFINITY {
                             let aim_time_distribution =
-                                LogNormal::new(COP_AIM_TIME_MEAN, COP_AIM_TIME_STD_DEV);
+                                Exp::new(COP_AIM_TIME_MEAN);
                             Behaviour::Cop {
                                 rounds_in_magazine: rounds_in_magazine,
                                 state: CopState::Aiming {
