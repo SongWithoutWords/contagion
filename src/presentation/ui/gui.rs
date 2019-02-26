@@ -3,6 +3,7 @@ use crate::simulation::state::State;
 use crate::core::matrix::Mat4;
 use crate::simulation::control::*;
 use crate::core::geo::intersect::rectangle_point::*;
+use sdl2::keyboard::Keycode;
 
 use glium_sdl2::SDL2Facade;
 use sdl2::event::Event;
@@ -71,7 +72,7 @@ impl Component {
                                     let bot_right = Vector2 { x : component.bot_right.x, y: component.bot_right.y};
                                     if check_bounding_box(top_left, bot_right, *mouse_pos) {
                                         *active = !*active;
-                                        *game_paused = true;
+                                        *game_paused = !*game_paused;
                                         CURRENT = ActiveWindow::Menu;
                                     }
                                 }

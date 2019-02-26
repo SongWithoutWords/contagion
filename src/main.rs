@@ -129,6 +129,10 @@ fn main() {
                             else if CURRENT == ActiveWindow::Instruction {
                                 CURRENT = ActiveWindow::Menu;
                             }
+                            else if CURRENT == ActiveWindow::Game {
+                                CURRENT = ActiveWindow::Menu;
+                                game_paused = !game_paused;
+                            }
                         }
 
                     },
