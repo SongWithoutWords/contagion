@@ -6,14 +6,18 @@ use crate::core::scalar::*;
 use crate::core::geo::polygon::*;
 use super::state::*;
 
-const PORTION_OF_ENTITIES_ZOMBIE: f32 = 0.2;
-const PORTION_OF_ENTITIES_COP: f32 = 0.05;
+const PORTION_OF_ENTITIES_COP: Scalar = 0.05;
+const PORTION_OF_ENTITIES_ZOMBIE: Scalar = 0.2;
 
 pub fn initial_state(entity_count: u32, random_seed: u32) -> State {
-    let entity_count_f32 = entity_count as f32;
-    let zombie_count: u32 = ((entity_count_f32 * PORTION_OF_ENTITIES_ZOMBIE) as u32).min(1);
-    let cop_count: u32 = ((entity_count_f32 * PORTION_OF_ENTITIES_COP) as u32).min(1);
-    let human_count = (entity_count - (zombie_count + cop_count)).min(1);
+    let entity_count_fp = entity_count as Scalar;
+    let cop_count: u32 = ((entity_count_fp * PORTION_OF_ENTITIES_COP) as u32).max(1);
+    let zombie_count: u32 = ((entity_count_fp * PORTION_OF_ENTITIES_ZOMBIE) as u32).max(1);
+    let human_count: u32 = entity_count - (cop_count + zombie_count);
+
+    println!("Spawning {} entities: {} cops, {} zombies, and {} civilians",
+            entity_count, cop_count, zombie_count, human_count);
+
     let mut state = State {
         entities: vec!(),
         buildings: vec!(),
@@ -32,11 +36,14 @@ pub fn initial_state(entity_count: u32, random_seed: u32) -> State {
        Vector2 { x: -5.0, y: 5.0 },
        Vector2 { x: 5.0, y: 5.0 },
        Vector2 { x: 5.0, y: -5.0 }]));
+    // We want the spawn area to be proportional to the number of entities
+    // let side_length_of_spawn_area = 3.0 * entity_count_fp.sqrt();
+    let side_length_of_spawn_area = 30.0;
 
     for i in 0..entity_count {
         // TODO: need to optimize this later with housing units and two entities shouldn't be placed on same tile
-        let x = -7.0;//state.rng.gen_range(0.0, 25 as Scalar);
-        let y = 0.0;//state.rng.gen_range(0.0, 25 as Scalar);
+        let x = state.rng.gen_range(0.0, side_length_of_spawn_area);
+        let y = state.rng.gen_range(0.0, side_length_of_spawn_area);
         let facing_angle = state.rng.gen_range(0.0, 1 as Scalar);
         let position = vector2(x, y);
         let velocity = Vector2::zero();
