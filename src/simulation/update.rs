@@ -217,6 +217,23 @@ fn handle_building_collision(
     }
 }
 
+fn can_see(
+    buildings: &Vec<Polygon>,
+    from: Vector2,
+    to: Vector2) -> bool {
+
+    for building in buildings {
+
+        let num_intersects = building.num_intersects(from, to);
+
+        if num_intersects > 0 {
+            return false;
+
+        }
+    };
+    return true;
+}
+
 fn update_cop(
     args: &UpdateArgs,
     sim_state: &mut State,
@@ -231,14 +248,24 @@ fn update_cop(
         Behaviour::Cop { rounds_in_magazine, state } => {
             match state {
                 CopState::Aiming { mut aim_time_remaining, target_index } => {
+
+                    // Stop aiming if the target is already dead
                     if entities[target_index].behaviour == Behaviour::Dead {
-                        // Stop aiming if the target is already dead
                         return Behaviour::Cop {
                             rounds_in_magazine: rounds_in_magazine,
                             state: CopState::Idle,
                         };
                     }
-                    // TODO: check if we can still see the target, and stop aiming if not
+
+                    // Stop aiming if we can no longer see the target
+                    if !can_see(buildings,
+                                entities[index].position,
+                                entities[target_index].position) {
+                        return Behaviour::Cop {
+                            rounds_in_magazine: rounds_in_magazine,
+                            state: CopState::Idle,
+                        };
+                    }
 
                     let my_pos = entities[index].position;
                     let target_pos = entities[target_index].position;
@@ -357,19 +384,27 @@ fn update_cop(
                     }
                     // Look for target if you do have ammo
                     else {
-                        let my_pos = sim_state.entities[index].position;
+                        let my_pos = entities[index].position;
 
                         let mut min_index = 0;
                         let mut min_distance_sqr = INFINITY;
 
-                        for i in 0..sim_state.entities.len() {
-                            match sim_state.entities[i].behaviour {
+                        for i in 0..entities.len() {
+                            match entities[i].behaviour {
 
                                 // Target zombies
                                 Behaviour::Zombie => {
-                                    let delta = sim_state.entities[i].position - my_pos;
+                                    let delta = entities[i].position - my_pos;
                                     let distance_sqr = delta.length_squared();
                                     if distance_sqr < min_distance_sqr {
+
+                                        // make sure we can actually see the target
+                                        if !can_see(buildings,
+                                                    entities[index].position,
+                                                    entities[i].position) {
+                                            continue;
+                                        }
+
                                         min_index = i;
                                         min_distance_sqr = distance_sqr;
                                     }
