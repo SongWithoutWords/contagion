@@ -71,8 +71,8 @@ impl Component {
                                     let top_left = Vector2 { x : component.top_left.x, y: component.top_left.y};
                                     let bot_right = Vector2 { x : component.bot_right.x, y: component.bot_right.y};
                                     if check_bounding_box(top_left, bot_right, *mouse_pos) {
-                                        *active = !*active;
-                                        *game_paused = !*game_paused;
+                                        *active = false;
+                                        *game_paused = false;
                                         CURRENT = ActiveWindow::Menu;
                                     }
                                 }
