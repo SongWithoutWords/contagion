@@ -28,6 +28,10 @@ pub fn update(args: &UpdateArgs, state: &mut State) {
         let p1 = state.entities[i].position;
         let circle = Circle { center: p1, radius: ENTITY_RADIUS };
 
+        if state.entities[i].behaviour == Behaviour::Dead {
+            continue;
+        }
+
         // Collisions with other entities
         for j in (i + 1)..state.entities.len() {
 
