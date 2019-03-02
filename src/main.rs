@@ -17,6 +17,8 @@ use glium::draw_parameters::Blend;
 use glium_sdl2::SDL2Facade;
 use sdl2::{EventPump, Sdl};
 use sdl2::keyboard::Keycode;
+use sdl2::mouse::MouseState;
+use sdl2::mouse::MouseButton;
 //use sdl2::mouse::MouseButton;
 
 use crate::core::scalar:: *;
@@ -88,10 +90,10 @@ fn main() {
     music::start_context::<Music, TheSound, _>(&_sdl_context, 200, || {
 
         // Load the sound effects (bind the mp3 files with the enum)
-        load_sound_effects();
+        //load_sound_effects();
 
         // Play the background music until the end of the program
-        play_background();
+        //play_background();
 
         // main game loop
         'main_game_loop: loop {
@@ -124,18 +126,33 @@ fn main() {
                         unsafe {
                             if CURRENT == ActiveWindow::Menu {
                                 CURRENT = ActiveWindow::Game;
-                                game_paused = !game_paused;
+                                game_paused = false;
                             }
                             else if CURRENT == ActiveWindow::Instruction {
                                 CURRENT = ActiveWindow::Menu;
                             }
                             else if CURRENT == ActiveWindow::Game {
                                 CURRENT = ActiveWindow::Menu;
-                                game_paused = !game_paused;
+                                game_paused = true;
                             }
                         }
 
                     },
+//                    Event::MouseButtonDown { mouse_btn: MouseButton::Left, .. } => {
+//                        unsafe {
+//                            if CURRENT == ActiveWindow::Menu {
+//                                CURRENT = ActiveWindow::Game;
+//                                game_paused = !game_paused;
+//                            }
+//                            else if CURRENT == ActiveWindow::Instruction {
+//                                CURRENT = ActiveWindow::Menu;
+//                            }
+//                            else if CURRENT == ActiveWindow::Game {
+//                                CURRENT = ActiveWindow::Menu;
+//                                game_paused = !game_paused;
+//                            }
+//                        }
+//                    },
                     Event::KeyDown { keycode: Some(Keycode::L), .. } => {
                         println!("Debug info:");
                         println!("  DT:               {:?}", delta_time);
