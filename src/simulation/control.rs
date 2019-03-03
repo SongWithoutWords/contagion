@@ -4,11 +4,13 @@ use crate::core::scalar::*;
 use crate::core::matrix::*;
 use crate::core::geo::intersect::rectangle_point::*;
 use crate::core::geo::segment2::*;
+use crate::simulation::game_state::GameState;
 
 use glium_sdl2::SDL2Facade;
 use sdl2::event::Event;
 use std::time::Instant;
 use sdl2::mouse::MouseButton;
+use sdl2::keyboard::Keycode;
 
 use super::state::*;
 
@@ -192,8 +194,11 @@ impl Control {
         self.drag_vertex_end.y = drag_end_proj.y;
     }
 
-    pub fn handle_event(&mut self, event: Event, window: &SDL2Facade, camera_frame: Mat4, state: &mut State) {
+    pub fn handle_event(&mut self, event: Event, window: &SDL2Facade, camera_frame: Mat4, state: &mut State, game_state: &mut GameState) {
         match event {
+            Event::KeyDown { keycode: Some(Keycode::P), .. } => {
+                game_state.game_paused = !game_state.game_paused;
+            },
             Event::MouseButtonDown { timestamp: _, window_id: _, which: _, mouse_btn: _, x, y } => {
                 self.mouse_drag = true;
                 let mouse_pos = Vector2 { x: x as f64, y: y as f64 };

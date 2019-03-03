@@ -25,7 +25,6 @@ use crate::core::scalar:: *;
 use crate::core::vector:: *;
 use crate::presentation::audio::sound_effects:: *;
 use crate::presentation::ui::glium_text;
-use crate::presentation::ui::gui::{CURRENT,ActiveWindow};
 
 pub mod constants;
 pub mod core;
@@ -83,8 +82,7 @@ fn main() {
     let mut control = simulation::control::Control::new();
 
     let mut last_frame = Instant::now();
-    let mut game_paused = false;
-    let mut terminate = false;
+    let mut game_state = simulation::game_state::GameState::new();
 
     // Handle the sound effects for the game
     music::start_context::<Music, TheSound, _>(&_sdl_context, 200, || {
@@ -97,7 +95,7 @@ fn main() {
 
         // main game loop
         'main_game_loop: loop {
-            if terminate {
+            if game_state.terminate {
                 break 'main_game_loop
             }
             // Compute delta time
@@ -114,45 +112,10 @@ fn main() {
             for event in event_pump.poll_iter() {
                 use sdl2::event::Event;
                 match event {
-                    // TODO: refactor into control
                     // Exit window if escape key pressed or quit event triggered
                     Event::Quit { .. } => {
                         break 'main_game_loop;
-                    }
-                    Event::KeyDown { keycode: Some(Keycode::P), .. } => {
-                        game_paused = !game_paused;
                     },
-                    Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
-                        unsafe {
-                            if CURRENT == ActiveWindow::Menu {
-                                CURRENT = ActiveWindow::Game;
-                                game_paused = false;
-                            }
-                            else if CURRENT == ActiveWindow::Instruction {
-                                CURRENT = ActiveWindow::Menu;
-                            }
-                            else if CURRENT == ActiveWindow::Game {
-                                CURRENT = ActiveWindow::Menu;
-                                game_paused = true;
-                            }
-                        }
-
-                    },
-//                    Event::MouseButtonDown { mouse_btn: MouseButton::Left, .. } => {
-//                        unsafe {
-//                            if CURRENT == ActiveWindow::Menu {
-//                                CURRENT = ActiveWindow::Game;
-//                                game_paused = !game_paused;
-//                            }
-//                            else if CURRENT == ActiveWindow::Instruction {
-//                                CURRENT = ActiveWindow::Menu;
-//                            }
-//                            else if CURRENT == ActiveWindow::Game {
-//                                CURRENT = ActiveWindow::Menu;
-//                                game_paused = !game_paused;
-//                            }
-//                        }
-//                    },
                     Event::KeyDown { keycode: Some(Keycode::L), .. } => {
                         println!("Debug info:");
                         println!("  DT:               {:?}", delta_time);
@@ -164,12 +127,12 @@ fn main() {
                         camera.set_zoom(y);
                     }
                     _ => {
-                        ui.handle_event(event, &mut control, &window, camera_frame, &mut state, &mut game_paused, &mut terminate);
+                        ui.handle_event(event, &window, camera_frame, &mut state, &mut game_state, &mut control);
                     }
                 }
             }
 
-            if !game_paused {
+            if !game_state.game_paused {
                 let _not_paused_game = simulation::update::update(
                     &simulation::update::UpdateArgs { dt: delta_time },
                     &mut state);
