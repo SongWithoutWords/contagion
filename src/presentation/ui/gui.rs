@@ -3,7 +3,6 @@ use crate::simulation::state::State;
 use crate::core::matrix::Mat4;
 use crate::simulation::control::*;
 use crate::core::geo::intersect::rectangle_point::*;
-use sdl2::keyboard::Keycode;
 
 use glium_sdl2::SDL2Facade;
 use sdl2::event::Event;

@@ -17,20 +17,19 @@ use glium::draw_parameters::Blend;
 use glium_sdl2::SDL2Facade;
 use sdl2::{EventPump, Sdl};
 use sdl2::keyboard::Keycode;
-use sdl2::mouse::MouseState;
-use sdl2::mouse::MouseButton;
-//use sdl2::mouse::MouseButton;
 
 use crate::core::scalar:: *;
 use crate::core::vector:: *;
 use crate::presentation::audio::sound_effects:: *;
 use crate::presentation::ui::glium_text;
 use crate::presentation::ui::gui::{CURRENT,ActiveWindow};
+use crate::scenemanager::Scene;
 
 pub mod constants;
 pub mod core;
 pub mod presentation;
 pub mod simulation;
+pub mod scenemanager;
 
 fn init() -> Result<((Sdl, SDL2Facade, EventPump),
                      presentation::display::Textures,
@@ -77,6 +76,8 @@ fn main() {
         ..Default::default()
     };
 
+    let mut sm = scenemanager::SceneManager::init();
+    sm.next(Scene::Game);
     let mut state = simulation::initial_state::initial_state(100, rand::random::<u32>());
     let mut ui = presentation::ui::gui::Component::init_demo();
     let mut camera = presentation::camera::Camera::new();
@@ -100,6 +101,7 @@ fn main() {
             if terminate {
                 break 'main_game_loop
             }
+            sm.update();
             // Compute delta time
             let duration = last_frame.elapsed();
             let delta_time = duration.as_secs() as Scalar + 1e-9 * duration.subsec_nanos() as Scalar;
@@ -157,8 +159,8 @@ fn main() {
                         println!("Debug info:");
                         println!("  DT:               {:?}", delta_time);
                         println!("  FPS:              {:?}", 1.0 / delta_time);
-                        println!("  Entity count:     {:?}", state.entities.len());
-                        println!("  Projectile count: {:?}", state.projectiles.len());
+                        println!("  Entity count:     {:?}", sm.state.unwrap().entities.len());
+                        println!("  Projectile count: {:?}", &sm.state.unwrap().projectiles.len());
                     }
                     Event::MouseWheel { timestamp: _, window_id: _, which: _, x: _, y, direction: _ } => {
                         camera.set_zoom(y);
