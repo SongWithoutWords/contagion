@@ -23,6 +23,9 @@ use crate::core::scalar:: *;
 use crate::core::vector:: *;
 use crate::presentation::audio::sound_effects:: *;
 use crate::presentation::ui::glium_text;
+use crate::scenemanager::update_scene;
+use crate::scenemanager::handle_scene_input;
+use crate::scenemanager::render_scene;
 
 pub mod constants;
 pub mod core;
@@ -74,14 +77,14 @@ fn main() {
         blend: Blend::alpha_blending(),
         ..Default::default()
     };
-
-    let mut state = simulation::initial_state::initial_state(100, rand::random::<u32>());
-    let mut ui = presentation::ui::gui::Component::init_demo();
-    let mut camera = presentation::camera::Camera::new();
-    let mut control = simulation::control::Control::new();
+    let mut ingame = scenemanager::InGame::new();
+//    let mut state = simulation::initial_state::initial_state(100, rand::random::<u32>());
+//    let mut ui = presentation::ui::gui::Component::init_demo();
+//    let mut camera = presentation::camera::Camera::new();
+//    let mut control = simulation::control::Control::new();
 
     let mut last_frame = Instant::now();
-    let mut game_state = simulation::game_state::GameState::new();
+//    let mut game_state = simulation::game_state::GameState::new();
 
     // Handle the sound effects for the game
     music::start_context::<Music, TheSound, _>(&_sdl_context, 200, || {
@@ -94,52 +97,22 @@ fn main() {
 
         // main game loop
         'main_game_loop: loop {
-            if game_state.terminate {
-                break 'main_game_loop
-            }
+//            if game_state.terminate {
+//                break 'main_game_loop
+//            }
             // Compute delta time
             let duration = last_frame.elapsed();
             let delta_time = duration.as_secs() as Scalar + 1e-9 * duration.subsec_nanos() as Scalar;
             last_frame = Instant::now();
-            let keyboard_state = event_pump.keyboard_state();
 
-            camera.update(&keyboard_state, delta_time);
-
-            let camera_frame = camera.compute_matrix();
+            // update scene
+            update_scene(&mut ingame, &event_pump,delta_time);
 
             // Event loop: polls for events sent to all windows
-            for event in event_pump.poll_iter() {
-                use sdl2::event::Event;
-                match event {
-                    // Exit window if escape key pressed or quit event triggered
-                    Event::Quit { .. } => {
-                        break 'main_game_loop;
-                    },
-                    Event::KeyDown { keycode: Some(Keycode::L), .. } => {
-                        println!("Debug info:");
-                        println!("  DT:               {:?}", delta_time);
-                        println!("  FPS:              {:?}", 1.0 / delta_time);
-                        println!("  Entity count:     {:?}", state.entities.len());
-                        println!("  Projectile count: {:?}", state.projectiles.len());
-                    }
-                    Event::MouseWheel { timestamp: _, window_id: _, which: _, x: _, y, direction: _ } => {
-                        camera.set_zoom(y);
-                    }
-                    _ => {
-                        ui.handle_event(event, &window, camera_frame, &mut state, &mut game_state, &mut control);
-                    }
-                }
-            }
+            handle_scene_input(&mut ingame, &mut event_pump, &window, delta_time);
 
-            if !game_state.game_paused {
-                let _not_paused_game = simulation::update::update(
-                    &simulation::update::UpdateArgs { dt: delta_time },
-                    &mut state);
-            }
-
-            let mut target = window.draw();
-            presentation::display::display(&mut target, &window, &programs, &textures, &params, &state, camera_frame, &mut ui, &font, &control);
-            target.finish().unwrap();
+            // render scene
+            render_scene(&mut ingame, &window, &programs, &textures, &params, &font);
         }
     });
 }
