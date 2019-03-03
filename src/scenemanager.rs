@@ -1,30 +1,20 @@
-use crate::presentation::{ui::gui, camera};
 use crate::simulation::state::State;
 use crate::presentation::ui::gui::Component;
 use crate::presentation::camera::Camera;
 use crate::simulation::control::Control;
 
 use crate::simulation::initial_state::initial_state;
-use crate::core::matrix::Mat4;
 use crate::presentation;
-use std::fs::File;
-use std::time::Instant;
 
-use glium::draw_parameters::Blend;
 use glium_sdl2::SDL2Facade;
-use sdl2::{EventPump, Sdl};
+use sdl2::{EventPump};
 use sdl2::keyboard::Keycode;
 
-use crate::core::scalar:: *;
-use crate::core::vector:: *;
-use crate::presentation::audio::sound_effects:: *;
-use crate::presentation::ui::glium_text;
-use crate::presentation::ui::gui::{CURRENT,ActiveWindow};
-use sdl2::mixer::query_spec;
 use crate::presentation::display::Programs;
 use crate::presentation::display::Textures;
 use glium::DrawParameters;
 use crate::presentation::ui::glium_text::FontTexture;
+use crate::simulation::game_state::GameState;
 
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -38,9 +28,9 @@ pub static mut CURRENT_SCENE: SceneType = SceneType::InGame;
 pub static mut PREV_SCENE: SceneType = SceneType::None;
 
 pub trait Scene {
-    fn handle_input(&self);
-    fn update(&self) -> Option<Box<Scene>>;
-    fn render(&self, window:SDL2Facade, program:Programs, textures:Textures, params:DrawParameters, font:FontTexture);
+    fn handle_input(&mut self, event_pump:EventPump, window:SDL2Facade, game_state:GameState, delta_time: f64);
+    fn update(&mut self, event_pump: EventPump, delta_time: f64) -> Option<Box<Scene>>;
+    fn render(&mut self, window:SDL2Facade, program:Programs, textures:Textures, params:DrawParameters, font:FontTexture);
 }
 
 ///*Start Menu*/
@@ -76,66 +66,33 @@ impl InGame {
 }
 
 impl Scene for InGame {
-    fn handle_input(&self, event_pump, terminate, ) {
+    fn handle_input(&mut self, mut event_pump:EventPump, window:SDL2Facade, ref mut game_state:GameState, delta_time: f64) {
         for event in event_pump.poll_iter() {
             use sdl2::event::Event;
             match event {
-                // TODO: refactor into control
                 // Exit window if escape key pressed or quit event triggered
                 Event::Quit { .. } => {
-                    break 'main_game_loop;
-                }
-                Event::KeyDown { keycode: Some(Keycode::P), .. } => {
-                    game_paused = !game_paused;
+                    break
                 },
-                Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
-                    unsafe {
-                        if CURRENT == ActiveWindow::Menu {
-                            CURRENT = ActiveWindow::Game;
-                            game_paused = false;
-                        }
-                        else if CURRENT == ActiveWindow::Instruction {
-                            CURRENT = ActiveWindow::Menu;
-                        }
-                        else if CURRENT == ActiveWindow::Game {
-                            CURRENT = ActiveWindow::Menu;
-                            game_paused = true;
-                        }
-                    }
-
-                },
-//                    Event::MouseButtonDown { mouse_btn: MouseButton::Left, .. } => {
-//                        unsafe {
-//                            if CURRENT == ActiveWindow::Menu {
-//                                CURRENT = ActiveWindow::Game;
-//                                game_paused = !game_paused;
-//                            }
-//                            else if CURRENT == ActiveWindow::Instruction {
-//                                CURRENT = ActiveWindow::Menu;
-//                            }
-//                            else if CURRENT == ActiveWindow::Game {
-//                                CURRENT = ActiveWindow::Menu;
-//                                game_paused = !game_paused;
-//                            }
-//                        }
-//                    },
                 Event::KeyDown { keycode: Some(Keycode::L), .. } => {
                     println!("Debug info:");
                     println!("  DT:               {:?}", delta_time);
                     println!("  FPS:              {:?}", 1.0 / delta_time);
-                    println!("  Entity count:     {:?}", state.entities.len());
-                    println!("  Projectile count: {:?}", state.projectiles.len());
+                    println!("  Entity count:     {:?}", self.state.as_ref().unwrap().entities.len());
+                    println!("  Projectile count: {:?}", self.state.as_ref().unwrap().projectiles.len());
                 }
                 Event::MouseWheel { timestamp: _, window_id: _, which: _, x: _, y, direction: _ } => {
-                    camera.set_zoom(y);
+                    self.camera.as_mut().unwrap().set_zoom(y);
                 }
                 _ => {
-                    ui.handle_event(event, &mut control, &window, camera_frame, &mut state, &mut game_paused, &mut terminate);
+                    self.gui.as_mut().unwrap().handle_event(event, &window, self.camera.as_ref().unwrap().compute_matrix(),
+                                                            self.state.as_mut().unwrap(), game_state,
+                                                            self.control.as_mut().unwrap());
                 }
             }
         }
     }
-    fn update(&self) -> Option<Box<Scene>> {
+    fn update(&mut self, event_pump: EventPump, delta_time: f64) -> Option<Box<Scene>> {
         unsafe {
             if PREV_SCENE != CURRENT_SCENE {
                 PREV_SCENE = SceneType::InGame;
@@ -147,19 +104,29 @@ impl Scene for InGame {
                 }))
             }
             else {
+                let keyboard_state = event_pump.keyboard_state();
+                self.camera.as_mut().unwrap().update(&keyboard_state, delta_time);
                 None
             }
         }
     }
-    fn render(&self, window:SDL2Facade, programs:Programs, textures:Textures, params:DrawParameters, font:FontTexture) {
+    fn render(&mut self, window:SDL2Facade, programs:Programs, textures:Textures, params:DrawParameters, font:FontTexture) {
         let mut target = window.draw();
         presentation::display::display(&mut target, &window, &programs, &textures, &params, &self.state.as_ref().unwrap(),
-                                       self.camera.as_ref().unwrap().compute_matrix(), &self.gui.as_ref().unwrap(), &font,
+                                       self.camera.as_ref().unwrap().compute_matrix(),  self.gui.as_mut().unwrap(), &font,
                                        &self.control.as_ref().unwrap());
         target.finish().unwrap();
     }
 }
 
-pub fn update_scene(x: &Scene) -> Option<Box<Scene>>{
-    x.update()
+pub fn handle_scene_input(scene: &mut Scene, event_pump:EventPump, window:SDL2Facade, game_state:GameState, delta_time: f64) {
+    scene.handle_input(event_pump, window, game_state, delta_time);
+}
+
+pub fn update_scene(scene: &mut Scene, event_pump: EventPump, delta_time: f64) -> Option<Box<Scene>>{
+    scene.update(event_pump, delta_time)
+}
+
+pub fn render_scene(scene: &mut Scene, window:SDL2Facade, programs:Programs, textures:Textures, params:DrawParameters, font:FontTexture) {
+    scene.render(window, programs, textures, params, font);
 }

@@ -17,14 +17,12 @@ use glium::draw_parameters::Blend;
 use glium_sdl2::SDL2Facade;
 use sdl2::{EventPump, Sdl};
 use sdl2::keyboard::Keycode;
+//use sdl2::mouse::MouseButton;
 
 use crate::core::scalar:: *;
 use crate::core::vector:: *;
 use crate::presentation::audio::sound_effects:: *;
 use crate::presentation::ui::glium_text;
-use crate::presentation::ui::gui::{CURRENT,ActiveWindow};
-use sdl2::mixer::query_spec;
-use crate::scenemanager::*;
 
 pub mod constants;
 pub mod core;
@@ -77,21 +75,13 @@ fn main() {
         ..Default::default()
     };
 
-//    let mut scene_manager = scenemanager::SceneManager::init();
     let mut state = simulation::initial_state::initial_state(100, rand::random::<u32>());
     let mut ui = presentation::ui::gui::Component::init_demo();
     let mut camera = presentation::camera::Camera::new();
     let mut control = simulation::control::Control::new();
 
     let mut last_frame = Instant::now();
-    let mut game_paused = false;
-    let mut terminate = false;
-    let x = scenemanager::InGame::new();
-    let scene = scenemanager::update_scene(&x as &Scene).unwrap();
-    if !&x.gui.is_none() {
-        println!("hi");
-    }
-
+    let mut game_state = simulation::game_state::GameState::new();
 
     // Handle the sound effects for the game
     music::start_context::<Music, TheSound, _>(&_sdl_context, 200, || {
@@ -104,21 +94,16 @@ fn main() {
 
         // main game loop
         'main_game_loop: loop {
-            if terminate {
+            if game_state.terminate {
                 break 'main_game_loop
             }
-//            println!("{:?}", &x.gui.as_ref().unwrap().components);
-//            match temp_scene  {
-//                None => (),
-//                __ => scene = &temp_scene,
-//            }
             // Compute delta time
             let duration = last_frame.elapsed();
             let delta_time = duration.as_secs() as Scalar + 1e-9 * duration.subsec_nanos() as Scalar;
             last_frame = Instant::now();
             let keyboard_state = event_pump.keyboard_state();
 
-//            x.camera.update(&keyboard_state, delta_time);
+            camera.update(&keyboard_state, delta_time);
 
             let camera_frame = camera.compute_matrix();
 
@@ -126,45 +111,10 @@ fn main() {
             for event in event_pump.poll_iter() {
                 use sdl2::event::Event;
                 match event {
-                    // TODO: refactor into control
                     // Exit window if escape key pressed or quit event triggered
                     Event::Quit { .. } => {
                         break 'main_game_loop;
-                    }
-                    Event::KeyDown { keycode: Some(Keycode::P), .. } => {
-                        game_paused = !game_paused;
                     },
-                    Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
-                        unsafe {
-                            if CURRENT == ActiveWindow::Menu {
-                                CURRENT = ActiveWindow::Game;
-                                game_paused = false;
-                            }
-                            else if CURRENT == ActiveWindow::Instruction {
-                                CURRENT = ActiveWindow::Menu;
-                            }
-                            else if CURRENT == ActiveWindow::Game {
-                                CURRENT = ActiveWindow::Menu;
-                                game_paused = true;
-                            }
-                        }
-
-                    },
-//                    Event::MouseButtonDown { mouse_btn: MouseButton::Left, .. } => {
-//                        unsafe {
-//                            if CURRENT == ActiveWindow::Menu {
-//                                CURRENT = ActiveWindow::Game;
-//                                game_paused = !game_paused;
-//                            }
-//                            else if CURRENT == ActiveWindow::Instruction {
-//                                CURRENT = ActiveWindow::Menu;
-//                            }
-//                            else if CURRENT == ActiveWindow::Game {
-//                                CURRENT = ActiveWindow::Menu;
-//                                game_paused = !game_paused;
-//                            }
-//                        }
-//                    },
                     Event::KeyDown { keycode: Some(Keycode::L), .. } => {
                         println!("Debug info:");
                         println!("  DT:               {:?}", delta_time);
@@ -176,12 +126,12 @@ fn main() {
                         camera.set_zoom(y);
                     }
                     _ => {
-                        ui.handle_event(event, &mut control, &window, camera_frame, &mut state, &mut game_paused, &mut terminate);
+                        ui.handle_event(event, &window, camera_frame, &mut state, &mut game_state, &mut control);
                     }
                 }
             }
 
-            if !game_paused {
+            if !game_state.game_paused {
                 let _not_paused_game = simulation::update::update(
                     &simulation::update::UpdateArgs { dt: delta_time },
                     &mut state);
