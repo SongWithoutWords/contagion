@@ -23,7 +23,8 @@ use crate::core::vector:: *;
 use crate::presentation::audio::sound_effects:: *;
 use crate::presentation::ui::glium_text;
 use crate::presentation::ui::gui::{CURRENT,ActiveWindow};
-use crate::scenemanager::Scene;
+use sdl2::mixer::query_spec;
+use crate::scenemanager::*;
 
 pub mod constants;
 pub mod core;
@@ -76,8 +77,7 @@ fn main() {
         ..Default::default()
     };
 
-    let mut sm = scenemanager::SceneManager::init();
-    sm.next(Scene::Game);
+//    let mut scene_manager = scenemanager::SceneManager::init();
     let mut state = simulation::initial_state::initial_state(100, rand::random::<u32>());
     let mut ui = presentation::ui::gui::Component::init_demo();
     let mut camera = presentation::camera::Camera::new();
@@ -86,6 +86,8 @@ fn main() {
     let mut last_frame = Instant::now();
     let mut game_paused = false;
     let mut terminate = false;
+    let x = scenemanager::InGame::new();
+
 
     // Handle the sound effects for the game
     music::start_context::<Music, TheSound, _>(&_sdl_context, 200, || {
@@ -101,14 +103,18 @@ fn main() {
             if terminate {
                 break 'main_game_loop
             }
-            sm.update();
+            let scene = scenemanager::update_scene(&x as &Scene).unwrap();
+//            match temp_scene  {
+//                None => (),
+//                __ => scene = &temp_scene,
+//            }
             // Compute delta time
             let duration = last_frame.elapsed();
             let delta_time = duration.as_secs() as Scalar + 1e-9 * duration.subsec_nanos() as Scalar;
             last_frame = Instant::now();
             let keyboard_state = event_pump.keyboard_state();
 
-            camera.update(&keyboard_state, delta_time);
+//            x.camera.update(&keyboard_state, delta_time);
 
             let camera_frame = camera.compute_matrix();
 
@@ -159,8 +165,8 @@ fn main() {
                         println!("Debug info:");
                         println!("  DT:               {:?}", delta_time);
                         println!("  FPS:              {:?}", 1.0 / delta_time);
-                        println!("  Entity count:     {:?}", sm.state.unwrap().entities.len());
-                        println!("  Projectile count: {:?}", &sm.state.unwrap().projectiles.len());
+                        println!("  Entity count:     {:?}", state.entities.len());
+                        println!("  Projectile count: {:?}", state.projectiles.len());
                     }
                     Event::MouseWheel { timestamp: _, window_id: _, which: _, x: _, y, direction: _ } => {
                         camera.set_zoom(y);

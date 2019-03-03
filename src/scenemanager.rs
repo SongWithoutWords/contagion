@@ -2,57 +2,80 @@ use crate::presentation::{ui::gui, camera};
 use crate::simulation::state::State;
 use crate::presentation::ui::gui::Component;
 use crate::presentation::camera::Camera;
-use crate::simulation::initial_state::initial_state;
 use crate::simulation::control::Control;
 
-#[derive(Clone,PartialEq, Debug)]
-pub enum Scene {
+use crate::simulation::initial_state::initial_state;
+
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum SceneType {
     StartMenu,
-    Game,
-    Menu,
-    Instruction,
+    InGame,
     None,
 }
 
-pub struct SceneManager {
-    pub prev: Scene,
-    pub next: Scene,
-    pub ui: Option<Component>,
-    pub state: Option<State>,
-    pub camera: Option<Camera>,
-    pub control: Option<Control>
+pub static mut CURRENT_SCENE: SceneType = SceneType::InGame;
+pub static mut PREV_SCENE: SceneType = SceneType::None;
+
+pub trait Scene {
+    fn handle_input(&self);
+    fn update(&self) -> Option<Box<Scene>>;
+    fn render(&self);
 }
 
-impl SceneManager {
-    // initialize scene_manager with no scenes
-    pub fn init() -> SceneManager {
-        SceneManager{
-            prev: Scene::None,
-            next: Scene::None,
-            ui: None,
+///*Start Menu*/
+//pub struct StartMenu {
+//    gui: Component,
+//}
+//
+//impl Scene for StartMenu {
+//    fn handle_input(&self){}
+//    fn update(&self) -> Box<Scene> {
+//        None
+//    }
+//    fn render(&self){}
+//}
+
+/*In Game*/
+pub struct InGame {
+    pub state: Option<State>,
+    pub gui: Option<Component>,
+    pub control: Option<Control>,
+    pub camera: Option<Camera>,
+}
+
+impl InGame {
+    pub fn new() -> InGame {
+        InGame {
             state: None,
-            camera: None,
+            gui: None,
             control: None,
+            camera: None,
         }
     }
+}
 
-    pub fn update(&mut self) {
-        match self.next {
-            Scene::StartMenu => {},
-            Scene::Game => {
-                self.state = Some(initial_state(100,rand::random::<u32>()));
-                self.ui = Some(Component::init_demo());
-                self.camera = Some(Camera::new());
-                self.control = Some(Control::new());
-                self.next = Scene::None;
-            },
-            Scene::Instruction => {},
-            Scene::Menu => {},
-            Scene::None => {},
+impl Scene for InGame {
+    fn handle_input(&self){}
+    fn update(&self) -> Option<Box<Scene>> {
+        unsafe {
+            if PREV_SCENE != CURRENT_SCENE {
+                PREV_SCENE = SceneType::InGame;
+                Some(Box::new(InGame {
+                    state: Some(initial_state(100, rand::random::<u32>())),
+                    gui: Some(Component::init_demo()),
+                    control: Some(Control::new()),
+                    camera: Some(Camera::new()),
+                }))
+            }
+            else {
+                None
+            }
         }
     }
+    fn render(&self){}
+}
 
-    pub fn next(&mut self, next_scene: Scene) {
-        self.next = next_scene;
-    }
+pub fn update_scene(x: &Scene) -> Option<Box<Scene>>{
+    x.update()
 }
