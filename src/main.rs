@@ -87,6 +87,10 @@ fn main() {
     let mut game_paused = false;
     let mut terminate = false;
     let x = scenemanager::InGame::new();
+    let scene = scenemanager::update_scene(&x as &Scene).unwrap();
+    if !&x.gui.is_none() {
+        println!("hi");
+    }
 
 
     // Handle the sound effects for the game
@@ -103,7 +107,7 @@ fn main() {
             if terminate {
                 break 'main_game_loop
             }
-            let scene = scenemanager::update_scene(&x as &Scene).unwrap();
+//            println!("{:?}", &x.gui.as_ref().unwrap().components);
 //            match temp_scene  {
 //                None => (),
 //                __ => scene = &temp_scene,

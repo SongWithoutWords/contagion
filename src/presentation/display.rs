@@ -344,7 +344,7 @@ pub fn display(
     textures: &Textures,
     params: &glium::DrawParameters,
     state: &State, camera_frame: Mat4,
-    ui: &mut Component,
+    ui: &Component,
     font: &FontTexture,
     control: &Control
     ) {
@@ -422,8 +422,8 @@ pub fn display(
 
     // Computer vertices for GUI
     let offset = 0.1;
-    for component in &mut ui.components {
-        match &component.id {
+    for component in &ui.components {
+        match component.clone().id {
             GuiType::Selected => {
                 if selection_count < 1 {
 
@@ -443,7 +443,7 @@ pub fn display(
                     let rec_min_y = control.drag_vertex_start.y.min(control.drag_vertex_end.y);
                     let rec_max_x = control.drag_vertex_start.x.max(control.drag_vertex_end.x);
                     let rec_max_y = control.drag_vertex_start.y.max(control.drag_vertex_end.y);
-                    component.set_dimension(Vector2 { x: rec_min_x, y: rec_min_y },
+                    component.clone().set_dimension(Vector2 { x: rec_min_x, y: rec_min_y },
                                             Vector2 { x: rec_min_x, y: rec_max_y },
                                             Vector2 { x: rec_max_x, y: rec_min_y },
                                             Vector2 { x: rec_max_x, y: rec_max_y });
@@ -457,7 +457,7 @@ pub fn display(
                     push_gui_vertices(&mut vertex_buffers_gui[SpriteType::Menu], component);
                 unsafe {
                     if CURRENT == ActiveWindow::Menu {
-                        push_gui_vertices(&mut vertex_buffers_gui[SpriteType::MenuWindow], _window_gui);
+                        push_gui_vertices(&mut vertex_buffers_gui[SpriteType::MenuWindow], &_window_gui);
                         let size = _buttons_gui.len();
                         for i in 0..size {
                             let button_dimensions = _buttons_gui[i].get_dimension();
@@ -467,7 +467,7 @@ pub fn display(
                             push_gui_vertices(&mut vertex_buffers_gui[SpriteType::Button], &_buttons_gui[i]);
                         }
                     } else if CURRENT == ActiveWindow::Instruction {
-                        push_gui_vertices(&mut vertex_buffers_gui[SpriteType::MenuWindow], _window_gui);
+                        push_gui_vertices(&mut vertex_buffers_gui[SpriteType::MenuWindow], &_window_gui);
                     }
                 }
             },
