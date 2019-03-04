@@ -64,6 +64,8 @@ impl Game {
 impl Scene for Game {
     fn handle_input(&mut self, event_pump: &mut EventPump, window:&SDL2Facade, delta_time: f64) {
         println!("handling input");
+        let keyboard_state = event_pump.keyboard_state();
+        self.camera.update(&keyboard_state, delta_time);
         for event in event_pump.poll_iter() {
             use sdl2::event::Event;
             match event {
@@ -98,9 +100,7 @@ impl Scene for Game {
                 let gui = Component::init_demo();
                 let control = Control::new();
                 let mut camera = Camera::new();
-                let keyboard_state = event_pump.keyboard_state();
                 let mut game_state = simulation::game_state::GameState::new();
-                camera.update(&keyboard_state, delta_time);
                 let frame = camera.compute_matrix();
                 if !game_state.game_paused {
                     let _not_paused_game = simulation::update::update(
@@ -111,8 +111,6 @@ impl Scene for Game {
                 Some(Box::new(self::Game::new()))
             } else {
                 println!("updating ingame scene");
-                let keyboard_state = event_pump.keyboard_state();
-                self.camera.update(&keyboard_state, delta_time);
                 if !self.game_state.game_paused {
                     let _not_paused_game = simulation::update::update(
                         &simulation::update::UpdateArgs { dt: delta_time },
@@ -126,8 +124,9 @@ impl Scene for Game {
     fn render(&mut self, window:&SDL2Facade, programs:&Programs, textures:&Textures, params:&DrawParameters, font:&FontTexture) {
         println!("rendering ingame scene");
         let mut target = window.draw();
+        let frame = self.camera.compute_matrix();
         presentation::display::display(&mut target, &window, &programs, &textures, &params, &self.state,
-                                       self.frame,  &mut self.gui, &font,
+                                       frame,  &mut self.gui, &font,
                                        &self.control);
         target.finish().unwrap();
     }
