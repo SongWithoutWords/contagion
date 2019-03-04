@@ -19,7 +19,7 @@ use sdl2::{EventPump, Sdl};
 use sdl2::keyboard::Keycode;
 use sdl2::mouse::MouseState;
 use sdl2::mouse::MouseButton;
-//use sdl2::mouse::MouseButton;
+use sdl2::mouse;
 
 use crate::core::scalar:: *;
 use crate::core::vector:: *;
@@ -105,8 +105,9 @@ fn main() {
             let delta_time = duration.as_secs() as Scalar + 1e-9 * duration.subsec_nanos() as Scalar;
             last_frame = Instant::now();
             let keyboard_state = event_pump.keyboard_state();
+            let mouse_state = event_pump.mouse_state();
 
-            camera.update(&keyboard_state, delta_time);
+            camera.update(&keyboard_state. &mouse_state, &window, delta_time);
 
             let camera_frame = camera.compute_matrix();
 
@@ -138,30 +139,15 @@ fn main() {
                         }
 
                     },
-//                    Event::MouseButtonDown { mouse_btn: MouseButton::Left, .. } => {
-//                        unsafe {
-//                            if CURRENT == ActiveWindow::Menu {
-//                                CURRENT = ActiveWindow::Game;
-//                                game_paused = !game_paused;
-//                            }
-//                            else if CURRENT == ActiveWindow::Instruction {
-//                                CURRENT = ActiveWindow::Menu;
-//                            }
-//                            else if CURRENT == ActiveWindow::Game {
-//                                CURRENT = ActiveWindow::Menu;
-//                                game_paused = !game_paused;
-//                            }
-//                        }
-//                    },
                     Event::KeyDown { keycode: Some(Keycode::L), .. } => {
                         println!("Debug info:");
                         println!("  DT:               {:?}", delta_time);
                         println!("  FPS:              {:?}", 1.0 / delta_time);
                         println!("  Entity count:     {:?}", state.entities.len());
                         println!("  Projectile count: {:?}", state.projectiles.len());
-                    }
+                    },
                     Event::MouseWheel { timestamp: _, window_id: _, which: _, x: _, y, direction: _ } => {
-                        camera.set_zoom(y);
+                        camera.set_zoom(&mouse_state, y, &window, camera_frame);
                     }
                     _ => {
                         ui.handle_event(event, &mut control, &window, camera_frame, &mut state, &mut game_paused, &mut terminate);
