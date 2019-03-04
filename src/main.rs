@@ -85,10 +85,10 @@ fn main() {
     music::start_context::<Music, TheSound, _>(&_sdl_context, 200, || {
 
         // Load the sound effects (bind the mp3 files with the enum)
-        //load_sound_effects();
+        load_sound_effects();
 
         // Play the background music until the end of the program
-        //play_background();
+        play_background();
 
         // main game loop
         'main_game_loop: loop {

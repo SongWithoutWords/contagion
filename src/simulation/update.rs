@@ -10,7 +10,7 @@ use crate::core::geo::segment2::*;
 use crate::simulation::ai::pathfinding::find_path;
 use crate::simulation::ai::path::Path;
 
-//use crate::presentation::audio::sound_effects::*;
+use crate::presentation::audio::sound_effects::*;
 
 use super::state::*;
 
@@ -168,7 +168,7 @@ pub fn update(args: &UpdateArgs, state: &mut State) {
             Some((_, i)) => {
                 state.entities[i].behaviour = Behaviour::Dead;
                 p.velocity = Vector2::zero();
-                //play_zombie_dead();
+                play_zombie_dead();
             }
         }
     }
@@ -186,11 +186,11 @@ fn handle_collision(
     match (&entities[i].behaviour, &entities[j].behaviour) {
         (Behaviour::Human, Behaviour::Zombie) | (Behaviour::Cop { .. }, Behaviour::Zombie) => {
             entities[i].behaviour = Behaviour::Zombie;
-            //play_person_infected();
+            play_person_infected();
         }
         (Behaviour::Zombie, Behaviour::Human) | (Behaviour::Zombie, Behaviour::Cop { .. }) => {
             entities[j].behaviour = Behaviour::Zombie;
-            //play_person_infected()
+            play_person_infected()
         }
         _ => ()
     }
@@ -328,7 +328,7 @@ fn update_cop(
                                 kind: ProjectileKind::Casing
                             });
 
-                        //play_shotgun();
+                        play_shotgun();
 
                         Behaviour::Cop {
                             rounds_in_magazine: rounds_in_magazine - 1,
@@ -377,7 +377,7 @@ fn update_cop(
                     // Play the reload sound when half-done reloading
                     if reload_time_remaining > half_reload_time &&
                         half_reload_time > new_reload_time_remaining {
-                        //play_reload();
+                        play_reload();
                     }
 
                     if reload_time_remaining > 0.0 {
