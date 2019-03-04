@@ -21,8 +21,7 @@ use crate::core::scalar:: *;
 use crate::core::vector:: *;
 use crate::presentation::audio::sound_effects:: *;
 use crate::presentation::ui::glium_text;
-use crate::game::update_scene;
-use crate::scene::Scene;
+use crate::scene::*;
 
 pub mod constants;
 pub mod core;
@@ -76,39 +75,32 @@ fn main() {
         ..Default::default()
     };
 
-    let mut game = game::Game::new();
-    let mut scene: Option<Box<Scene>> = update_scene(&mut game, 0.0);
+    let mut scene: Box<Scene> = Box::new(game::Game::new());
 
     let mut last_frame = Instant::now();
 
     // Handle the sound effects for the game
     music::start_context::<Music, TheSound, _>(&_sdl_context, 200, || {
 
-        // Load the sound effects (bind the mp3 files with the enum)
         load_sound_effects();
 
-        // Play the background music until the end of the program
         play_background();
 
-        // main game loop
         'main_game_loop: loop {
             // Compute delta time
             let duration = last_frame.elapsed();
             let delta_time = duration.as_secs() as Scalar + 1e-9 * duration.subsec_nanos() as Scalar;
             last_frame = Instant::now();
 
-            // update scene
-            let temp_scene = scene.as_mut().unwrap().update(delta_time);
-            if (!temp_scene.is_none()) || (scene.is_none()) {
-                println!("changing scene");
-                scene = temp_scene;
-            }
-            // Event loop: polls for events sent to all windows
-            scene.as_mut().unwrap().handle_input(&mut event_pump, &window, delta_time);
+            let opt_next_scene = scene.update(&mut event_pump, &window, delta_time);
 
-            // render scene
-            scene.as_mut().unwrap().render(&window, &programs, &textures, &params, &font);
+            match opt_next_scene {
+                UpdateResult::Exit => break,
+                UpdateResult::Continue => (),
+                UpdateResult::Transition(next_scene) => scene = next_scene,
+            };
 
+            scene.render(&window, &programs, &textures, &params, &font);
         }
     });
 }

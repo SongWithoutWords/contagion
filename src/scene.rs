@@ -5,8 +5,24 @@ use glium::DrawParameters;
 use crate::presentation::display::Textures;
 use crate::presentation::ui::glium_text::FontTexture;
 
+pub enum UpdateResult {
+    Exit,
+    Continue,
+    Transition(Box<Scene>),
+}
+
 pub trait Scene {
-    fn handle_input(&mut self, event_pump:&mut EventPump, window:&SDL2Facade, delta_time: f64);
-    fn update(&mut self, delta_time: f64) -> Option<Box<Scene>>;
-    fn render(&mut self, window:&SDL2Facade, program:&Programs, textures:&Textures, params:&DrawParameters, font:&FontTexture);
+
+    fn update(&mut self,
+              event_pump: &mut EventPump,
+              window: &SDL2Facade,
+              delta_time: f64)
+              -> UpdateResult;
+
+    fn render(&mut self,
+              window: &SDL2Facade,
+              programs: &Programs,
+              textures: &Textures,
+              params:&DrawParameters,
+              font:&FontTexture);
 }

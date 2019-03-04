@@ -15,52 +15,41 @@ use glium::DrawParameters;
 use crate::presentation::ui::glium_text::FontTexture;
 use crate::simulation::game_state::GameState;
 use crate::simulation;
-use crate::core::matrix::Mat4;
-use crate::scene::Scene;
+use crate::scene::*;
 
 
-#[derive(Debug, Copy, Clone, PartialEq)]
-pub enum SceneType {
-    StartMenu,
-    InGame,
-    None,
-}
-
-pub static mut CURRENT_SCENE: SceneType = SceneType::InGame;
-pub static mut PREV_SCENE: SceneType = SceneType::None;
-
-
-/*In Game*/
 pub struct Game {
     pub state: State,
     pub gui: Component,
     pub control: Control,
     pub camera: Camera,
-    pub frame: Mat4,
     pub game_state: GameState,
 }
 
 impl Game {
     pub fn new() -> Game {
-        let mut _state = simulation::initial_state::initial_state(100, rand::random::<u32>());
-        let mut _gui = presentation::ui::gui::Component::init_game_gui();
-        let mut _camera = presentation::camera::Camera::new();
-        let mut _control = simulation::control::Control::new();
-        let mut _game_state = simulation::game_state::GameState::new();
-        let _frame = _camera.compute_matrix();
+        let state = simulation::initial_state::initial_state(100, rand::random::<u32>());
+        let gui = presentation::ui::gui::Component::init_game_gui();
+        let camera = presentation::camera::Camera::new();
+        let control = simulation::control::Control::new();
+        let game_state = simulation::game_state::GameState::new();
         Game {
-            state: _state,
-            gui: _gui,
-            control: _control,
-            camera: _camera,
-            frame: _frame,
-            game_state: _game_state
+            state: state,
+            gui: gui,
+            control: control,
+            camera: camera,
+            game_state: game_state
         }
     }
 }
 
 impl Scene for Game {
-    fn handle_input(&mut self, event_pump: &mut EventPump, window:&SDL2Facade, delta_time: f64) {
+    fn update(&mut self,
+              event_pump: &mut EventPump,
+              window: &SDL2Facade,
+              delta_time: f64)
+              -> UpdateResult {
+
         let keyboard_state = event_pump.keyboard_state();
         self.camera.update(&keyboard_state, delta_time);
         for event in event_pump.poll_iter() {
@@ -68,7 +57,7 @@ impl Scene for Game {
             match event {
                 // Exit window if escape key pressed or quit event triggered
                 Event::Quit { .. } => {
-                    break
+                    return UpdateResult::Exit
                 },
                 Event::KeyDown { keycode: Some(Keycode::L), .. } => {
                     println!("Debug info:");
@@ -81,48 +70,38 @@ impl Scene for Game {
                     self.camera.set_zoom(y);
                 }
                 _ => {
-                    self.gui.handle_event(event, &window, self.frame,
+                    self.gui.handle_event(event, &window, self.camera.compute_matrix(),
                                                             &mut self.state, &mut self.game_state,
                                                             &mut self.control);
                 }
             }
         }
-    }
-    fn update(&mut self, delta_time: f64) -> Option<Box<Scene>> {
-        unsafe {
-            if PREV_SCENE != CURRENT_SCENE {
-                PREV_SCENE = SceneType::InGame;
-                Some(Box::new(self::Game::new()))
-            } else {
-                // println!("updating ingame scene");
-                self.frame = self.camera.compute_matrix();
-                if !self.game_state.game_paused {
-                    let _not_paused_game = simulation::update::update(
-                        &simulation::update::UpdateArgs { dt: delta_time },
-                        &mut self.state);
-                }
-                None
-            }
+
+        if !self.game_state.game_paused {
+            simulation::update::update(
+                &simulation::update::UpdateArgs { dt: delta_time },
+                &mut self.state);
         }
+        UpdateResult::Continue
     }
 
-    fn render(&mut self, window:&SDL2Facade, programs:&Programs, textures:&Textures, params:&DrawParameters, font:&FontTexture) {
+    fn render(&mut self,
+              window:&SDL2Facade,
+              programs:&Programs,
+              textures:&Textures,
+              params:&DrawParameters,
+              font:&FontTexture) {
+
         let mut target = window.draw();
-        presentation::display::display(&mut target, &window, &programs, &textures, &params, &self.state,
-                                       self.frame,  &mut self.gui, &font,
+        presentation::display::display(&mut target,
+                                       &window,
+                                       &programs,
+                                       &textures,
+                                       &params,
+                                       &self.state,
+                                       self.camera.compute_matrix(),
+                                       &mut self.gui, &font,
                                        &self.control);
         target.finish().unwrap();
     }
-}
-
-pub fn handle_scene_input(scene: &mut Scene, event_pump:&mut EventPump, window:&SDL2Facade, delta_time: f64) {
-    scene.handle_input(event_pump, window, delta_time);
-}
-
-pub fn update_scene(scene: &mut Scene, delta_time: f64) -> Option<Box<Scene>>{
-    scene.update(delta_time)
-}
-
-pub fn render_scene(scene: &mut Scene, window:&SDL2Facade, programs:&Programs, textures:&Textures, params:&DrawParameters, font:&FontTexture) {
-    scene.render(window, programs, textures, params, font);
 }
