@@ -16,17 +16,12 @@ use std::time::Instant;
 use glium::draw_parameters::Blend;
 use glium_sdl2::SDL2Facade;
 use sdl2::{EventPump, Sdl};
-use sdl2::keyboard::Keycode;
-//use sdl2::mouse::MouseButton;
 
 use crate::core::scalar:: *;
 use crate::core::vector:: *;
 use crate::presentation::audio::sound_effects:: *;
 use crate::presentation::ui::glium_text;
 use crate::game::update_scene;
-use crate::game::handle_scene_input;
-use crate::game::render_scene;
-use crate::game::SceneType::InGame;
 use crate::scene::Scene;
 
 pub mod constants;
@@ -82,7 +77,7 @@ fn main() {
     };
 
     let mut game = game::Game::new();
-    let mut scene: Option<Box<Scene>> = update_scene(&mut game, &mut event_pump, 0.0);
+    let mut scene: Option<Box<Scene>> = update_scene(&mut game, 0.0);
 
     let mut last_frame = Instant::now();
 
@@ -97,16 +92,13 @@ fn main() {
 
         // main game loop
         'main_game_loop: loop {
-//            if game_state.terminate {
-//                break 'main_game_loop
-//            }
             // Compute delta time
             let duration = last_frame.elapsed();
             let delta_time = duration.as_secs() as Scalar + 1e-9 * duration.subsec_nanos() as Scalar;
             last_frame = Instant::now();
 
             // update scene
-            let temp_scene = scene.as_mut().unwrap().update(&mut event_pump, delta_time);
+            let temp_scene = scene.as_mut().unwrap().update(delta_time);
             if (!temp_scene.is_none()) || (scene.is_none()) {
                 println!("changing scene");
                 scene = temp_scene;
