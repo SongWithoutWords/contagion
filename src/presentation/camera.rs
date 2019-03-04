@@ -54,6 +54,15 @@ impl Camera {
 
     }
 
+    pub fn compute_matrix(&self) -> Mat4 {
+        (Mat4 {
+            i : Vector4 {x: self.zoom, y: 0.0, z: 0.0, w: 0.0},
+            j : Vector4 {x: 0.0, y: self.zoom, z: 0.0, w: 0.0},
+            k : Vector4 {x: 0.0, y: 0.0, z: 1.0, w: 0.0},
+            w : Vector4 {x: -self.position.x as f64, y: -self.position.y as f64, z: 0.0, w: 1.0},
+        })
+    }
+
     pub fn set_zoom(
         &mut self,
         ms: &sdl2::mouse::MouseState,
@@ -61,7 +70,7 @@ impl Camera {
         window: &SDL2Facade,
         camera_frame: Mat4) {
 
-        const ZOOM_SPEED: Scalar = 0.0005;
+        const ZOOM_SPEED: Scalar = 0.005;
         const LOWER_BOUND: Scalar = 0.015;
         const UPPER_BOUND: Scalar = 0.15;
 
@@ -92,6 +101,13 @@ impl Camera {
         let cursor_world_pos = Vector2 {x: new_camera_world_pos.x * pos_scale, y: new_camera_world_pos.y * pos_scale};
 
 
+        // Limit camera zoom
+        if mouse_scroll > 0.0 && self.zoom < UPPER_BOUND {
+            self.zoom += (UPPER_BOUND - self.zoom) * zoom_scale;
+        } else if mouse_scroll < 0.0 && self.zoom > LOWER_BOUND {
+            self.zoom += (LOWER_BOUND - self.zoom) * zoom_scale;
+        }
+
 
 
 
@@ -121,51 +137,26 @@ impl Camera {
 
 //        //TODO: Mouse coord to world coord
 //
-//        // Limit camera zoom
-//        if zoom_scale > 0.0 && self.zoom < UPPER_BOUND {
-//            //camera_frame.i.x += zoom;
-//            //camera_frame.w.x = *mouse_pos.x;
-////            self.position.x += mouse_pos.x * 0.01; // * zoom_scale
-////            self.position.y += mouse_pos.y * 0.01;
-//            self.zoom += zoom;
-//        } else if mouse_scroll < 0.0 && self.zoom > LOWER_BOUND {
-//            //self.position.x += mouse_pos.x * 0.01;
-//            //self.position.y += mouse_pos.y * 0.01;
-//            self.zoom -= zoom;
-//        }
-    }
 
-    fn lerp(value: f64, start: f64, end: f64) -> f64 {
-        return start + (end - start) * value;
     }
+}
 
+pub fn translate_mouse_to_camera(vec: &mut Vector2, window_size: (u32, u32)) {
+    vec.x = vec.x / window_size.0 as f64 * 2.0 - 1.0;
+    vec.y = -(vec.y / window_size.1 as f64 * 2.0 - 1.0);
+}
 
-    pub fn compute_matrix(&self) -> Mat4 {
-        (Mat4 {
-            i : Vector4 {x: self.zoom, y: 0.0, z: 0.0, w: 0.0},
-            j : Vector4 {x: 0.0, y: self.zoom, z: 0.0, w: 0.0},
-            k : Vector4 {x: 0.0, y: 0.0, z: 1.0, w: 0.0},
-            w : Vector4 {x: -self.position.x as f64, y: -self.position.y as f64, z: 0.0, w: 1.0},
-        })
-    }
+pub fn translate_camera_to_world(vec: &mut Vector2, matrix: Mat4) {
+    let inverse_matrix = matrix.inverse_matrix4();
+    let temp_vec2 = Vector2{x: vec.x, y: vec.y};
+    let new_vec2 = inverse_matrix.multiply_vec2(temp_vec2);
+    vec.x = new_vec2.x;
+    vec.y = new_vec2.y;
+}
 
-    pub fn translate_mouse_to_camera(vec: &mut Vector2, window_size: (u32, u32)) {
-        vec.x = vec.x / window_size.0 as f64 * 2.0 - 1.0;
-        vec.y = -(vec.y / window_size.1 as f64 * 2.0 - 1.0);
-    }
-
-    pub fn translate_camera_to_world(vec: &mut Vector2, matrix: Mat4) {
-        let inverse_matrix = matrix.inverse_matrix4();
-        let temp_vec2 = Vector2{x: vec.x, y: vec.y};
-        let new_vec2 = inverse_matrix.multiply_vec2(temp_vec2);
-        vec.x = new_vec2.x;
-        vec.y = new_vec2.y;
-    }
-
-    pub fn translate_world_to_camera(vec: &mut Vector2, matrix: Mat4) {
-        let temp_vec2 = Vector2{x: vec.x, y: vec.y};
-        let new_vec2 = matrix.multiply_vec2(temp_vec2);
-        vec.x = new_vec2.x;
-        vec.y = new_vec2.y;
-    }
+pub fn translate_world_to_camera(vec: &mut Vector2, matrix: Mat4) {
+    let temp_vec2 = Vector2{x: vec.x, y: vec.y};
+    let new_vec2 = matrix.multiply_vec2(temp_vec2);
+    vec.x = new_vec2.x;
+    vec.y = new_vec2.y;
 }
