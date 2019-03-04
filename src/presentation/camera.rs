@@ -88,6 +88,10 @@ impl Camera {
         println!("{}", "Position Scale");
         println!("{:?}", pos_scale);
 
+        let cursor_world_pos = Vector2 {x: new_camera_world_pos.x * pos_scale.x, y: new_camera_world_pos.y * pos_scale.y};
+
+        println!("{}", "Cursor Position");
+        println!("{:?}", cursor_world_pos);
 
         //translate_camera_to_world(mouse_pos, camera_frame);
 
