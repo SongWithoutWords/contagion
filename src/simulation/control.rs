@@ -1,4 +1,3 @@
-
 use crate::core::vector::*;
 use crate::core::scalar::*;
 use crate::core::matrix::*;
@@ -277,5 +276,3 @@ pub enum PoliceOrder {
     Move,
     Shoot
 }
-
-

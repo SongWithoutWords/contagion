@@ -16,20 +16,20 @@ use std::time::Instant;
 use glium::draw_parameters::Blend;
 use glium_sdl2::SDL2Facade;
 use sdl2::{EventPump, Sdl};
-use sdl2::keyboard::Keycode;
-use sdl2::mouse::MouseState;
-use sdl2::mouse::MouseButton;
-//use sdl2::mouse::MouseButton;
 
 use crate::core::scalar:: *;
 use crate::core::vector:: *;
 use crate::presentation::audio::sound_effects:: *;
 use crate::presentation::ui::glium_text;
+use crate::game::update_scene;
+use crate::scene::Scene;
 
 pub mod constants;
 pub mod core;
 pub mod presentation;
 pub mod simulation;
+pub mod game;
+pub mod scene;
 
 fn init() -> Result<((Sdl, SDL2Facade, EventPump),
                      presentation::display::Textures,
@@ -76,13 +76,10 @@ fn main() {
         ..Default::default()
     };
 
-    let mut state = simulation::initial_state::initial_state(100, rand::random::<u32>());
-    let mut ui = presentation::ui::gui::Component::init_demo();
-    let mut camera = presentation::camera::Camera::new();
-    let mut control = simulation::control::Control::new();
+    let mut game = game::Game::new();
+    let mut scene: Option<Box<Scene>> = update_scene(&mut game, 0.0);
 
     let mut last_frame = Instant::now();
-    let mut game_state = simulation::game_state::GameState::new();
 
     // Handle the sound effects for the game
     music::start_context::<Music, TheSound, _>(&_sdl_context, 200, || {
@@ -95,52 +92,23 @@ fn main() {
 
         // main game loop
         'main_game_loop: loop {
-            if game_state.terminate {
-                break 'main_game_loop
-            }
             // Compute delta time
             let duration = last_frame.elapsed();
             let delta_time = duration.as_secs() as Scalar + 1e-9 * duration.subsec_nanos() as Scalar;
             last_frame = Instant::now();
-            let keyboard_state = event_pump.keyboard_state();
 
-            camera.update(&keyboard_state, delta_time);
-
-            let camera_frame = camera.compute_matrix();
-
+            // update scene
+            let temp_scene = scene.as_mut().unwrap().update(delta_time);
+            if (!temp_scene.is_none()) || (scene.is_none()) {
+                println!("changing scene");
+                scene = temp_scene;
+            }
             // Event loop: polls for events sent to all windows
-            for event in event_pump.poll_iter() {
-                use sdl2::event::Event;
-                match event {
-                    // Exit window if escape key pressed or quit event triggered
-                    Event::Quit { .. } => {
-                        break 'main_game_loop;
-                    },
-                    Event::KeyDown { keycode: Some(Keycode::L), .. } => {
-                        println!("Debug info:");
-                        println!("  DT:               {:?}", delta_time);
-                        println!("  FPS:              {:?}", 1.0 / delta_time);
-                        println!("  Entity count:     {:?}", state.entities.len());
-                        println!("  Projectile count: {:?}", state.projectiles.len());
-                    }
-                    Event::MouseWheel { timestamp: _, window_id: _, which: _, x: _, y, direction: _ } => {
-                        camera.set_zoom(y);
-                    }
-                    _ => {
-                        ui.handle_event(event, &window, camera_frame, &mut state, &mut game_state, &mut control);
-                    }
-                }
-            }
+            scene.as_mut().unwrap().handle_input(&mut event_pump, &window, delta_time);
 
-            if !game_state.game_paused {
-                let _not_paused_game = simulation::update::update(
-                    &simulation::update::UpdateArgs { dt: delta_time },
-                    &mut state);
-            }
+            // render scene
+            scene.as_mut().unwrap().render(&window, &programs, &textures, &params, &font);
 
-            let mut target = window.draw();
-            presentation::display::display(&mut target, &window, &programs, &textures, &params, &state, camera_frame, &mut ui, &font, &control);
-            target.finish().unwrap();
         }
     });
 }

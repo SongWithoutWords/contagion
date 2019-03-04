@@ -347,7 +347,7 @@ pub fn display(
     ui: &mut Component,
     font: &FontTexture,
     control: &Control
-    ) {
+) {
 
     frame.clear_color(0.2, 0.2, 0.2, 1.0);
 

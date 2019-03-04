@@ -54,7 +54,7 @@ pub struct Component {
 }
 
 impl Component {
-    pub fn init_demo() -> Component {
+    pub fn init_game_gui() -> Component {
         let selected_ui = Gui::new(GuiType::Selected, 0.1, 0.1, Vector2{x: -0.9, y: -0.9});
         let drag_ui = Gui::new(GuiType::SelectionDrag, 0.0, 0.0, Vector2{x: 0.0, y: 0.0});
         let box_ui = Gui::new(GuiType::Window, 1.8, 1.8, Vector2{x: 0.0, y: 0.0});
