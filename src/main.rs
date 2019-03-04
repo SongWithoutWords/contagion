@@ -107,7 +107,7 @@ fn main() {
             let keyboard_state = event_pump.keyboard_state();
             let mouse_state = event_pump.mouse_state();
 
-            camera.update(&keyboard_state. &mouse_state, &window, delta_time);
+            camera.update(&keyboard_state, delta_time);
 
             let camera_frame = camera.compute_matrix();
 
@@ -139,6 +139,9 @@ fn main() {
                         }
 
                     },
+                    Event::MouseWheel {timestamp: _, window_id: _, which: _, x: _, y, direction: _} => {
+                        camera.set_zoom(&mouse_state, y, &window, camera_frame);
+                    },
                     Event::KeyDown { keycode: Some(Keycode::L), .. } => {
                         println!("Debug info:");
                         println!("  DT:               {:?}", delta_time);
@@ -146,9 +149,6 @@ fn main() {
                         println!("  Entity count:     {:?}", state.entities.len());
                         println!("  Projectile count: {:?}", state.projectiles.len());
                     },
-                    Event::MouseWheel { timestamp: _, window_id: _, which: _, x: _, y, direction: _ } => {
-                        camera.set_zoom(&mouse_state, y, &window, camera_frame);
-                    }
                     _ => {
                         ui.handle_event(event, &mut control, &window, camera_frame, &mut state, &mut game_paused, &mut terminate);
                     }

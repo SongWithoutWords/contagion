@@ -42,8 +42,6 @@ impl Camera {
             }
         }
 
-        Event::MouseWheel {}
-
         let acceleration = Vector2 {
             x: key_pressed(ks, Scancode::D) - key_pressed(ks, Scancode::A),
             y: key_pressed(ks, Scancode::W) - key_pressed(ks, Scancode::S),
@@ -68,22 +66,33 @@ impl Camera {
         const UPPER_BOUND: Scalar = 0.15;
 
         let mouse_scroll = scroll as Scalar;
-        let zoom_scale = mouse_scroll * ZOOM_SPEED;
-        let zoom = zoom_scale.abs();
+        let zoom_scale = (mouse_scroll * ZOOM_SPEED).abs();
         let mouse_pos = &mut Vector2 { x: ms.x() as f64, y: ms.y() as f64 };
 
-
         translate_mouse_to_camera(mouse_pos, window.window().size());
-        println!("{}", "Mouse Position");
-        println!("{:?}", mouse_pos);
+        translate_camera_to_world(mouse_pos, camera_frame);
+
+        let camera_world_pos = Vector2 {x: camera_frame.w.x, y: camera_frame.w.y};
+
+        println!("{}", "Camera Position");
+        println!("{:?}", camera_world_pos);
+
+        let new_camera_world_pos = Vector2 {x: -mouse_pos.x, y: -mouse_pos.y};
+
+        println!("{}", "Camera World Position");
+        println!("{:?}", new_camera_world_pos);
+
+        let pos_scale = Vector2 {x: camera_world_pos.x / new_camera_world_pos.x, y: camera_world_pos.y / new_camera_world_pos.y};
+
+
+        println!("{}", "Position Scale");
+        println!("{:?}", pos_scale);
 
 
         //translate_camera_to_world(mouse_pos, camera_frame);
 
 //        println!("{:?}", zoom);
 
-//        println!("{}", "Camera Position");
-//        println!("{:?}", self.position);
 
 //        println!("{}", "Mouse Position");
 //        println!("{:?}", mouse_pos);
@@ -92,20 +101,20 @@ impl Camera {
 //        println!("{:?}", mouse_pos.x * 0.1);
 //        println!("{:?}", mouse_pos.y * 0.1);
 
-        //TODO: Mouse coord to world coord
-
-        // Limit camera zoom
-        if zoom_scale > 0.0 && self.zoom < UPPER_BOUND {
-            //camera_frame.i.x += zoom;
-            //camera_frame.w.x = *mouse_pos.x;
-//            self.position.x += mouse_pos.x * 0.01; // * zoom_scale
-//            self.position.y += mouse_pos.y * 0.01;
-            self.zoom += zoom;
-        } else if mouse_scroll < 0.0 && self.zoom > LOWER_BOUND {
-            //self.position.x += mouse_pos.x * 0.01;
-            //self.position.y += mouse_pos.y * 0.01;
-            self.zoom -= zoom;
-        }
+//        //TODO: Mouse coord to world coord
+//
+//        // Limit camera zoom
+//        if zoom_scale > 0.0 && self.zoom < UPPER_BOUND {
+//            //camera_frame.i.x += zoom;
+//            //camera_frame.w.x = *mouse_pos.x;
+////            self.position.x += mouse_pos.x * 0.01; // * zoom_scale
+////            self.position.y += mouse_pos.y * 0.01;
+//            self.zoom += zoom;
+//        } else if mouse_scroll < 0.0 && self.zoom > LOWER_BOUND {
+//            //self.position.x += mouse_pos.x * 0.01;
+//            //self.position.y += mouse_pos.y * 0.01;
+//            self.zoom -= zoom;
+//        }
     }
 
     pub fn compute_matrix(&self) -> Mat4 {
