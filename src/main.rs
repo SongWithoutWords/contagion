@@ -23,15 +23,18 @@ use crate::core::scalar:: *;
 use crate::core::vector:: *;
 use crate::presentation::audio::sound_effects:: *;
 use crate::presentation::ui::glium_text;
-use crate::scenemanager::update_scene;
-use crate::scenemanager::handle_scene_input;
-use crate::scenemanager::render_scene;
+use crate::game::update_scene;
+use crate::game::handle_scene_input;
+use crate::game::render_scene;
+use crate::game::SceneType::InGame;
+use crate::scene::Scene;
 
 pub mod constants;
 pub mod core;
 pub mod presentation;
 pub mod simulation;
-pub mod scenemanager;
+pub mod game;
+pub mod scene;
 
 fn init() -> Result<((Sdl, SDL2Facade, EventPump),
                      presentation::display::Textures,
@@ -77,14 +80,11 @@ fn main() {
         blend: Blend::alpha_blending(),
         ..Default::default()
     };
-    let mut ingame = scenemanager::InGame::new();
-//    let mut state = simulation::initial_state::initial_state(100, rand::random::<u32>());
-//    let mut ui = presentation::ui::gui::Component::init_demo();
-//    let mut camera = presentation::camera::Camera::new();
-//    let mut control = simulation::control::Control::new();
+
+    let mut game = game::Game::new();
+    let mut scene: Option<Box<Scene>> = update_scene(&mut game, &mut event_pump, 0.0);
 
     let mut last_frame = Instant::now();
-//    let mut game_state = simulation::game_state::GameState::new();
 
     // Handle the sound effects for the game
     music::start_context::<Music, TheSound, _>(&_sdl_context, 200, || {
@@ -106,13 +106,17 @@ fn main() {
             last_frame = Instant::now();
 
             // update scene
-            update_scene(&mut ingame, &event_pump,delta_time);
-
+            let temp_scene = scene.as_mut().unwrap().update(&mut event_pump, delta_time);
+            if (!temp_scene.is_none()) || (scene.is_none()) {
+                println!("changing scene");
+                scene = temp_scene;
+            }
             // Event loop: polls for events sent to all windows
-            handle_scene_input(&mut ingame, &mut event_pump, &window, delta_time);
+            scene.as_mut().unwrap().handle_input(&mut event_pump, &window, delta_time);
 
             // render scene
-            render_scene(&mut ingame, &window, &programs, &textures, &params, &font);
+            scene.as_mut().unwrap().render(&window, &programs, &textures, &params, &font);
+
         }
     });
 }

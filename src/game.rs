@@ -17,6 +17,8 @@ use crate::presentation::ui::glium_text::FontTexture;
 use crate::simulation::game_state::GameState;
 use crate::simulation;
 use crate::core::matrix::Mat4;
+use crate::presentation::ui::gui::Gui;
+use crate::scene::Scene;
 
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -29,49 +31,37 @@ pub enum SceneType {
 pub static mut CURRENT_SCENE: SceneType = SceneType::InGame;
 pub static mut PREV_SCENE: SceneType = SceneType::None;
 
-pub trait Scene {
-    fn handle_input(&mut self, event_pump:&mut EventPump, window:&SDL2Facade, delta_time: f64);
-    fn update(&mut self, event_pump: &EventPump, delta_time: f64) -> Option<Box<Scene>>;
-    fn render(&mut self, window:&SDL2Facade, program:&Programs, textures:&Textures, params:&DrawParameters, font:&FontTexture);
-}
-
-///*Start Menu*/
-//pub struct StartMenu {
-//    gui: Component,
-//}
-//
-//impl Scene for StartMenu {
-//    fn handle_input(&self){}
-//    fn update(&self) -> Box<Scene> {
-//        None
-//    }
-//    fn render(&self){}
-//}
 
 /*In Game*/
-pub struct InGame {
-    pub state: Option<State>,
-    pub gui: Option<Component>,
-    pub control: Option<Control>,
-    pub camera: Option<Camera>,
-    pub frame: Option<Mat4>,
-    pub game_state: Option<GameState>,
+pub struct Game {
+    pub state: State,
+    pub gui: Component,
+    pub control: Control,
+    pub camera: Camera,
+    pub frame: Mat4,
+    pub game_state: GameState,
 }
 
-impl InGame {
-    pub fn new() -> InGame {
-        InGame {
-            state: None,
-            gui: None,
-            control: None,
-            camera: None,
-            frame: None,
-            game_state: None,
+impl Game {
+    pub fn new() -> Game {
+        let mut _state = simulation::initial_state::initial_state(100, rand::random::<u32>());
+        let mut _gui = presentation::ui::gui::Component::init_demo();
+        let mut _camera = presentation::camera::Camera::new();
+        let mut _control = simulation::control::Control::new();
+        let mut _game_state = simulation::game_state::GameState::new();
+        let _frame = _camera.compute_matrix();
+        Game {
+            state: _state,
+            gui: _gui,
+            control: _control,
+            camera: _camera,
+            frame: _frame,
+            game_state: _game_state
         }
     }
 }
 
-impl Scene for InGame {
+impl Scene for Game {
     fn handle_input(&mut self, event_pump: &mut EventPump, window:&SDL2Facade, delta_time: f64) {
         println!("handling input");
         for event in event_pump.poll_iter() {
@@ -85,16 +75,17 @@ impl Scene for InGame {
                     println!("Debug info:");
                     println!("  DT:               {:?}", delta_time);
                     println!("  FPS:              {:?}", 1.0 / delta_time);
-                    println!("  Entity count:     {:?}", self.state.as_ref().unwrap().entities.len());
-                    println!("  Projectile count: {:?}", self.state.as_ref().unwrap().projectiles.len());
+                    println!("  Entity count:     {:?}", self.state.entities.len());
+                    println!("  Projectile count: {:?}", self.state.projectiles.len());
                 }
                 Event::MouseWheel { timestamp: _, window_id: _, which: _, x: _, y, direction: _ } => {
-                    self.camera.as_mut().unwrap().set_zoom(y);
+                    self.camera.set_zoom(y);
                 }
                 _ => {
-                    self.gui.as_mut().unwrap().handle_event(event, &window, self.frame.unwrap(),
-                                                            self.state.as_mut().unwrap(), self.game_state.as_mut().unwrap(),
-                                                            self.control.as_mut().unwrap());
+                    println!("does it go here");
+                    self.gui.handle_event(event, &window, self.frame,
+                                                            &mut self.state, &mut self.game_state,
+                                                            &mut self.control);
                 }
             }
         }
@@ -117,35 +108,27 @@ impl Scene for InGame {
                         &mut state);
                 }
                 println!("initializing ingame scene");
-                let returntype = Box::new(self::InGame {
-                    state: Some(state),
-                    gui: Some(gui),
-                    control: Some(control),
-                    camera: Some(camera),
-                    frame: Some(frame),
-                    game_state: Some(game_state)
-                });
-                Some(returntype)
-            }
-            else {
+                Some(Box::new(self::Game::new()))
+            } else {
                 println!("updating ingame scene");
                 let keyboard_state = event_pump.keyboard_state();
-                self.camera.as_mut().unwrap().update(&keyboard_state, delta_time);
-                if !self.game_state.as_ref().unwrap().game_paused {
+                self.camera.update(&keyboard_state, delta_time);
+                if !self.game_state.game_paused {
                     let _not_paused_game = simulation::update::update(
                         &simulation::update::UpdateArgs { dt: delta_time },
-                        self.state.as_mut().unwrap());
+                        &mut self.state);
                 }
                 None
             }
         }
     }
+
     fn render(&mut self, window:&SDL2Facade, programs:&Programs, textures:&Textures, params:&DrawParameters, font:&FontTexture) {
         println!("rendering ingame scene");
         let mut target = window.draw();
-        presentation::display::display(&mut target, &window, &programs, &textures, &params, &self.state.as_ref().unwrap(),
-                                       self.frame.unwrap(),  self.gui.as_mut().unwrap(), &font,
-                                       &self.control.as_ref().unwrap());
+        presentation::display::display(&mut target, &window, &programs, &textures, &params, &self.state,
+                                       self.frame,  &mut self.gui, &font,
+                                       &self.control);
         target.finish().unwrap();
     }
 }
