@@ -77,21 +77,35 @@ impl Camera {
         println!("{}", "Camera Position");
         println!("{:?}", camera_world_pos);
 
-        let new_camera_world_pos = Vector2 {x: -mouse_pos.x, y: -mouse_pos.y};
+        let new_camera_world_pos = Vector2 {x: mouse_pos.x, y: mouse_pos.y};
 
         println!("{}", "Camera World Position");
         println!("{:?}", new_camera_world_pos);
 
-        let pos_scale = Vector2 {x: camera_world_pos.x / new_camera_world_pos.x, y: camera_world_pos.y / new_camera_world_pos.y};
+        // TODO: Make scale dynamic
+        let pos_scale = 0.09;
 
 
         println!("{}", "Position Scale");
         println!("{:?}", pos_scale);
 
-        let cursor_world_pos = Vector2 {x: new_camera_world_pos.x * pos_scale.x, y: new_camera_world_pos.y * pos_scale.y};
+        let cursor_world_pos = Vector2 {x: new_camera_world_pos.x * pos_scale, y: new_camera_world_pos.y * pos_scale};
+
+
+
+
+
+
+        //////////////////////////////////
 
         println!("{}", "Cursor Position");
         println!("{:?}", cursor_world_pos);
+
+        //self.position = cursor_world_pos;
+        //self.compute_matrix();
+
+        println!("{}", "Set Position");
+        println!("{:?}", self.position);
 
         //translate_camera_to_world(mouse_pos, camera_frame);
 
@@ -120,6 +134,11 @@ impl Camera {
 //            self.zoom -= zoom;
 //        }
     }
+
+    fn lerp(value: f64, start: f64, end: f64) -> f64 {
+        return start + (end - start) * value;
+    }
+
 
     pub fn compute_matrix(&self) -> Mat4 {
         (Mat4 {
