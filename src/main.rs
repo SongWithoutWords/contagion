@@ -140,7 +140,7 @@ fn main() {
 
                     },
                     Event::MouseWheel {timestamp: _, window_id: _, which: _, x: _, y, direction: _} => {
-                        camera.set_zoom(&mouse_state, y, &window, camera_frame);
+                        camera.set_zoom(&mouse_state, y, &window, camera_frame, delta_time);
                     },
                     Event::KeyDown { keycode: Some(Keycode::L), .. } => {
                         println!("Debug info:");

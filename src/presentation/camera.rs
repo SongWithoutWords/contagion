@@ -47,6 +47,10 @@ impl Camera {
             y: key_pressed(ks, Scancode::W) - key_pressed(ks, Scancode::S),
         };
 
+        fn move_camera() {
+
+        }
+
         self.velocity += delta_time * Self::ACCELERATION_FACTOR * acceleration;
         self.position += delta_time * self.velocity;
         self.velocity -= delta_time * Self::DRAG_FACTOR * self.velocity;
@@ -68,7 +72,8 @@ impl Camera {
         ms: &sdl2::mouse::MouseState,
         scroll: i32,
         window: &SDL2Facade,
-        camera_frame: Mat4) {
+        camera_frame: Mat4,
+        delta_time: Scalar) {
 
         const ZOOM_SPEED: Scalar = 0.005;
         const LOWER_BOUND: Scalar = 0.015;
@@ -79,66 +84,50 @@ impl Camera {
         let mouse_pos = &mut Vector2 { x: ms.x() as f64, y: ms.y() as f64 };
 
         translate_mouse_to_camera(mouse_pos, window.window().size());
-        translate_camera_to_world(mouse_pos, camera_frame);
+        //translate_camera_to_world(mouse_pos, camera_frame);
 
-        let camera_world_pos = Vector2 {x: camera_frame.w.x, y: camera_frame.w.y};
+        let camera_world_pos = Vector2 {x: -camera_frame.w.x, y: -camera_frame.w.y};
+        let mouse_world_pos = &mut Vector2 {x: mouse_pos.x, y: mouse_pos.y};
 
-        println!("{}", "Camera Position");
-        println!("{:?}", camera_world_pos);
-
-        let new_camera_world_pos = Vector2 {x: mouse_pos.x, y: mouse_pos.y};
+        //let world_pos_scale = Vector2 {x: camera_world_pos.x / mouse_world_pos.x, y: camera_world_pos.y / mouse_world_pos.y};
 
         println!("{}", "Camera World Position");
-        println!("{:?}", new_camera_world_pos);
+        println!("{:?}", camera_world_pos);
 
-        // TODO: Make scale dynamic
-        let pos_scale = 0.09;
+        //let world_pos_scale = Vector2 {x: 0.898678771250003 / 10.031551765622623, y: 0.9381503312395915 / 10.423892569328794};
+        //mouse_world_pos.x *= world_pos_scale.x;
+        //mouse_world_pos.y *= world_pos_scale.y;
 
+        println!("{}", "Mouse World Position");
+        println!("{:?}", mouse_world_pos);
 
-        println!("{}", "Position Scale");
-        println!("{:?}", pos_scale);
+        println!("{}", "Velocity");
+        println!("{:?}", self.velocity);
 
-        let cursor_world_pos = Vector2 {x: new_camera_world_pos.x * pos_scale, y: new_camera_world_pos.y * pos_scale};
+        println!("{}", "Zoom Scale");
+        println!("{:?}", zoom_scale);
+
 
 
         // Limit camera zoom
         if mouse_scroll > 0.0 && self.zoom < UPPER_BOUND {
-            self.zoom += (UPPER_BOUND - self.zoom) * zoom_scale;
+            self.zoom = interpolate_zoom(zoom_scale, self.zoom, UPPER_BOUND);
+
+            self.velocity += *mouse_world_pos / delta_time;
+            self.velocity *= self.zoom;
         } else if mouse_scroll < 0.0 && self.zoom > LOWER_BOUND {
-            self.zoom += (LOWER_BOUND - self.zoom) * zoom_scale;
+            self.zoom = interpolate_zoom(zoom_scale, self.zoom, LOWER_BOUND);
+
+            self.velocity += *mouse_world_pos / delta_time;
+            self.velocity *= self.zoom;
         }
 
-
-
-
-
-        //////////////////////////////////
-
-        println!("{}", "Cursor Position");
-        println!("{:?}", cursor_world_pos);
-
-        //self.position = cursor_world_pos;
-        //self.compute_matrix();
-
-        println!("{}", "Set Position");
-        println!("{:?}", self.position);
-
-        //translate_camera_to_world(mouse_pos, camera_frame);
-
-//        println!("{:?}", zoom);
-
-
-//        println!("{}", "Mouse Position");
-//        println!("{:?}", mouse_pos);
-
-//        println!("{}", "MouseZoom Position");
-//        println!("{:?}", mouse_pos.x * 0.1);
-//        println!("{:?}", mouse_pos.y * 0.1);
-
-//        //TODO: Mouse coord to world coord
-//
-
     }
+}
+
+// Smooth zooming
+fn interpolate_zoom(value: f64, start: f64, end: f64) -> f64 {
+    return start + (end - start) * value;
 }
 
 pub fn translate_mouse_to_camera(vec: &mut Vector2, window_size: (u32, u32)) {
