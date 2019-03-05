@@ -111,15 +111,15 @@ impl Camera {
 
         // Limit camera zoom
         if mouse_scroll > 0.0 && self.zoom < UPPER_BOUND {
+            self.velocity += *mouse_world_pos / delta_time;
+            self.position += delta_time * (self.velocity * self.zoom);
+
             self.zoom = interpolate_zoom(zoom_scale, self.zoom, UPPER_BOUND);
-
-            self.velocity += *mouse_world_pos / delta_time;
-            self.velocity *= self.zoom;
         } else if mouse_scroll < 0.0 && self.zoom > LOWER_BOUND {
-            self.zoom = interpolate_zoom(zoom_scale, self.zoom, LOWER_BOUND);
-
             self.velocity += *mouse_world_pos / delta_time;
-            self.velocity *= self.zoom;
+            self.position += delta_time * (self.velocity * self.zoom);
+
+            self.zoom = interpolate_zoom(zoom_scale, self.zoom, LOWER_BOUND);
         }
 
     }
