@@ -8,7 +8,6 @@ use sdl2::keyboard::Keycode;
 
 use glium_sdl2::SDL2Facade;
 use sdl2::event::Event;
-use core::borrow::BorrowMut;
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum GuiType {
@@ -244,7 +243,7 @@ impl Component {
                                 let bot_right = Vector2 { x: component.bot_right.x, y: component.bot_right.y };
                                 let check_within_bound = check_bounding_box(top_left, bot_right, *mouse_pos);
                                 if check_within_bound {
-                                    let mut display_text = text;
+                                    let display_text = text;
                                     if display_text == "Start" {
                                         game_state.start = true;
                                     } else if display_text == "Exit" {

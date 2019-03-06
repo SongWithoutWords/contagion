@@ -728,7 +728,7 @@ pub fn display_main_menu (
 
     frame.clear_color(0.160, 0.160, 0.160, 1.0);
 
-    let camera_frame =[
+    let _camera_frame =[
         [1.0, 0.0, 0.0, 0.0],
         [0.0, 1.0, 0.0, 0.0],
         [0.0, 0.0, 1.0, 0.0],
@@ -879,10 +879,10 @@ pub fn display_main_menu (
         let str_slice: &str = &text_display[..];
         let text = glium_text::TextDisplay::new(&system, font, str_slice);
         let color = [1.0, 1.0, 0.0, 1.0f32];
-        let font_scale_down = 1.5;
+        let _font_scale_down = 1.5;
         let text_width = text.get_width();
         let (w, h) = frame.get_dimensions();
-        let text_offset = 1.0 / text_width;
+        let _text_offset = 1.0 / text_width;
         let matrix = [
             [2.0 / text_width, 0.0, 0.0, 0.0],
             [0.0, 2.0 * (w as f32) / (h as f32) / text_width, 0.0, 0.0],
