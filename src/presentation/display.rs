@@ -28,6 +28,7 @@ pub enum SpriteType {
     MenuWindow,
     Button,
     InstructionMenu,
+    CopIcon
 }
 
 // pub type Textures = EnumMap<SpriteType, Texture2d>;
@@ -63,7 +64,9 @@ pub fn load_textures(window: &glium_sdl2::SDL2Facade) -> Textures {
             SpriteType::Button
                 => load_texture(window, "assets/images/other/selection_highlight.png"),
             SpriteType::InstructionMenu
-                => load_texture(window, "assets/images/ui/instruction_menu_transparent.png")
+                => load_texture(window, "assets/images/ui/instruction_menu_transparent.png"),
+            SpriteType::CopIcon
+                => load_texture(window, "assets/images/old/badge_icon.png")
         },
         background_texture: load_texture(&window, "assets/images/background_concrete.png")
     }
@@ -361,6 +364,7 @@ pub fn display(
     let mut text_buffers = vec!();
 
     let mut cop_count = 0;
+    let mut selected_cops = 2;
     let mut human_count = 0;
     let mut zombie_count = 0;
     let mut _dead_count = 0;
@@ -420,7 +424,8 @@ pub fn display(
     }
 
     // Computer vertices for GUI
-    let offset = 0.1;
+    //let cop_number = 1;
+    //let offset = 0.1;
     for component in &mut ui.components {
         match &component.id {
             GuiType::Selected => {
@@ -429,11 +434,18 @@ pub fn display(
                 } else {
                     // might be useful later...
                     // component.move_pos(Vector2 { x: offset * ((0) as f64), y: 0.0 });
-                    push_gui_vertices(&mut vertex_buffers_gui[SpriteType::Cop], component);
-                    for i in 0 .. selection_count {
-                        let selected_ui = Gui::new(GuiType::Selected, 0.1, 0.1, Vector2{x: -0.9 + offset*(i as f64), y: -0.9});
-                        push_gui_vertices(&mut vertex_buffers_gui[SpriteType::Cop], &selected_ui);
-                    }
+
+
+                    push_gui_vertices(&mut vertex_buffers_gui[SpriteType::CopIcon], component);
+                    let cop_number = Gui::new(GuiType::Button{text: "hello".to_string()}, 1.0, 1.0,Vector2{x: -0.7, y: -0.8});
+                    // let selected_ui = Gui::new(GuiType::Selected, 0.1, 0.1, Vector2{x: -0.9 + offset*(i as f64), y: -0.9});
+                    push_gui_vertices(&mut vertex_buffers_gui[SpriteType::Button], &cop_number);
+//                    for i in 0 .. selection_count {
+//                        let num: String = i.to_string();
+//                        let cop_number = Gui::new(GuiType::Button{text: num}, 1.0, 1.0,Vector2{x: -0.7, y: -0.9});
+//                       // let selected_ui = Gui::new(GuiType::Selected, 0.1, 0.1, Vector2{x: -0.9 + offset*(i as f64), y: -0.9});
+//                        push_gui_vertices(&mut vertex_buffers_gui[SpriteType::Button], &cop_number);
+//                    }
                 }
             },
             GuiType::SelectionDrag => {
@@ -569,7 +581,20 @@ pub fn display(
                 &programs.sprite_program,
                 params,
                 &uniforms);
-        }  else if _gui_type == SpriteType::MenuWindow {
+        } else if _gui_type == SpriteType::CopIcon {
+            let uniforms = uniform! {
+                    matrix: mat_gui,
+                    tex: &textures.sprite_textures[_gui_type],
+                };
+            draw_color_sprites(
+                frame,
+                window,
+                &vertex_buffer,
+                &programs.sprite_program,
+                params,
+                &uniforms);
+        }
+        else if _gui_type == SpriteType::MenuWindow {
             if ui.active_window == ActiveWindow::Menu {
                 let uniforms = uniform! {
                         matrix: mat_gui,
@@ -672,4 +697,28 @@ pub fn display(
         [0.3, 0.9, 0.0, 1.0f32],
     ];
     glium_text::draw(&text, &system, frame, matrix, color);
+
+
+
+//
+//    // Draw selected cop number next to the UI Cop Icon
+//
+//    let system2 = glium_text::TextSystem::new(window);
+//    let cop_num_display = format!("{}", selected_cops);
+//    let str_slice2: &str = &cop_num_display[..];
+//    let text2 = glium_text::TextDisplay::new(&system2, font, str_slice2);
+//    let color2 = [0.0, 0.0, 1.0, 1.0f32];
+//    let font_scale_down = 10.0;
+//    let text_width2 = text2.get_width() * font_scale_down;
+//    let (w, h) = frame.get_dimensions();
+//    let matrix2 = [
+//        [1.0/text_width2, 0.0, 0.0, 0.0],
+//        [0.0, 1.0 * (w as f32) / (h as f32) / text_width2,0.0, 0.0],
+//        [0.0, 0.0, 1.0, 0.0],
+//        [-1.0, -1.0, 0.0, 1.0f32],
+//    ];
+//    glium_text::draw(&text2, &system2, frame, matrix2, color2);
+
+
+
 }
