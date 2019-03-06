@@ -195,7 +195,7 @@ impl Control {
 
     pub fn handle_event(&mut self, event: Event, window: &SDL2Facade, camera_frame: Mat4, state: &mut State, game_state: &mut GameState) {
         match event {
-            Event::KeyDown { keycode: Some(Keycode::P), .. } => {
+            Event::KeyDown { keycode: Some(Keycode::Space), .. } => {
                 game_state.game_paused = !game_state.game_paused;
             },
             Event::MouseButtonDown { timestamp: _, window_id: _, which: _, mouse_btn: _, x, y } => {

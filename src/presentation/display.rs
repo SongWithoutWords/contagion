@@ -788,42 +788,7 @@ pub fn display_main_menu (
         [0.0, 0.0, 0.0, 1.0f32],
     ];
     for (_gui_type, vertex_buffer) in &vertex_buffers_gui {
-        if _gui_type == SpriteType::Cop {
-            let uniforms = uniform! {
-                    matrix: mat_gui,
-                    tex: &textures.sprite_textures[SpriteType::Cop],
-                };
-            draw_color_sprites(
-                frame,
-                window,
-                &vertex_buffer,
-                &programs.sprite_program,
-                params,
-                &uniforms);
-        } else if _gui_type == SpriteType::SelectionHighlight {
-            let uniforms = uniform! {
-                    matrix: mat_gui,
-                };
-            draw_color_sprites(
-                frame,
-                window,
-                &vertex_buffer,
-                &programs.gui_program,
-                params,
-                &uniforms);
-        } else if _gui_type == SpriteType::Menu {
-            let uniforms = uniform! {
-                    matrix: mat_gui,
-                    tex: &textures.sprite_textures[_gui_type],
-                };
-            draw_color_sprites(
-                frame,
-                window,
-                &vertex_buffer,
-                &programs.sprite_program,
-                params,
-                &uniforms);
-        }  else if _gui_type == SpriteType::MenuWindow {
+        if _gui_type == SpriteType::MenuWindow {
             if ui.active_window == ActiveWindow::Menu {
                 let uniforms = uniform! {
                         matrix: mat_gui,
