@@ -29,6 +29,7 @@ pub mod presentation;
 pub mod simulation;
 pub mod game;
 pub mod scene;
+pub mod main_menu;
 
 fn init() -> Result<((Sdl, SDL2Facade, EventPump),
                      presentation::display::Textures,
@@ -75,8 +76,8 @@ fn main() {
         ..Default::default()
     };
 
-    let mut scene: Box<Scene> = Box::new(game::Game::new());
-
+//    let mut scene: Box<Scene> = Box::new(game::Game::new());
+    let mut scene: Box<Scene> = Box::new(main_menu::MainMenu::new());
     let mut last_frame = Instant::now();
 
     // Handle the sound effects for the game

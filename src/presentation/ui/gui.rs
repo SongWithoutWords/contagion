@@ -18,7 +18,8 @@ pub enum GuiType {
     Window,
     Menu {
         _window_gui: Box<Gui>,
-        _buttons_gui: Vec<Box<Gui>>
+        _buttons_gui: Vec<Box<Gui>>,
+        text: String
     },
     Button {
         text: String
@@ -45,6 +46,7 @@ pub enum ActiveWindow {
     Game,
     Menu,
     Instruction,
+    MainMenu
 }
 pub static mut CURRENT: ActiveWindow = ActiveWindow::Game;
 
@@ -62,11 +64,48 @@ impl Component {
         let button2 = GuiType::Button{text: "Instruction".to_string()};
         let button_ui_1 = Gui::new(button1, 0.2, 0.05, Vector2{x: 0.0, y: -0.1});
         let button_ui_2 = Gui::new(button2, 0.4, 0.05, Vector2{x: 0.0, y: 0.1});
-        let menu_ui = Gui::new(GuiType::Menu{ _window_gui: Box::new(box_ui), _buttons_gui: vec![Box::new(button_ui_2), Box::new(button_ui_1)]}, 0.1, 0.125, Vector2{x: -0.9, y: 0.9});
+        let menu_ui = Gui::new(GuiType::Menu{ _window_gui: Box::new(box_ui),
+                                                       _buttons_gui: vec![Box::new(button_ui_2),
+                                                                          Box::new(button_ui_1)],
+                                                       text: "Setting".to_string()},
+                               0.1, 0.125,
+                               Vector2{x: -0.9, y: 0.9});
 
         Component {
             components: vec![selected_ui, drag_ui, menu_ui],
             active_window: ActiveWindow::Game
+        }
+    }
+
+    pub fn init_main_menu_gui() -> Component {
+        // main menu buttons
+        let button_start = GuiType::Button{text: "Start".to_string()};
+        let button_exit = GuiType::Button {text: "Exit".to_string()};
+        let button_start_ui = Gui::new(button_start, 0.3, 0.05, Vector2{x:0.0, y: -0.2});
+        let button_exit_ui = Gui::new(button_exit, 0.2, 0.05, Vector2{x: 0.0, y: -0.5});
+
+        // box containment for main menu settings
+        let box_ui = Gui::new(GuiType::Window, 1.8, 1.8, Vector2{x: 0.0, y: 0.0});
+
+        // main menu settings button
+        let button_menu_instruction = GuiType::Button{text: "Instruction".to_string()};
+        let button_menu_settings = GuiType::Button{text: "Advanced (WIP)".to_string()};
+        let button_menu_back = GuiType::Button{text: "Back".to_string()};
+        let button_menu_instruction_ui = Gui::new(button_menu_instruction, 0.4, 0.05, Vector2{x: 0.0, y: 0.3});
+        let button_menu_settings_ui = Gui::new(button_menu_settings, 0.4, 0.05, Vector2{x: 0.0, y: 0.1});
+        let button_menu_back_ui = Gui::new(button_menu_back, 0.2, 0.05, Vector2{x: 0.0, y: -0.1});
+        let setting_ui = Gui::new(GuiType::Menu{ _window_gui: Box::new(box_ui),
+                                                          _buttons_gui: vec![Box::new(button_menu_instruction_ui),
+                                                                          Box::new(button_menu_settings_ui),
+                                                                          Box::new(button_menu_back_ui)],
+                                                           text: "Setting".to_string()},
+                                    0.4, 0.05,
+                                    Vector2{x: 0.0, y: -0.35});
+
+        // component initialization
+        Component {
+            components: vec![button_start_ui, button_exit_ui, setting_ui],
+            active_window: ActiveWindow::MainMenu
         }
     }
 
@@ -76,7 +115,7 @@ impl Component {
         for i in 0..self.components.len() {
             let component = &mut self.components[i];
             match component.id {
-                GuiType::Menu {ref mut _window_gui, ref mut _buttons_gui} => {
+                GuiType::Menu {ref mut _window_gui, ref mut _buttons_gui, ..} => {
                     match event {
                         Event::MouseButtonDown { timestamp: _, window_id: _, which: _, mouse_btn: _, x, y } => {
                             if self.active_window == ActiveWindow::Game {
@@ -185,6 +224,122 @@ impl Component {
 
         if !handled_event && self.active_window == ActiveWindow::Game {
             control.handle_event(event, &window, camera_frame, state, game_state);
+        }
+    }
+
+    pub fn handle_main_menu_event(&mut self, event: &Event, window: &SDL2Facade, game_state: &mut GameState) {
+        // handle events for any menu laid on top of game
+        for i in 0..self.components.len() {
+            let component = &self.components[i];
+            match &component.id {
+                GuiType::Button {text} => {
+                    if self.active_window == ActiveWindow::MainMenu {
+                        match event {
+                            Event::MouseButtonDown { timestamp: _, window_id: _, which: _, mouse_btn: _, x, y } => {
+                                let mouse_pos = &mut Vector2 { x: *x as f64, y: *y as f64 };
+                                translate_mouse_to_camera(mouse_pos, window.window().size());
+
+                                let top_left = Vector2 { x: component.top_left.x, y: component.top_left.y };
+                                let bot_right = Vector2 { x: component.bot_right.x, y: component.bot_right.y };
+                                let check_within_bound = check_bounding_box(top_left, bot_right, *mouse_pos);
+                                if check_within_bound {
+                                    let display_text = text;
+                                    if display_text == "Start" {
+                                        game_state.start = true;
+                                    } else if display_text == "Exit" {
+                                        game_state.terminate = true;
+                                    }
+                                }
+                            },
+                            __ => ()
+                        }
+                    }
+                },
+                // Settings
+                GuiType::Menu {_window_gui, _buttons_gui, ..} => {
+                    match event.clone() {
+                        Event::MouseButtonDown { timestamp: _, window_id: _, which: _, mouse_btn: _, x, y } => {
+                            if self.active_window == ActiveWindow::MainMenu {
+                                let mouse_pos = &mut Vector2 { x: x as f64, y: y as f64 };
+                                translate_mouse_to_camera(mouse_pos, window.window().size());
+
+                                let top_left = Vector2 { x: component.top_left.x, y: component.top_left.y };
+                                let bot_right = Vector2 { x: component.bot_right.x, y: component.bot_right.y };
+                                if check_bounding_box(top_left, bot_right, *mouse_pos) {
+                                    self.active_window = ActiveWindow::Menu;
+                                }
+                            } else if self.active_window == ActiveWindow::Menu {
+                                let buttons = _buttons_gui.clone();
+                                let size = buttons.len();
+                                for j in 0..size {
+                                    let button = buttons[j].clone();
+//                                        println!("{:?}", button.get_dimension());
+                                    let mouse_pos = &mut Vector2 { x: x as f64, y: y as f64 };
+                                    translate_mouse_to_camera(mouse_pos, window.window().size());
+
+                                    let top_left = Vector2 { x: button.top_left.x, y: button.top_left.y };
+                                    let bot_right = Vector2 { x: button.bot_right.x, y: button.bot_right.y };
+                                    let check_within_bound = check_bounding_box(top_left, bot_right, *mouse_pos);
+                                    if check_within_bound {
+                                        let mut display_text = "".to_string();
+                                        match button.id {
+                                            GuiType::Button { text } => {
+                                                display_text = text;
+                                            }
+                                            _ => ()
+                                        }
+
+                                        if display_text == "Instruction" {
+                                            self.active_window = ActiveWindow::Instruction;
+                                        } else if display_text == "Back" {
+                                            if self.active_window == ActiveWindow::Menu {
+                                                self.active_window = ActiveWindow::MainMenu;
+                                            }
+
+                                        }
+                                    }
+                                }
+                                // Check if mouse position is outside the window of menu
+                                let mouse_pos = &mut Vector2 { x: x as f64, y: y as f64 };
+                                translate_mouse_to_camera(mouse_pos, window.window().size());
+
+                                let top_left = Vector2 { x: _window_gui.top_left.x, y: _window_gui.top_left.y };
+                                let bot_right = Vector2 { x: _window_gui.bot_right.x, y: _window_gui.bot_right.y };
+
+                                if !check_bounding_box(top_left, bot_right, *mouse_pos) {
+                                    //println!("Mouse button up {}, {}, {}", top_left, bot_right, mouse_pos);
+                                    self.active_window = ActiveWindow::MainMenu;
+                                }
+                            } else if self.active_window == ActiveWindow::Instruction {
+                                // Check if mouse position is outside the window of menu
+                                let mouse_pos = &mut Vector2 { x: x as f64, y: y as f64 };
+                                translate_mouse_to_camera(mouse_pos, window.window().size());
+
+                                let top_left = Vector2 { x: _window_gui.top_left.x, y: _window_gui.top_left.y };
+                                let bot_right = Vector2 { x: _window_gui.bot_right.x, y: _window_gui.bot_right.y };
+
+                                if !check_bounding_box(top_left, bot_right, *mouse_pos) {
+                                    self.active_window = ActiveWindow::MainMenu;
+                                }
+                            } else {
+                            }
+                        },
+                        Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
+                            if self.active_window == ActiveWindow::Menu {
+                                self.active_window = ActiveWindow::MainMenu;
+                            }
+                            else if self.active_window == ActiveWindow::Instruction {
+                                self.active_window = ActiveWindow::Menu;
+                            }
+                            else if self.active_window == ActiveWindow::MainMenu {
+                                self.active_window = ActiveWindow::Menu;
+                            }
+                        },
+                        _ => ()
+                    }
+                }
+                _ => ()
+            }
         }
     }
 }
