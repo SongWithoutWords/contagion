@@ -437,8 +437,6 @@ pub fn display(
 
                     // draw the cop UI icon (is used to show the selected cops)
                     push_gui_vertices(&mut vertex_buffers_gui[SpriteType::CopIcon], component);
-                    // draw the cop number
-                    draw_cop_num(window, selection_count, frame, &font);
                 }
             },
             GuiType::SelectionDrag => {
@@ -574,18 +572,6 @@ pub fn display(
                 &programs.sprite_program,
                 params,
                 &uniforms);
-        } else if _gui_type == SpriteType::CopIcon {
-            let uniforms = uniform! {
-                    matrix: mat_gui,
-                    tex: &textures.sprite_textures[_gui_type],
-                };
-            draw_color_sprites(
-                frame,
-                window,
-                &vertex_buffer,
-                &programs.sprite_program,
-                params,
-                &uniforms);
         }
         else if _gui_type == SpriteType::MenuWindow {
             if ui.active_window == ActiveWindow::Menu {
@@ -633,6 +619,21 @@ pub fn display(
                 window,
                 &vertex_buffer,
                 &programs.gui_program,
+                params,
+                &uniforms);
+        }
+        else if _gui_type == SpriteType::CopIcon {
+            let uniforms = uniform! {
+                    matrix: mat_gui,
+                    tex: &textures.sprite_textures[_gui_type],
+                };
+            // Draw the text showing the number of cops next to the UI cop icon
+            draw_cop_num(window, selection_count,frame, &font);
+            draw_color_sprites(
+                frame,
+                window,
+                &vertex_buffer,
+                &programs.sprite_program,
                 params,
                 &uniforms);
         }
@@ -707,7 +708,8 @@ pub fn display(
             [0.0, 0.0, 1.0, 0.0],
             [-0.88, -0.88, 0.0, 1.0f32],
         ];
-        glium_text::draw(&text2, &system2, frame, matrix2, color2);
+
+            glium_text::draw(&text2, &system2, frame, matrix2, color2);
 
 
     }
