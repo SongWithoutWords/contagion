@@ -694,15 +694,15 @@ pub fn display(
 
     // Draw the selected cop number next to the UI Cop Icon
     fn draw_cop_num(window: &glium_sdl2::SDL2Facade, cop_num: i32, frame: &mut glium::Frame, font: &FontTexture){
-        let system2 = glium_text::TextSystem::new(window);
+        let system = glium_text::TextSystem::new(window);
         let cop_num_str: String = cop_num.to_string();
         let cop_num_display = format!("x{}", cop_num_str);
-        let str_slice2: &str = &cop_num_display[..];
-        let text2 = glium_text::TextDisplay::new(&system2, font, str_slice2);
-        let color2 = [0.0, 0.0, 0.05, 1.0f32];
+        let str_slice: &str = &cop_num_display[..];
+        let text = glium_text::TextDisplay::new(&system, font, str_slice);
+        let color = [0.0, 0.0, 0.05, 1.0f32];
         let font_scale_down = 40.0;
         let (w, h) = frame.get_dimensions();
-        let matrix2 = [
+        let matrix = [
             [1.0/font_scale_down, 0.0, 0.0, 0.0],
             [0.0, 1.0 * (w as f32) / (h as f32) / font_scale_down,0.0, 0.0],
             [0.0, 0.0, 1.0, 0.0],
@@ -710,7 +710,7 @@ pub fn display(
         ];
 
         if cop_num>0 {
-            glium_text::draw(&text2, &system2, frame, matrix2, color2);
+            glium_text::draw(&text, &system, frame, matrix, color);
         }
 
     }
