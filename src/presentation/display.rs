@@ -364,7 +364,7 @@ pub fn display(
     let mut text_buffers = vec!();
 
     let mut cop_count = 0;
-    let mut selected_cops = 2;
+
     let mut human_count = 0;
     let mut zombie_count = 0;
     let mut _dead_count = 0;
@@ -435,17 +435,10 @@ pub fn display(
                     // might be useful later...
                     // component.move_pos(Vector2 { x: offset * ((0) as f64), y: 0.0 });
 
-
+                    // draw the cop UI icon (is used to show the selected cops)
                     push_gui_vertices(&mut vertex_buffers_gui[SpriteType::CopIcon], component);
-                    let cop_number = Gui::new(GuiType::Button{text: "hello".to_string()}, 1.0, 1.0,Vector2{x: -0.7, y: -0.8});
-                    // let selected_ui = Gui::new(GuiType::Selected, 0.1, 0.1, Vector2{x: -0.9 + offset*(i as f64), y: -0.9});
-                    push_gui_vertices(&mut vertex_buffers_gui[SpriteType::Button], &cop_number);
-//                    for i in 0 .. selection_count {
-//                        let num: String = i.to_string();
-//                        let cop_number = Gui::new(GuiType::Button{text: num}, 1.0, 1.0,Vector2{x: -0.7, y: -0.9});
-//                       // let selected_ui = Gui::new(GuiType::Selected, 0.1, 0.1, Vector2{x: -0.9 + offset*(i as f64), y: -0.9});
-//                        push_gui_vertices(&mut vertex_buffers_gui[SpriteType::Button], &cop_number);
-//                    }
+                    // draw the cop number
+                    draw_cop_num(window, selection_count, frame, &font);
                 }
             },
             GuiType::SelectionDrag => {
@@ -681,7 +674,6 @@ pub fn display(
     }
 
     // Render Text
-
     let system = glium_text::TextSystem::new(window);
     let text_display = format!("Cop: {} / Civ: {} / Zombie: {}", cop_count, human_count, zombie_count);
     let str_slice: &str = &text_display[..];
@@ -699,25 +691,26 @@ pub fn display(
     glium_text::draw(&text, &system, frame, matrix, color);
 
 
+    // Draw the selected cop number next to the UI Cop Icon
+    fn draw_cop_num(window: &glium_sdl2::SDL2Facade, cop_num: i32, frame: &mut glium::Frame, font: &FontTexture){
+        let system2 = glium_text::TextSystem::new(window);
+        let cop_num_str: String = cop_num.to_string();
+        let cop_num_display = format!("x{}", cop_num_str);
+        let str_slice2: &str = &cop_num_display[..];
+        let text2 = glium_text::TextDisplay::new(&system2, font, str_slice2);
+        let color2 = [0.0, 0.0, 0.05, 1.0f32];
+        let font_scale_down = 40.0;
+        let (w, h) = frame.get_dimensions();
+        let matrix2 = [
+            [1.0/font_scale_down, 0.0, 0.0, 0.0],
+            [0.0, 1.0 * (w as f32) / (h as f32) / font_scale_down,0.0, 0.0],
+            [0.0, 0.0, 1.0, 0.0],
+            [-0.88, -0.88, 0.0, 1.0f32],
+        ];
+        glium_text::draw(&text2, &system2, frame, matrix2, color2);
 
-//
-//    // Draw selected cop number next to the UI Cop Icon
-//
-//    let system2 = glium_text::TextSystem::new(window);
-//    let cop_num_display = format!("{}", selected_cops);
-//    let str_slice2: &str = &cop_num_display[..];
-//    let text2 = glium_text::TextDisplay::new(&system2, font, str_slice2);
-//    let color2 = [0.0, 0.0, 1.0, 1.0f32];
-//    let font_scale_down = 10.0;
-//    let text_width2 = text2.get_width() * font_scale_down;
-//    let (w, h) = frame.get_dimensions();
-//    let matrix2 = [
-//        [1.0/text_width2, 0.0, 0.0, 0.0],
-//        [0.0, 1.0 * (w as f32) / (h as f32) / text_width2,0.0, 0.0],
-//        [0.0, 0.0, 1.0, 0.0],
-//        [-1.0, -1.0, 0.0, 1.0f32],
-//    ];
-//    glium_text::draw(&text2, &system2, frame, matrix2, color2);
+
+    }
 
 
 
