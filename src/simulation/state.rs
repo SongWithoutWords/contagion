@@ -80,6 +80,9 @@ pub enum CopState {
     Moving {
         waypoint: Vector2,
     },
+    Sprinting {
+        waypoint: Vector2,
+    },
     Reloading {
         reload_time_remaining: Scalar,
     },

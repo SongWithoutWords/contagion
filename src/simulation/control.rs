@@ -18,7 +18,8 @@ pub struct Control {
     pub drag_start_mouse_coord: Vector2,
     pub drag_vertex_start: Vector2,
     pub drag_vertex_end: Vector2,
-    pub last_click_time: Instant
+    pub last_click_time: Instant,
+    pub last_right_click_time: Instant
 }
 
 impl Control {
@@ -29,7 +30,8 @@ impl Control {
             drag_start_mouse_coord: Vector2::zero(),
             drag_vertex_start: Vector2::zero(),
             drag_vertex_end: Vector2::zero(),
-            last_click_time: Instant::now()
+            last_click_time: Instant::now(),
+            last_right_click_time: Instant::now()
         }
     }
 
@@ -125,43 +127,43 @@ impl Control {
 
     // Issue an order to selected police
     pub fn issue_police_order(&mut self, order: PoliceOrder, state: &mut State, window: &SDL2Facade, camera_frame: Mat4, mouse_pos: Vector2) {
-        match order {
-            PoliceOrder::Move => {
-                let m_pos = &mut Vector2{ x: mouse_pos.x, y: mouse_pos.y };
-                translate_mouse_to_camera(m_pos, window.window().size());
-                translate_camera_to_world(m_pos, camera_frame);
+        let m_pos = &mut Vector2{ x: mouse_pos.x, y: mouse_pos.y };
+        translate_mouse_to_camera(m_pos, window.window().size());
+        translate_camera_to_world(m_pos, camera_frame);
 
-                let buildings = &state.buildings;
+        let buildings = &state.buildings;
 
-                // Check if m_pos is inside a building
-                for building in buildings {
-                    if building.contains_point(*m_pos) {
-                        let mut distance_squared = INFINITY;
-                        let mut normal = Vector2::zero();
-                        let normals = building.normals();
+        // Check if m_pos is inside a building
+        for building in buildings {
+            if building.contains_point(*m_pos) {
+                let mut distance_squared = INFINITY;
+                let mut normal = Vector2::zero();
+                let normals = building.normals();
 
-                        for i in 0..building.num_sides() {
-                            let seg_i = Segment2 {
-                                p1: building.get(i),
-                                p2: building.get((i + 1) % building.num_sides())
-                            };
-                            let dist_i = seg_i.dist_squared(*m_pos);
+                for i in 0..building.num_sides() {
+                    let seg_i = Segment2 {
+                        p1: building.get(i),
+                        p2: building.get((i + 1) % building.num_sides())
+                    };
+                    let dist_i = seg_i.dist_squared(*m_pos);
 
-                            if distance_squared > dist_i {
-                                distance_squared = dist_i;
-                                normal = normals[i];
-                            }
-                        }
-
-                        // Offset waypoint to be outside the closest edge
-                        let offset = (distance_squared.sqrt() + ENTITY_RADIUS * 1.1) * normal;
-                        m_pos.x = m_pos.x + offset.x;
-                        m_pos.y = m_pos.y + offset.y;
-
-                        break;
+                    if distance_squared > dist_i {
+                        distance_squared = dist_i;
+                        normal = normals[i];
                     }
                 }
 
+                // Offset waypoint to be outside the closest edge
+                let offset = (distance_squared.sqrt() + ENTITY_RADIUS * 1.1) * normal;
+                m_pos.x = m_pos.x + offset.x;
+                m_pos.y = m_pos.y + offset.y;
+
+                break;
+            }
+        }
+
+        match order {
+            PoliceOrder::Move => {
                 for i in &state.selection {
                     match state.entities[*i].behaviour {
                         Behaviour::Cop { ref mut state, .. } => {
@@ -171,7 +173,16 @@ impl Control {
                     }
                 }
             }
-            _=>()
+            PoliceOrder::Sprint => {
+                for i in &state.selection {
+                    match state.entities[*i].behaviour {
+                        Behaviour::Cop { ref mut state, .. } => {
+                            *state = CopState::Sprinting { waypoint: *m_pos }
+                        }
+                        _ => ()
+                    }
+                }
+            }
         }
     }
 
@@ -198,11 +209,16 @@ impl Control {
             Event::KeyDown { keycode: Some(Keycode::P), .. } => {
                 game_state.game_paused = !game_state.game_paused;
             },
-            Event::MouseButtonDown { timestamp: _, window_id: _, which: _, mouse_btn: _, x, y } => {
-                self.mouse_drag = true;
-                let mouse_pos = Vector2 { x: x as f64, y: y as f64 };
-                self.update_drag_start(mouse_pos, &window);
-                self.update_drag_end(mouse_pos, &window);
+            Event::MouseButtonDown { timestamp: _, window_id: _, which: _, mouse_btn, x, y } => {
+                match mouse_btn {
+                    MouseButton::Left { .. } => {
+                        self.mouse_drag = true;
+                        let mouse_pos = Vector2 { x: x as f64, y: y as f64 };
+                        self.update_drag_start(mouse_pos, &window);
+                        self.update_drag_end(mouse_pos, &window);
+                    }
+                    _ => ()
+                }
             }
             Event::MouseMotion {
                 timestamp: _,
@@ -221,6 +237,7 @@ impl Control {
             Event::MouseButtonUp { timestamp: _, window_id: _, which: _, mouse_btn, x, y } => {
                 self.mouse_drag = false;
                 let mouse_pos = Vector2 { x: x as f64, y: y as f64 };
+                let delta_millisecond = 300;
 
                 match mouse_btn {
                     MouseButton::Left { .. } => {
@@ -229,7 +246,6 @@ impl Control {
 
                         if (mouse_pos.x - self.drag_start_mouse_coord.x).abs() <= delta && (mouse_pos.y - self.drag_start_mouse_coord.y).abs() <= delta {
                             let current_time = Instant::now();
-                            let delta_millisecond = 300;
                             let duration = current_time.duration_since(self.last_click_time);
                             if duration.as_secs() == 0 && duration.subsec_millis() < delta_millisecond {
                                 self.double_click_select(state, camera_frame, mouse_pos, &window);
@@ -242,7 +258,16 @@ impl Control {
                         }
                     }
                     MouseButton::Right { .. } => {
-                        self.issue_police_order(PoliceOrder::Move, state, &window, camera_frame, mouse_pos);
+                        let current_time = Instant::now();
+                        let duration = current_time.duration_since(self.last_right_click_time);
+                        if duration.as_secs() == 0 && duration.subsec_millis() < delta_millisecond {
+                            // double right click to sprint
+                            self.issue_police_order(PoliceOrder::Sprint, state, &window, camera_frame, mouse_pos);
+                        } else {
+                            // single right click for attack move
+                            self.issue_police_order(PoliceOrder::Move, state, &window, camera_frame, mouse_pos);
+                        }
+                        self.last_right_click_time = current_time;
                     }
                     _ => ()
                 }
@@ -274,5 +299,5 @@ pub fn translate_world_to_camera(vec: &mut Vector2, matrix: Mat4) {
 
 pub enum PoliceOrder {
     Move,
-    Shoot
+    Sprint
 }

@@ -370,6 +370,41 @@ fn update_cop(
                         }
                     }
                 }
+                CopState::Sprinting { waypoint } => {
+                    // TODO: Cops sprint!
+                    match find_path(entities[index].position, waypoint, buildings, building_outlines) {
+                        None => {
+                            Behaviour::Cop {
+                                rounds_in_magazine: rounds_in_magazine,
+                                state: CopState::Idle
+                            }
+                        },
+                        Some(path) => {
+                            match path.to_vec().get(1) {
+                                None => Behaviour::Cop {
+                                    rounds_in_magazine: rounds_in_magazine,
+                                    state: CopState::Idle
+                                },
+                                Some(&node) => {
+                                    let delta = node - entities[index].position;
+
+                                    if waypoint == node && delta.length_squared() < COP_MIN_DISTANCE_FROM_WAYPOINT_SQUARED {
+                                        Behaviour::Cop {
+                                            rounds_in_magazine: rounds_in_magazine,
+                                            state: CopState::Idle
+                                        }
+                                    } else {
+                                        entities[index].accelerate_along_vector(delta, args.dt, COP_MOVEMENT_FORCE);
+                                        Behaviour::Cop {
+                                            rounds_in_magazine: rounds_in_magazine,
+                                            state: CopState::Moving { waypoint }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
                 CopState::Reloading { reload_time_remaining } => {
                     let half_reload_time = 0.5 * COP_RELOAD_COOLDOWN;
                     let new_reload_time_remaining = reload_time_remaining - args.dt;
