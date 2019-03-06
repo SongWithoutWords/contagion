@@ -709,8 +709,9 @@ pub fn display(
             [-0.88, -0.88, 0.0, 1.0f32],
         ];
 
+        if cop_num>0 {
             glium_text::draw(&text2, &system2, frame, matrix2, color2);
-
+        }
 
     }
 
