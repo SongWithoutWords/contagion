@@ -49,7 +49,12 @@ impl Scene for Game {
               window: &SDL2Facade,
               delta_time: f64)
               -> UpdateResult {
-
+        match self.game_state {
+            GameState{terminate, ..} =>
+                {
+                    if terminate {return UpdateResult::Exit}
+                }
+        }
         let keyboard_state = event_pump.keyboard_state();
         self.camera.update(&keyboard_state, delta_time);
         for event in event_pump.poll_iter() {
