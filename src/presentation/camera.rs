@@ -2,13 +2,7 @@ use crate::core::scalar::*;
 use crate::core::vector::*;
 use crate::core::matrix::*;
 use crate::simulation::control::*;
-
-use crate::simulation::state::State;
-
 use glium_sdl2::SDL2Facade;
-use sdl2::event::Event;
-use sdl2::mouse::MouseState;
-use sdl2::mouse::Cursor;
 
 pub struct Camera {
     position: Vector2,
@@ -21,7 +15,7 @@ impl Camera {
         Camera {
             position: Vector2::zero(),
             velocity: Vector2::zero(),
-            zoom: Vector2 {x: 0.01 as f64, y: 0.01 as f64}
+            zoom: Vector2 {x: 0.09 as f64, y: 0.09 as f64}  // set initial zoom level
         }
     }
 
@@ -54,6 +48,7 @@ impl Camera {
 
     }
 
+    // Camera frame in world coordinates
     pub fn compute_matrix(&self) -> Mat4 {
         (Mat4 {
             i : Vector4 {x: self.zoom.x, y: 0.0, z: 0.0, w: 0.0},
@@ -74,11 +69,11 @@ impl Camera {
         const LOWER_BOUND: f64 = 0.015;
         const UPPER_BOUND: f64 = 0.15;
 
-        let mouse_scroll: f64 = scroll as Scalar;
+        let mouse_scroll: f64 = scroll as f64;
         let zoom_scale: f64 = (mouse_scroll * ZOOM_SPEED).abs();
-        let mouse_pos = &mut Vector2 { x: ms.x() as f64, y: ms.y() as f64 };
+        let mouse_pos: &mut Vector2 = &mut Vector2 { x: ms.x() as f64, y: ms.y() as f64 };
 
-        let center = &mut Vector2 {x: window.window().size().0 as f64 / 2.0, y: window.window().size().1 as f64 / 2.0};
+        let center: &mut Vector2 = &mut Vector2 {x: window.window().size().0 as f64 / 2.0, y: window.window().size().1 as f64 / 2.0};
         println!("{}", "center window coord");
         println!("{:?}", center);
 
