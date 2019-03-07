@@ -28,7 +28,10 @@ pub enum SpriteType {
     MenuWindow,
     Button,
     InstructionMenu,
-    CopIcon
+    CopIcon,
+    ZombieWorldIcon,
+    CopWorldIcon,
+    CivilianWorldIcon
 }
 
 // pub type Textures = EnumMap<SpriteType, Texture2d>;
@@ -66,7 +69,13 @@ pub fn load_textures(window: &glium_sdl2::SDL2Facade) -> Textures {
             SpriteType::InstructionMenu
                 => load_texture(window, "assets/images/ui/instruction_menu_transparent.png"),
             SpriteType::CopIcon
-                => load_texture(window, "assets/images/old/badge_icon.png")
+                => load_texture(window, "assets/images/old/badge_icon.png"),
+            SpriteType::ZombieWorldIcon
+                => load_texture(window, "assets/images/ui/zombie_world_icon.png"),
+            SpriteType::CopWorldIcon
+                => load_texture(window, "assets/images/ui/cop_world_icon.png"),
+            SpriteType::CivilianWorldIcon
+                => load_texture(window, "assets/images/ui/civilian_world_icon.png")
         },
         background_texture: load_texture(&window, "assets/images/background_concrete.png")
     }
@@ -425,11 +434,14 @@ pub fn display(
     }
 
     // Computer vertices for GUI
-    //let cop_number = 1;
+
     //let offset = 0.1;
     for component in &mut ui.components {
         match &component.id {
-            GuiType::Selected => {
+            GuiType::ZombieUI => {
+                push_gui_vertices(&mut vertex_buffers_gui[SpriteType::ZombieWorldIcon], component);
+            },
+                        GuiType::Selected => {
                 if selection_count < 1 {
 
                 } else {
@@ -476,6 +488,8 @@ pub fn display(
         };
     }
 
+    //  push_gui_vertices(&mut vertex_buffers_gui[SpriteType::SelectionHighlight], component);
+
     // Compute vertices for buildings
     for building in &state.buildings {
         let color = [0.1, 0.1, 0.1, 1.0];
@@ -495,6 +509,7 @@ pub fn display(
             params,
             &uniforms);
     }
+
 
     // Render shadows
     use crate::presentation::display::SpriteType::*;
@@ -609,8 +624,6 @@ pub fn display(
                     params,
                     &uniforms);
             }
-//            } else {
-////            }
         } else if _gui_type == SpriteType::Button {
             let uniforms = uniform! {
                     matrix: mat_gui,
@@ -638,8 +651,25 @@ pub fn display(
                 params,
                 &uniforms);
         }
-    }
+          else if _gui_type == SpriteType::ZombieWorldIcon {
+            let uniforms = uniform! {
+                    matrix: mat_gui,
+                    tex: &textures.sprite_textures[_gui_type],
+                };
+            // Draw the text showing the number of cops next to the UI cop icon
+            draw_remaining_zombie_num(window, zombie_count, frame, &font);
+            draw_color_sprites(
+                frame,
+                window,
+                &vertex_buffer,
+                &programs.sprite_program,
+                params,
+                &uniforms);
+        }
 
+
+
+    }
 
     // Render Menu Text
     for i in 0..text_buffers.len() {
@@ -675,22 +705,6 @@ pub fn display(
         glium_text::draw(&text, &system, frame, matrix, color);
     }
 
-    // Render Text
-    let system = glium_text::TextSystem::new(window);
-    let text_display = format!("Cop: {} / Civ: {} / Zombie: {}", cop_count, human_count, zombie_count);
-    let str_slice: &str = &text_display[..];
-    let text = glium_text::TextDisplay::new(&system, font, str_slice);
-    let color = [1.0, 1.0, 0.0, 1.0f32];
-    let font_scale_down = 1.5;
-    let text_width = text.get_width() * font_scale_down;
-    let (w, h) = frame.get_dimensions();
-    let matrix = [
-        [1.0 / text_width, 0.0, 0.0, 0.0],
-        [0.0, 1.0 * (w as f32) / (h as f32) / text_width, 0.0, 0.0],
-        [0.0, 0.0, 1.0, 0.0],
-        [0.3, 0.9, 0.0, 1.0f32],
-    ];
-    glium_text::draw(&text, &system, frame, matrix, color);
 }
 
 // Draw the selected cop number next to the UI Cop Icon
@@ -713,6 +727,32 @@ fn draw_cop_num(window: &glium_sdl2::SDL2Facade, cop_num: i32, frame: &mut glium
     if cop_num>0 {
         glium_text::draw(&text, &system, frame, matrix, color);
     }
+
+}
+
+
+// Draw the remaining number of zombies in the world (number)
+fn draw_remaining_zombie_num(window: &glium_sdl2::SDL2Facade, zombie_num: i32, frame: &mut glium::Frame, font: &FontTexture){
+    let system = glium_text::TextSystem::new(window);
+    let zombie_num_str: String =  zombie_num.to_string();
+    let mut zombie_num_display = format!("0{}",  zombie_num_str);
+    if zombie_num > 99{
+        zombie_num_display = format!("{}",  zombie_num_str);
+    }
+    let str_slice: &str = &zombie_num_display[..];
+    let text = glium_text::TextDisplay::new(&system, font, str_slice);
+    let color = [0.0, 0.0, 0.0, 1.0f32];
+    let font_scale_down = 40.0;
+    let (w, h) = frame.get_dimensions();
+
+    let matrix = [
+        [1.0/font_scale_down, 0.0, 0.0, 0.0],
+        [0.0, 1.0 * (w as f32) / (h as f32) / font_scale_down,0.0, 0.0],
+        [0.0, 0.0, 1.0, 0.0],
+        [0.8755, 0.83, 0.0, 1.0f32],
+    ];
+
+    glium_text::draw(&text, &system, frame, matrix, color);
 
 }
 
