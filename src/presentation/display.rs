@@ -825,6 +825,9 @@ fn draw_remaining_cop_num(window: &glium_sdl2::SDL2Facade, cop_num: i32, frame: 
     if cop_num > 99 {
         cop_num_display = format!("{}",  cop_num_str);
     }
+    else if cop_num < 10 {
+        cop_num_display = format!("00{}",  cop_num_str);
+    }
     let str_slice: &str = &cop_num_display[..];
     let text = glium_text::TextDisplay::new(&system, font, str_slice);
     let color = [0.0, 0.0, 0.0, 1.0f32];
