@@ -13,15 +13,15 @@ use sdl2::mouse::Cursor;
 pub struct Camera {
     position: Vector2,
     velocity: Vector2,
-    zoom: Scalar,
+    zoom: Vector2,
 }
 
 impl Camera {
     pub fn new() -> Camera {
         Camera {
-            position: Vector2 {x: 5.0, y: 5.0},
+            position: Vector2::zero(),
             velocity: Vector2::zero(),
-            zoom: 0.09,
+            zoom: Vector2 {x: 0.1, y: 0.1}
         }
     }
 
@@ -47,17 +47,17 @@ impl Camera {
             y: key_pressed(ks, Scancode::W) - key_pressed(ks, Scancode::S),
         };
 
-//        self.velocity += delta_time * Self::ACCELERATION_FACTOR * acceleration;
-//        self.position += delta_time * self.velocity;
-//        self.velocity -= delta_time * Self::DRAG_FACTOR * self.velocity;
+        self.velocity += delta_time * Self::ACCELERATION_FACTOR * acceleration;
+        self.position += delta_time * self.velocity;
+        self.velocity -= delta_time * Self::DRAG_FACTOR * self.velocity;
 
 
     }
 
     pub fn compute_matrix(&self) -> Mat4 {
         (Mat4 {
-            i : Vector4 {x: self.zoom, y: 0.0, z: 0.0, w: 0.0},
-            j : Vector4 {x: 0.0, y: self.zoom, z: 0.0, w: 0.0},
+            i : Vector4 {x: self.zoom.x, y: 0.0, z: 0.0, w: 0.0},
+            j : Vector4 {x: 0.0, y: self.zoom.y, z: 0.0, w: 0.0},
             k : Vector4 {x: 0.0, y: 0.0, z: 1.0, w: 0.0},
             w : Vector4 {x: -self.position.x, y: -self.position.y, z: 0.0, w: 1.0},
         })
@@ -95,7 +95,7 @@ impl Camera {
         println!("{}", "center world coord");
         println!("{:?}", center);
 
-        let world_pos_scale = Vector2 {x: 0.09, y: 0.09};
+        let world_pos_scale = Vector2 {x: self.zoom.x + zoom_scale, y: self.zoom.y + zoom_scale};
 
         println!("{}", "center scale");
         println!("{:?}", world_pos_scale);
@@ -105,6 +105,11 @@ impl Camera {
 
         println!("{}", "center world scaled coord");
         println!("{:?}", center);
+
+        self.zoom = Vector2 {x: self.zoom.x + zoom_scale, y: self.zoom.y + zoom_scale};
+
+        println!("{}", "self.zoom");
+        println!("{:?}", self.zoom);
 
         self.position = *center;
 
