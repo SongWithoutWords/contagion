@@ -21,7 +21,7 @@ impl Camera {
         Camera {
             position: Vector2::zero(),
             velocity: Vector2::zero(),
-            zoom: Vector2 {x: 0.1, y: 0.1}
+            zoom: Vector2 {x: 0.01 as f64, y: 0.01 as f64}
         }
     }
 
@@ -70,12 +70,12 @@ impl Camera {
         window: &SDL2Facade,
         camera_frame: Mat4) {
 
-        const ZOOM_SPEED: Scalar = 0.005;
-        const LOWER_BOUND: Scalar = 0.015;
-        const UPPER_BOUND: Scalar = 0.15;
+        const ZOOM_SPEED: f64 = 0.005;
+        const LOWER_BOUND: f64 = 0.015;
+        const UPPER_BOUND: f64 = 0.15;
 
-        let mouse_scroll = scroll as Scalar;
-        let zoom_scale = (mouse_scroll * ZOOM_SPEED).abs();
+        let mouse_scroll: f64 = scroll as Scalar;
+        let zoom_scale: f64 = (mouse_scroll * ZOOM_SPEED).abs();
         let mouse_pos = &mut Vector2 { x: ms.x() as f64, y: ms.y() as f64 };
 
         let center = &mut Vector2 {x: window.window().size().0 as f64 / 2.0, y: window.window().size().1 as f64 / 2.0};
@@ -92,26 +92,50 @@ impl Camera {
 
         translate_camera_to_world(center, camera_frame);
 
-        println!("{}", "center world coord");
-        println!("{:?}", center);
 
-        let world_pos_scale = Vector2 {x: self.zoom.x + zoom_scale, y: self.zoom.y + zoom_scale};
 
-        println!("{}", "center scale");
-        println!("{:?}", world_pos_scale);
+        if mouse_scroll > 0.0 && self.zoom.x < UPPER_BOUND {
+            println!("{}", "center world coord");
+            println!("{:?}", center);
 
-        center.x *= world_pos_scale.x;
-        center.y *= world_pos_scale.y;
+            let world_pos_scale = Vector2 {x: self.zoom.x + zoom_scale, y: self.zoom.y + zoom_scale};
 
-        println!("{}", "center world scaled coord");
-        println!("{:?}", center);
+            println!("{}", "center scale");
+            println!("{:?}", world_pos_scale);
 
-        self.zoom = Vector2 {x: self.zoom.x + zoom_scale, y: self.zoom.y + zoom_scale};
+            center.x *= world_pos_scale.x;
+            center.y *= world_pos_scale.y;
 
-        println!("{}", "self.zoom");
-        println!("{:?}", self.zoom);
+            println!("{}", "center world scaled coord");
+            println!("{:?}", center);
 
-        self.position = *center;
+            self.zoom = Vector2 {x: self.zoom.x + zoom_scale, y: self.zoom.y + zoom_scale};
+            println!("{}", "self.zoom");
+            println!("{:?}", self.zoom);
+
+            self.position = *center;
+        } else if mouse_scroll < 0.0 && self.zoom.x > LOWER_BOUND {
+            println!("{}", "center world coord");
+            println!("{:?}", center);
+
+            let world_pos_scale = Vector2 {x: self.zoom.x - zoom_scale, y: self.zoom.y - zoom_scale};
+
+            println!("{}", "center scale");
+            println!("{:?}", world_pos_scale);
+
+            center.x *= world_pos_scale.x;
+            center.y *= world_pos_scale.y;
+
+            println!("{}", "center world scaled coord");
+            println!("{:?}", center);
+
+            self.zoom = Vector2 {x: self.zoom.x - zoom_scale, y: self.zoom.y - zoom_scale};
+            println!("{}", "self.zoom");
+            println!("{:?}", self.zoom);
+
+            self.position = *center;
+        }
+
 
 
         //translate_mouse_to_camera(mouse_pos, window.window().size());
