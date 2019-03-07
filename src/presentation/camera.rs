@@ -19,7 +19,7 @@ pub struct Camera {
 impl Camera {
     pub fn new() -> Camera {
         Camera {
-            position: Vector2::zero(),
+            position: Vector2 {x: 5.0, y: 5.0},
             velocity: Vector2::zero(),
             zoom: 0.09,
         }
@@ -47,13 +47,9 @@ impl Camera {
             y: key_pressed(ks, Scancode::W) - key_pressed(ks, Scancode::S),
         };
 
-        fn move_camera() {
-
-        }
-
-        self.velocity += delta_time * Self::ACCELERATION_FACTOR * acceleration;
-        self.position += delta_time * self.velocity;
-        self.velocity -= delta_time * Self::DRAG_FACTOR * self.velocity;
+//        self.velocity += delta_time * Self::ACCELERATION_FACTOR * acceleration;
+//        self.position += delta_time * self.velocity;
+//        self.velocity -= delta_time * Self::DRAG_FACTOR * self.velocity;
 
 
     }
@@ -63,7 +59,7 @@ impl Camera {
             i : Vector4 {x: self.zoom, y: 0.0, z: 0.0, w: 0.0},
             j : Vector4 {x: 0.0, y: self.zoom, z: 0.0, w: 0.0},
             k : Vector4 {x: 0.0, y: 0.0, z: 1.0, w: 0.0},
-            w : Vector4 {x: -self.position.x as f64, y: -self.position.y as f64, z: 0.0, w: 1.0},
+            w : Vector4 {x: -self.position.x, y: -self.position.y, z: 0.0, w: 1.0},
         })
     }
 
@@ -72,8 +68,7 @@ impl Camera {
         ms: &sdl2::mouse::MouseState,
         scroll: i32,
         window: &SDL2Facade,
-        camera_frame: Mat4,
-        delta_time: Scalar) {
+        camera_frame: Mat4) {
 
         const ZOOM_SPEED: Scalar = 0.005;
         const LOWER_BOUND: Scalar = 0.015;
@@ -83,51 +78,106 @@ impl Camera {
         let zoom_scale = (mouse_scroll * ZOOM_SPEED).abs();
         let mouse_pos = &mut Vector2 { x: ms.x() as f64, y: ms.y() as f64 };
 
-        translate_mouse_to_camera(mouse_pos, window.window().size());
+        let center = &mut Vector2 {x: window.window().size().0 as f64 / 2.0, y: window.window().size().1 as f64 / 2.0};
+        println!("{}", "center window coord");
+        println!("{:?}", center);
+
+        translate_mouse_to_camera(center, window.window().size());
+
+        println!("{}", "center camera coord");
+        println!("{:?}", center);
+
+        println!("{}", "camera frame");
+        println!("{:?}", camera_frame);
+
+        translate_camera_to_world(center, camera_frame);
+
+        println!("{}", "center world coord");
+        println!("{:?}", center);
+
+        let world_pos_scale = Vector2 {x: 0.09, y: 0.09};
+
+        println!("{}", "center scale");
+        println!("{:?}", world_pos_scale);
+
+        center.x *= world_pos_scale.x;
+        center.y *= world_pos_scale.y;
+
+        println!("{}", "center world scaled coord");
+        println!("{:?}", center);
+
+        self.position = *center;
+
+
+        //translate_mouse_to_camera(mouse_pos, window.window().size());
         //translate_camera_to_world(mouse_pos, camera_frame);
 
-        let camera_world_pos = Vector2 {x: -camera_frame.w.x, y: -camera_frame.w.y};
-        let mouse_world_pos = &mut Vector2 {x: mouse_pos.x, y: mouse_pos.y};
+        //let camera_world_pos = Vector2 {x: -camera_frame.w.x, y: -camera_frame.w.y};
+        //let mouse_world_pos = &mut Vector2 {x: mouse_pos.x, y: mouse_pos.y};
 
         //let world_pos_scale = Vector2 {x: camera_world_pos.x / mouse_world_pos.x, y: camera_world_pos.y / mouse_world_pos.y};
 
-        println!("{}", "Camera World Position");
-        println!("{:?}", camera_world_pos);
+//        println!("{}", "Camera World Position");
+//        println!("{:?}", camera_world_pos);
 
         //let world_pos_scale = Vector2 {x: 0.898678771250003 / 10.031551765622623, y: 0.9381503312395915 / 10.423892569328794};
         //mouse_world_pos.x *= world_pos_scale.x;
         //mouse_world_pos.y *= world_pos_scale.y;
 
-        println!("{}", "Mouse World Position");
-        println!("{:?}", mouse_world_pos);
+//        println!("{}", "Mouse World Position");
+//        println!("{:?}", mouse_world_pos);
 
-        println!("{}", "Velocity");
-        println!("{:?}", self.velocity);
+//        let old_zoom = self.zoom;
+//        let new_zoom = old_zoom + zoom_scale;
+//        self.zoom = new_zoom;
 
-        println!("{}", "Zoom Scale");
-        println!("{:?}", zoom_scale);
+//        if mouse_scroll > 0.0 && self.zoom < UPPER_BOUND {
+//            let new_zoom = self.interpolate_zoom(zoom_scale, self.zoom, LOWER_BOUND);
+//
+//            // TODO: Find camera frame width and height
+//            // TODO: Change 0.5 to mouse position in screen coord
 
-
-
-        // Limit camera zoom
-        if mouse_scroll > 0.0 && self.zoom < UPPER_BOUND {
-            self.velocity += *mouse_world_pos / delta_time;
-            self.position += delta_time * (self.velocity * self.zoom);
-
-            self.zoom = interpolate_zoom(zoom_scale, self.zoom, UPPER_BOUND);
-        } else if mouse_scroll < 0.0 && self.zoom > LOWER_BOUND {
-            self.velocity += *mouse_world_pos / delta_time;
-            self.position += delta_time * (self.velocity * self.zoom);
-
-            self.zoom = interpolate_zoom(zoom_scale, self.zoom, LOWER_BOUND);
-        }
+        // TODO: Get window coord convert to camera coord convert to world coord, set as position on each frame
+//
+//            // Offset the camera to keep it centered
+//            let delta_zoom_inverse = self.zoom / new_zoom;
+//
+//            let height = camera_frame.j.y;
+//            let width = camera_frame.i.x;
+//
+//            let x_offset_factor = (1.0 - delta_zoom_inverse) * 0.5;
+//            let y_offset_factor = (1.0 - delta_zoom_inverse) * 0.5;
+//
+//            self.position += vector2(x_offset_factor, y_offset_factor);
+//            self.zoom = new_zoom;
+//
+//
+//        } else if mouse_scroll < 0.0 && self.zoom > LOWER_BOUND {
+//            let new_zoom = self.interpolate_zoom(zoom_scale, self.zoom, UPPER_BOUND);
+//
+//            // TODO: Find camera frame width and height
+//            // TODO: Change 0.5 to mouse position in screen coord
+//
+//            // Offset the camera to keep it centered
+//            let delta_zoom_inverse = self.zoom / new_zoom;
+//
+//            let height = camera_frame.j.y;
+//            let width = camera_frame.i.x;
+//
+//            let x_offset_factor = (1.0 - delta_zoom_inverse) * 0.5;
+//            let y_offset_factor = (1.0 - delta_zoom_inverse) * 0.5;
+//
+//            self.position += vector2(x_offset_factor, y_offset_factor);
+//            self.zoom = new_zoom;
+//        }
 
     }
-}
 
-// Smooth zooming
-fn interpolate_zoom(value: f64, start: f64, end: f64) -> f64 {
-    return start + (end - start) * value;
+    // Smooth zooming
+    fn interpolate_zoom(&mut self, value: f64, start: f64, end: f64) -> f64 {
+        return start + (end - start) * value;
+    }
+
 }
 
 pub fn translate_mouse_to_camera(vec: &mut Vector2, window_size: (u32, u32)) {
