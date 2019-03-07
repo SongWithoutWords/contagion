@@ -775,6 +775,9 @@ fn draw_remaining_zombie_num(window: &glium_sdl2::SDL2Facade, zombie_num: i32, f
     if zombie_num > 99{
         zombie_num_display = format!("{}",  zombie_num_str);
     }
+    else if zombie_num < 10 {
+        zombie_num_display = format!("00{}",  zombie_num_display);
+    }
     let str_slice: &str = &zombie_num_display[..];
     let text = glium_text::TextDisplay::new(&system, font, str_slice);
     let color = [0.0, 0.0, 0.0, 1.0f32];
@@ -799,6 +802,9 @@ fn draw_remaining_civilian_num(window: &glium_sdl2::SDL2Facade, civilian_num: i3
     let mut civilian_num_display = format!("0{}",  civilian_num_str);
     if civilian_num > 99 {
         civilian_num_display = format!("{}",  civilian_num_str);
+    }
+    else if civilian_num < 10 {
+        civilian_num_display = format!("00{}",  civilian_num_str);
     }
     let str_slice: &str = &civilian_num_display[..];
     let text = glium_text::TextDisplay::new(&system, font, str_slice);
