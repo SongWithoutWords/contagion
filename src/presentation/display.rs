@@ -444,6 +444,9 @@ pub fn display(
             GuiType::CivilianUI => {
                 push_gui_vertices(&mut vertex_buffers_gui[SpriteType::CivilianWorldIcon], component);
             },
+            GuiType::CopUI => {
+                push_gui_vertices(&mut vertex_buffers_gui[SpriteType::CopWorldIcon], component);
+            },
             GuiType::Selected => {
                 if selection_count < 1 {
 
@@ -684,6 +687,21 @@ pub fn display(
                 params,
                 &uniforms);
         }
+          else if _gui_type == SpriteType::CopWorldIcon {
+            let uniforms = uniform! {
+                    matrix: mat_gui,
+                    tex: &textures.sprite_textures[_gui_type],
+                };
+            // Draw the text showing the number of cops next to the UI cop icon
+            draw_remaining_cop_num(window, cop_count, frame, &font);
+            draw_color_sprites(
+                frame,
+                window,
+                &vertex_buffer,
+                &programs.sprite_program,
+                params,
+                &uniforms);
+        }
 
 
 
@@ -793,6 +811,31 @@ fn draw_remaining_civilian_num(window: &glium_sdl2::SDL2Facade, civilian_num: i3
         [0.0, 1.0 * (w as f32) / (h as f32) / font_scale_down,0.0, 0.0],
         [0.0, 0.0, 1.0, 0.0],
         [0.7255, 0.83, 0.0, 1.0f32],
+    ];
+
+    glium_text::draw(&text, &system, frame, matrix, color);
+
+}
+
+// Draw the remaining number of civilians in the world (number)
+fn draw_remaining_cop_num(window: &glium_sdl2::SDL2Facade, cop_num: i32, frame: &mut glium::Frame, font: &FontTexture){
+    let system = glium_text::TextSystem::new(window);
+    let cop_num_str: String =  cop_num.to_string();
+    let mut cop_num_display = format!("0{}",  cop_num_str);
+    if cop_num > 99 {
+        cop_num_display = format!("{}",  cop_num_str);
+    }
+    let str_slice: &str = &cop_num_display[..];
+    let text = glium_text::TextDisplay::new(&system, font, str_slice);
+    let color = [0.0, 0.0, 0.0, 1.0f32];
+    let font_scale_down = 40.0;
+    let (w, h) = frame.get_dimensions();
+
+    let matrix = [
+        [1.0/font_scale_down, 0.0, 0.0, 0.0],
+        [0.0, 1.0 * (w as f32) / (h as f32) / font_scale_down,0.0, 0.0],
+        [0.0, 0.0, 1.0, 0.0],
+        [0.5755, 0.83, 0.0, 1.0f32],
     ];
 
     glium_text::draw(&text, &system, frame, matrix, color);

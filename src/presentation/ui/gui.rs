@@ -62,7 +62,7 @@ impl Component {
     pub fn init_game_gui() -> Component {
         let selected_ui = Gui::new(GuiType::Selected, 0.1, 0.1, Vector2{x: -0.9, y: -0.9});
         let zombie_ui = Gui::new(GuiType::ZombieUI, 0.1, 0.1, Vector2{x: 0.91, y: 0.92});
-        let cop_ui = Gui::new(GuiType::CopUI, 0.1, 0.1, Vector2{x: 0.73, y: 0.92});
+        let cop_ui = Gui::new(GuiType::CopUI, 0.1, 0.1, Vector2{x: 0.61, y: 0.92});
         let civilian_ui = Gui::new(GuiType::CivilianUI, 0.1, 0.1, Vector2{x: 0.76, y: 0.92});
         let drag_ui = Gui::new(GuiType::SelectionDrag, 0.0, 0.0, Vector2{x: 0.0, y: 0.0});
         let box_ui = Gui::new(GuiType::Window, 1.8, 1.8, Vector2{x: 0.0, y: 0.0});
