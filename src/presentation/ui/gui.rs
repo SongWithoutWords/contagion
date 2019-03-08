@@ -53,6 +53,7 @@ pub enum ActiveWindow {
 }
 pub static mut CURRENT: ActiveWindow = ActiveWindow::Game;
 
+#[derive(Clone)]
 pub struct Component {
     pub components: Vec<Gui>,
     pub active_window: ActiveWindow
@@ -119,6 +120,10 @@ impl Component {
             components: vec![button_start_ui, button_exit_ui, setting_ui],
             active_window: ActiveWindow::MainMenu
         }
+    }
+
+    pub fn init_loss_gui() -> Component {
+        unimplemented!();
     }
 
     pub fn handle_event(&mut self, event: Event, window: &SDL2Facade, camera_frame: Mat4, state: &mut State, game_state: &mut GameState, control: &mut Control) {

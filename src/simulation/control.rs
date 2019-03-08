@@ -14,6 +14,7 @@ use sdl2::keyboard::Keycode;
 
 use super::state::*;
 
+#[derive(Clone)]
 pub struct Control {
     pub mouse_drag: bool,
     pub drag_start_mouse_coord: Vector2,
