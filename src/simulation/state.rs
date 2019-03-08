@@ -111,8 +111,9 @@ pub enum ProjectileKind {
     Casing,
 }
 
+// TOOD: add another move mode
 #[derive(Copy, Clone, PartialEq)]
 pub enum MoveMode {
-    MoveAttacking,
+    Moving,
     Sprinting
 }

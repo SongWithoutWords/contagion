@@ -46,10 +46,8 @@ impl Control {
             let entity = &mut state.entities[i];
             match entity.behaviour {
                 Behaviour::Cop {..} => {
-                    let x_pos: Scalar = entity.position.x;
-                    let y_pos: Scalar = entity.position.y;
-                    if m_pos.x <= x_pos + 0.5 && m_pos.x >= x_pos - 0.5
-                        && m_pos.y <= y_pos + 0.5 && m_pos.y >= y_pos - 0.5 {
+                    let entity_pos = entity.position;
+                    if is_click_on_entity(entity_pos, *m_pos) {
                         state.selection.insert(i);
                         break;
                     }
@@ -165,10 +163,32 @@ impl Control {
 
         match order {
             PoliceOrder::Move => {
+                let mut zombie_index:i32 = -1;
+
+                // Check if any zombie is within the click
+                for i in 0..state.entities.len() {
+                    let entity = &mut state.entities[i];
+                    match entity.behaviour {
+                        Behaviour::Zombie {..} => {
+                            let entity_pos = entity.position;
+                            if is_click_on_entity(entity_pos, *m_pos) {
+                                zombie_index = i as i32;
+                            }
+                        }
+                        _ => ()
+                    }
+                }
+
                 for i in &state.selection {
                     match state.entities[*i].behaviour {
                         Behaviour::Cop { ref mut state, .. } => {
-                            *state = CopState::Moving { waypoint: *m_pos, mode: MoveMode::MoveAttacking, path: None }
+                            // If no zombie clicked, issue regular move order, else issue special attack order
+                            if zombie_index == -1 {
+                                *state = CopState::Moving { waypoint: *m_pos, mode: MoveMode::Moving, path: None }
+                            } else {
+                                // TODO
+
+                            }
                         }
                         _ => ()
                     }
@@ -265,7 +285,7 @@ impl Control {
                             // double right click to sprint
                             self.issue_police_order(PoliceOrder::Sprint, state, &window, camera_frame, mouse_pos);
                         } else {
-                            // single right click for attack move
+                            // single right click for attack or attack move
                             self.issue_police_order(PoliceOrder::Move, state, &window, camera_frame, mouse_pos);
                         }
                         self.last_right_click_time = current_time;
@@ -298,7 +318,15 @@ pub fn translate_world_to_camera(vec: &mut Vector2, matrix: Mat4) {
     vec.y = new_vec2.y;
 }
 
+fn is_click_on_entity(entity_pos: Vector2, m_pos: Vector2) -> bool {
+    let entity_delta = 0.5;
+    let x_pos = entity_pos.x;
+    let y_pos = entity_pos.y;
+    return m_pos.x <= x_pos + entity_delta && m_pos.x >= x_pos - entity_delta
+        && m_pos.y <= y_pos + entity_delta && m_pos.y >= y_pos - entity_delta;
+}
+
 pub enum PoliceOrder {
     Move,
-    Sprint
+    Sprint,
 }

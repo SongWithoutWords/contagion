@@ -181,7 +181,6 @@ pub fn update_when_paused(args: &UpdateArgs, state: &mut State) {
     for i in 0..state.entities.len() {
         match &state.entities[i].behaviour {
             b @ Behaviour::Cop { .. } => {
-                // simulate_cop(args, &mut entities, i),
                 let behaviour = update_cop_when_paused(&args, state, i, b.clone());
                 state.entities[i].behaviour = behaviour
             }
@@ -290,7 +289,7 @@ fn update_cop_when_paused(
                         Some(path) => {
                             Behaviour::Cop {
                                 rounds_in_magazine: rounds_in_magazine,
-                                state: CopState::Moving { waypoint, mode: MoveMode::MoveAttacking, path: Some(path) }
+                                state: CopState::Moving { waypoint, mode: MoveMode::Moving, path: Some(path) }
                             }
                         }
                         _ => {
@@ -415,7 +414,7 @@ fn update_cop(
                                         entities[index].accelerate_along_vector(delta, args.dt, COP_MOVEMENT_FORCE);
                                         Behaviour::Cop {
                                             rounds_in_magazine: rounds_in_magazine,
-                                            state: CopState::Moving { waypoint, mode: MoveMode::MoveAttacking, path: Some(path) }
+                                            state: CopState::Moving { waypoint, mode: MoveMode::Moving, path: Some(path) }
                                         }
                                     }
                                 }
