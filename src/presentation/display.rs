@@ -450,7 +450,7 @@ pub fn display(
             Behaviour::Cop{..} => {cop_count+=1; SpriteType::Cop},
             Behaviour::Dead => {_dead_count+=1; SpriteType::Dead},
             Behaviour::Human => {human_count+=1; SpriteType::Civilian},
-            Behaviour::Zombie => {zombie_count+=1; SpriteType::Zombie},
+            Behaviour::Zombie{..} => {zombie_count+=1; SpriteType::Zombie},
         };
         let sprite = Sprite {
             position: entity.position,

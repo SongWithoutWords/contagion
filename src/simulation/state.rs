@@ -68,7 +68,9 @@ pub enum Behaviour {
     },
     Dead,
     Human,
-    Zombie
+    Zombie {
+        state: ZombieState
+    }
 }
 
 pub const COP_MIN_DISTANCE_FROM_WAYPOINT_SQUARED: Scalar = 0.01;
@@ -88,6 +90,17 @@ pub enum CopState {
         reload_time_remaining: Scalar,
     },
     Idle
+}
+
+#[derive(Clone, PartialEq)]
+pub enum ZombieState {
+    Chasing {
+        target_index: usize
+    },
+    Moving {
+        waypoint: Vector2
+    },
+    Roaming
 }
 
 pub const PROJECTILE_DRAG: Scalar = 1.0;

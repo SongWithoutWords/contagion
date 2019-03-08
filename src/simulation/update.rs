@@ -95,9 +95,12 @@ pub fn update(args: &UpdateArgs, state: &mut State) {
             Behaviour::Human =>
             // Run from zombies!
                 simulate_human(args, &mut state.entities, i),
-            Behaviour::Zombie =>
-            // Chase humans and cops!
-                simulate_zombie(args, state, i)
+            b @ Behaviour::Zombie { .. } => {
+                // Chase humans and cops!
+//                simulate_zombie(args, state, i)
+                let behaviour = update_zombie(&args, state, i, b.clone());
+                state.entities[i].behaviour = behaviour
+            }
         }
     }
 
@@ -200,12 +203,12 @@ fn handle_collision(
 
     // Spread the infection from zombies to others
     match (&entities[i].behaviour, &entities[j].behaviour) {
-        (Behaviour::Human, Behaviour::Zombie) | (Behaviour::Cop { .. }, Behaviour::Zombie) => {
-            entities[i].behaviour = Behaviour::Zombie;
+        (Behaviour::Human, Behaviour::Zombie { .. }) | (Behaviour::Cop { .. }, Behaviour::Zombie { .. }) => {
+            entities[i].behaviour = Behaviour::Zombie { state: ZombieState::Roaming };
             play_person_infected();
         }
-        (Behaviour::Zombie, Behaviour::Human) | (Behaviour::Zombie, Behaviour::Cop { .. }) => {
-            entities[j].behaviour = Behaviour::Zombie;
+        (Behaviour::Zombie { .. }, Behaviour::Human) | (Behaviour::Zombie { .. }, Behaviour::Cop { .. }) => {
+            entities[j].behaviour = Behaviour::Zombie { state: ZombieState::Roaming };
             play_person_infected()
         }
         _ => ()
@@ -468,7 +471,7 @@ fn update_cop(
                             match entities[i].behaviour {
 
                                 // Target zombies
-                                Behaviour::Zombie => {
+                                Behaviour::Zombie { .. } => {
                                     let delta = entities[i].position - my_pos;
                                     let distance_sqr = delta.length_squared();
                                     if distance_sqr < min_distance_sqr {
@@ -510,6 +513,85 @@ fn update_cop(
             }
         }
         _ => panic!("Entity at index should be a cop!")
+    }
+}
+
+fn update_zombie(
+    args: &UpdateArgs,
+    sim_state: &mut State,
+    index: usize,
+    behaviour: Behaviour) -> Behaviour {
+
+    let entities = &mut sim_state.entities;
+    let buildings = &sim_state.buildings;
+
+    let my_pos = entities[index].position;
+
+    match behaviour {
+        Behaviour::Zombie { state } => {
+            match state {
+                // TODO: add target switching on loss of LOS/distance
+                ZombieState::Chasing { target_index } => {
+                    let target_pos = entities[target_index].position;
+                    let delta = target_pos - my_pos;
+
+                    entities[index].accelerate_along_vector(delta, args.dt, ZOMBIE_MOVEMENT_FORCE);
+
+                    match entities[target_index].behaviour {
+                        // If alive, check line of sight
+                        Behaviour::Cop { .. } | Behaviour::Human => {
+                            if can_see(buildings,my_pos,target_pos) {
+                                // Continue chasing
+                                Behaviour::Zombie { state: ZombieState::Chasing { target_index } }
+                            } else {
+                                // Go to last known position
+                                Behaviour::Zombie {
+                                    state: ZombieState::Moving { waypoint: target_pos }
+                                }
+                            }
+                        }
+                        // Otherwise return to roaming
+                        _ => Behaviour::Zombie { state: ZombieState::Roaming },
+                    }
+                }
+                // TODO: Add target acquisition logic (similar to roaming)
+                ZombieState::Moving { waypoint } => {
+                    let delta = waypoint - my_pos;
+                    entities[index].accelerate_along_vector(delta, args.dt, ZOMBIE_MOVEMENT_FORCE);
+
+                    if delta.length_squared() < COP_MIN_DISTANCE_FROM_WAYPOINT_SQUARED {
+                        Behaviour::Zombie { state: ZombieState::Roaming }
+                    } else {
+                        Behaviour::Zombie { state: ZombieState::Moving { waypoint } }
+                    }
+                }
+                ZombieState::Roaming => {
+                    let mut min_dist = INFINITY;
+                    let mut closest_index: Option<usize> = None;
+
+                    for i in 0..entities.len() {
+                        match entities[i].behaviour {
+                            Behaviour::Cop { .. } | Behaviour::Human => {
+                                if can_see(buildings, my_pos, entities[i].position) {
+                                    let delta = my_pos - entities[i].position;
+                                    if delta.length_squared() < min_dist {
+                                        min_dist = delta.length_squared();
+                                        closest_index = Some(i);
+                                    }
+                                }
+                            }
+                            _ => ()
+                        }
+                    }
+
+                    match closest_index {
+                        None => Behaviour::Zombie { state: ZombieState::Roaming },
+                        Some(i) => Behaviour::Zombie { state: ZombieState::Chasing { target_index: i} }
+                    }
+                }
+            }
+        }
+        _ => panic!("Entity at index should be a zombie!")
     }
 }
 
@@ -567,7 +649,7 @@ fn simulate_human(args: &UpdateArgs, entities: &mut Vec<Entity>, index: usize) {
         match entities[i].behaviour {
 
             // Run from zombies
-            Behaviour::Zombie => {
+            Behaviour::Zombie { .. } => {
                 let delta = entities[i].position - my_pos;
                 let distance_sqr = delta.length_squared();
                 if distance_sqr < min_distance_sqr {
