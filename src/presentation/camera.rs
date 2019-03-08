@@ -65,7 +65,7 @@ impl Camera {
         window: &SDL2Facade,
         camera_frame: Mat4) {
 
-        const ZOOM_SPEED: f64 = 0.0005;
+        const ZOOM_SPEED: f64 = 0.005;
         const LOWER_BOUND: f64 = 0.015;
         const UPPER_BOUND: f64 = 0.15;
 
@@ -83,15 +83,12 @@ impl Camera {
 
 
         // Zoom in to cursor
-        if mouse_scroll > 0.0 && self.zoom.x < UPPER_BOUND - 0.05 {
+        if mouse_scroll > 0.0 && self.zoom.x < UPPER_BOUND {
 
             let old_zoom = self.zoom;
-            let new_zoom = Vector2 {x: old_zoom.x + zoom_scale, y: old_zoom.y + zoom_scale};
+            let new_zoom = vector2(interpolate_zoom(zoom_scale, old_zoom.x, UPPER_BOUND), interpolate_zoom(zoom_scale, old_zoom.x, UPPER_BOUND));
 
             let delta_cord = Vector2 {x: (mouse_pos.x - camera_center.x) * (new_zoom.x - old_zoom.x), y: (mouse_pos.y - camera_center.y) * (new_zoom.y - old_zoom.y)};
-
-            println!("{}", "delta cord");
-            println!("{:?}", delta_cord);
 
             if old_zoom.x != new_zoom.x || old_zoom.y != new_zoom.y {
                 let scale_delta_cord = Vector2 {x: new_zoom.x / old_zoom.x, y: new_zoom.y / old_zoom.y};
@@ -100,61 +97,18 @@ impl Camera {
                 self.zoom = new_zoom;
             }
 
-
-
-
-
-
-
-
-////            let new_zoom = vector2(interpolate_zoom(zoom_scale, self.zoom.x, UPPER_BOUND), interpolate_zoom(zoom_scale, self.zoom.x, UPPER_BOUND));
-//
-//            let new_zoom = vector2(self.zoom.x + zoom_scale, self.zoom.y + zoom_scale);
-//
-//
-////            mouse_pos.x *= new_zoom.x;
-////            mouse_pos.y *= new_zoom.y;
-//
-////            camera_center.x *= new_zoom.x;
-////            camera_center.y *= new_zoom.y;
-//
-//            let move_vec = &mut Vector2 {x: mouse_pos.x - camera_center.x, y: mouse_pos.y - camera_center.y};
-//
-//
-//            self.zoom = new_zoom;
-//            self.position = self.position + *move_vec;
-
             // Zooming out from camera_center of camera
         } else if mouse_scroll < 0.0 && self.zoom.x > LOWER_BOUND {
 
-//            let new_zoom = vector2(interpolate_zoom(zoom_scale, self.zoom.x, LOWER_BOUND), interpolate_zoom(zoom_scale, self.zoom.x, LOWER_BOUND));
+            let old_zoom = self.zoom;
+            let new_zoom = vector2(interpolate_zoom(zoom_scale, old_zoom.x, LOWER_BOUND), interpolate_zoom(zoom_scale, old_zoom.y, LOWER_BOUND));
 
-            let new_zoom = vector2(self.zoom.x - zoom_scale, self.zoom.y - zoom_scale);
             camera_center.x *= new_zoom.x;
             camera_center.y *= new_zoom.y;
 
             self.zoom = new_zoom;
             self.position = *camera_center;
         }
-
-
-//        if mouse_scroll > 0.0 && self.zoom < UPPER_BOUND {
-//            let new_zoom = self.interpolate_zoom(zoom_scale, self.zoom, LOWER_BOUND);
-//
-//            // TODO: Change 0.5 to mouse position in screen coord
-
-//
-//            // Offset the camera to keep it centered
-//            let delta_zoom_inverse = self.zoom / new_zoom;
-//
-//            let height = camera_frame.j.y;
-//            let width = camera_frame.i.x;
-//
-//            let x_offset_factor = (1.0 - delta_zoom_inverse) * 0.5;
-//            let y_offset_factor = (1.0 - delta_zoom_inverse) * 0.5;
-//
-//            self.position += vector2(x_offset_factor, y_offset_factor);
-//            self.zoom = new_zoom;
     }
 }
 
