@@ -1,13 +1,14 @@
 use crate::presentation::ui::gui::Component;
-use crate::scene::{Scene, UpdateResult};
+use crate::scenes::scene::{Scene, UpdateResult};
 use sdl2::EventPump;
 use glium_sdl2::SDL2Facade;
 use crate::presentation::display::{Programs, Textures};
 use glium::DrawParameters;
 use crate::presentation::ui::glium_text::FontTexture;
-use crate::{presentation, simulation, game};
+use crate::{presentation, simulation};
 use sdl2::keyboard::Keycode;
 use crate::simulation::game_state::GameState;
+use crate::scenes::game;
 
 pub struct MainMenu {
     gui: Component,

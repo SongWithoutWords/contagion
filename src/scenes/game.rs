@@ -3,7 +3,7 @@ use crate::presentation::ui::gui::Component;
 use crate::presentation::camera::Camera;
 use crate::simulation::control::Control;
 
-use crate::{presentation, main_menu};
+use crate::{presentation};
 
 use glium_sdl2::SDL2Facade;
 use sdl2::{EventPump};
@@ -15,8 +15,8 @@ use glium::DrawParameters;
 use crate::presentation::ui::glium_text::FontTexture;
 use crate::simulation::game_state::GameState;
 use crate::simulation;
-use crate::scene::*;
-
+use crate::scenes::scene::*;
+use crate::scenes::main_menu;
 
 
 pub struct Game {
@@ -51,9 +51,11 @@ impl Scene for Game {
               delta_time: f64)
               -> UpdateResult {
         match self.game_state {
-            GameState{terminate, transition_menu, ..} =>
+            GameState{terminate, transition_menu, transition_game, ..} =>
                 {
                     if terminate {return UpdateResult::Exit}
+                    if transition_game {self.game_state.transition_game = false;
+                        return UpdateResult::Transition(Box::new(Game::new()))}
                     if transition_menu {self.game_state.transition_menu = false;
                         return UpdateResult::Transition(Box::new(main_menu::MainMenu::new()))}
                 }

@@ -21,15 +21,14 @@ use crate::core::scalar:: *;
 use crate::core::vector:: *;
 use crate::presentation::audio::sound_effects:: *;
 use crate::presentation::ui::glium_text;
-use crate::scene::*;
+use crate::scenes::main_menu;
+use crate::scenes::scene::{Scene, UpdateResult};
 
 pub mod constants;
 pub mod core;
 pub mod presentation;
 pub mod simulation;
-pub mod game;
-pub mod scene;
-pub mod main_menu;
+pub mod scenes;
 
 fn init() -> Result<((Sdl, SDL2Facade, EventPump),
                      presentation::display::Textures,
