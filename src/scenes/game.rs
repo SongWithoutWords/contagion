@@ -3,7 +3,7 @@ use crate::presentation::ui::gui::Component;
 use crate::presentation::camera::Camera;
 use crate::simulation::control::Control;
 
-use crate::{presentation, main_menu};
+use crate::{presentation};
 
 use glium_sdl2::SDL2Facade;
 use sdl2::{EventPump};
@@ -15,8 +15,8 @@ use glium::DrawParameters;
 use crate::presentation::ui::glium_text::FontTexture;
 use crate::simulation::game_state::GameState;
 use crate::simulation;
-use crate::scene::*;
-
+use crate::scenes::scene::*;
+use crate::scenes::main_menu;
 
 
 pub struct Game {
