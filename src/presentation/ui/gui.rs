@@ -67,13 +67,16 @@ impl Component {
         let drag_ui = Gui::new(GuiType::SelectionDrag, 0.0, 0.0, Vector2{x: 0.0, y: 0.0});
         let box_ui = Gui::new(GuiType::Window, 1.8, 1.8, Vector2{x: 0.0, y: 0.0});
         let button1 = GuiType::Button{text: "Exit".to_string()};
-        let button2 = GuiType::Button{text: "Main Menu".to_string()};
-        let button3 = GuiType::Button{text: "Instruction".to_string()};
-        let button_ui_1 = Gui::new(button1, 0.2, 0.05, Vector2{x: 0.0, y: -0.15});
-        let button_ui_2 = Gui::new(button2, 0.4, 0.05, Vector2{x: 0.0, y: 0.0});
-        let button_ui_3 = Gui::new(button3, 0.4, 0.05, Vector2{x: 0.0, y: 0.15});
+        let button2 = GuiType::Button{text: "Retry".to_string()};
+        let button3 = GuiType::Button{text: "Main Menu".to_string()};
+        let button4 = GuiType::Button{text: "Instruction".to_string()};
+        let button_ui_1 = Gui::new(button1, 0.2, 0.05, Vector2{x: 0.0, y: -0.225});
+        let button_ui_2 = Gui::new(button2, 0.2, 0.05, Vector2{x: 0.0, y: -0.075});
+        let button_ui_3 = Gui::new(button3, 0.4, 0.05, Vector2{x: 0.0, y: 0.075});
+        let button_ui_4 = Gui::new(button4, 0.4, 0.05, Vector2{x: 0.0, y: 0.225});
         let menu_ui = Gui::new(GuiType::Menu{ _window_gui: Box::new(box_ui),
-                                                       _buttons_gui: vec![Box::new(button_ui_3),
+                                                       _buttons_gui: vec![Box::new(button_ui_4),
+                                                                          Box::new(button_ui_3),
                                                                           Box::new(button_ui_2),
                                                                           Box::new(button_ui_1)],
                                                        text: "Setting".to_string()},
@@ -171,6 +174,8 @@ impl Component {
                                             game_state.game_paused = true;
                                         } else if display_text == "Main Menu" {
                                             game_state.transition_menu = true;
+                                        } else if display_text == "Retry" {
+                                            game_state.transition_game = true;
                                         } else if display_text == "Exit" {
                                             game_state.terminate = true;
                                         }

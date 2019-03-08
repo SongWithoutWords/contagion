@@ -51,9 +51,11 @@ impl Scene for Game {
               delta_time: f64)
               -> UpdateResult {
         match self.game_state {
-            GameState{terminate, transition_menu, ..} =>
+            GameState{terminate, transition_menu, transition_game, ..} =>
                 {
                     if terminate {return UpdateResult::Exit}
+                    if transition_game {self.game_state.transition_game = false;
+                        return UpdateResult::Transition(Box::new(Game::new()))}
                     if transition_menu {self.game_state.transition_menu = false;
                         return UpdateResult::Transition(Box::new(main_menu::MainMenu::new()))}
                 }
