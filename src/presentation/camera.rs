@@ -1,7 +1,6 @@
 use crate::core::scalar::*;
 use crate::core::vector::*;
 use crate::core::matrix::*;
-use crate::simulation::control::*;
 use glium_sdl2::SDL2Facade;
 
 pub struct Camera {

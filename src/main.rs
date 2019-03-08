@@ -17,9 +17,6 @@ use glium::draw_parameters::Blend;
 use glium_sdl2::SDL2Facade;
 use sdl2::{EventPump, Sdl};
 use sdl2::keyboard::Keycode;
-use sdl2::mouse::MouseState;
-use sdl2::mouse::MouseButton;
-use sdl2::mouse;
 
 use crate::core::scalar:: *;
 use crate::core::vector:: *;
@@ -90,10 +87,10 @@ fn main() {
     music::start_context::<Music, TheSound, _>(&_sdl_context, 200, || {
 
         // Load the sound effects (bind the mp3 files with the enum)
-        //load_sound_effects();
+        load_sound_effects();
 
         // Play the background music until the end of the program
-        //play_background();
+        play_background();
 
         // main game loop
         'main_game_loop: loop {
