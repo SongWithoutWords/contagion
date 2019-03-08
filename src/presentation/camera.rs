@@ -65,103 +65,84 @@ impl Camera {
         window: &SDL2Facade,
         camera_frame: Mat4) {
 
-        const ZOOM_SPEED: f64 = 0.005;
+        const ZOOM_SPEED: f64 = 0.0005;
         const LOWER_BOUND: f64 = 0.015;
         const UPPER_BOUND: f64 = 0.15;
 
         let mouse_scroll: f64 = scroll as f64;
         let zoom_scale: f64 = (mouse_scroll * ZOOM_SPEED).abs();
         let mouse_pos: &mut Vector2 = &mut Vector2 { x: ms.x() as f64, y: ms.y() as f64 };
+        let camera_center: &mut Vector2 = &mut Vector2 {x: window.window().size().0 as f64 / 2.0, y: window.window().size().1 as f64 / 2.0};
 
-        let center: &mut Vector2 = &mut Vector2 {x: window.window().size().0 as f64 / 2.0, y: window.window().size().1 as f64 / 2.0};
-        println!("{}", "center window coord");
-        println!("{:?}", center);
+        translate_to_camera(mouse_pos, window.window().size());
+        translate_camera_to_world(mouse_pos, camera_frame);
 
-        translate_mouse_to_camera(center, window.window().size());
-
-        println!("{}", "center camera coord");
-        println!("{:?}", center);
-
-        println!("{}", "camera frame");
-        println!("{:?}", camera_frame);
-
-        translate_camera_to_world(center, camera_frame);
+        translate_to_camera(camera_center, window.window().size());
+        translate_camera_to_world(camera_center, camera_frame);
 
 
 
-        if mouse_scroll > 0.0 && self.zoom.x < UPPER_BOUND {
-            println!("{}", "center world coord");
-            println!("{:?}", center);
+        // Zoom in to cursor
+        if mouse_scroll > 0.0 && self.zoom.x < UPPER_BOUND - 0.05 {
 
-            let world_pos_scale = Vector2 {x: self.zoom.x + zoom_scale, y: self.zoom.y + zoom_scale};
+            let old_zoom = self.zoom;
+            let new_zoom = Vector2 {x: old_zoom.x + zoom_scale, y: old_zoom.y + zoom_scale};
 
-            println!("{}", "center scale");
-            println!("{:?}", world_pos_scale);
+            let delta_cord = Vector2 {x: (mouse_pos.x - camera_center.x) * (new_zoom.x - old_zoom.x), y: (mouse_pos.y - camera_center.y) * (new_zoom.y - old_zoom.y)};
 
-            center.x *= world_pos_scale.x;
-            center.y *= world_pos_scale.y;
+            println!("{}", "delta cord");
+            println!("{:?}", delta_cord);
 
-            println!("{}", "center world scaled coord");
-            println!("{:?}", center);
+            if old_zoom.x != new_zoom.x || old_zoom.y != new_zoom.y {
+                let scale_delta_cord = Vector2 {x: new_zoom.x / old_zoom.x, y: new_zoom.y / old_zoom.y};
+                let camera_pos = Vector2 {x: self.position.x * scale_delta_cord.x, y: self.position.y * scale_delta_cord.y};
+                self.position = camera_pos + delta_cord;
+                self.zoom = new_zoom;
+            }
 
-            self.zoom = Vector2 {x: self.zoom.x + zoom_scale, y: self.zoom.y + zoom_scale};
-            println!("{}", "self.zoom");
-            println!("{:?}", self.zoom);
 
-            self.position = *center;
+
+
+
+
+
+
+////            let new_zoom = vector2(interpolate_zoom(zoom_scale, self.zoom.x, UPPER_BOUND), interpolate_zoom(zoom_scale, self.zoom.x, UPPER_BOUND));
+//
+//            let new_zoom = vector2(self.zoom.x + zoom_scale, self.zoom.y + zoom_scale);
+//
+//
+////            mouse_pos.x *= new_zoom.x;
+////            mouse_pos.y *= new_zoom.y;
+//
+////            camera_center.x *= new_zoom.x;
+////            camera_center.y *= new_zoom.y;
+//
+//            let move_vec = &mut Vector2 {x: mouse_pos.x - camera_center.x, y: mouse_pos.y - camera_center.y};
+//
+//
+//            self.zoom = new_zoom;
+//            self.position = self.position + *move_vec;
+
+            // Zooming out from camera_center of camera
         } else if mouse_scroll < 0.0 && self.zoom.x > LOWER_BOUND {
-            println!("{}", "center world coord");
-            println!("{:?}", center);
 
-            let world_pos_scale = Vector2 {x: self.zoom.x - zoom_scale, y: self.zoom.y - zoom_scale};
+//            let new_zoom = vector2(interpolate_zoom(zoom_scale, self.zoom.x, LOWER_BOUND), interpolate_zoom(zoom_scale, self.zoom.x, LOWER_BOUND));
 
-            println!("{}", "center scale");
-            println!("{:?}", world_pos_scale);
+            let new_zoom = vector2(self.zoom.x - zoom_scale, self.zoom.y - zoom_scale);
+            camera_center.x *= new_zoom.x;
+            camera_center.y *= new_zoom.y;
 
-            center.x *= world_pos_scale.x;
-            center.y *= world_pos_scale.y;
-
-            println!("{}", "center world scaled coord");
-            println!("{:?}", center);
-
-            self.zoom = Vector2 {x: self.zoom.x - zoom_scale, y: self.zoom.y - zoom_scale};
-            println!("{}", "self.zoom");
-            println!("{:?}", self.zoom);
-
-            self.position = *center;
+            self.zoom = new_zoom;
+            self.position = *camera_center;
         }
 
-
-
-        //translate_mouse_to_camera(mouse_pos, window.window().size());
-        //translate_camera_to_world(mouse_pos, camera_frame);
-
-        //let camera_world_pos = Vector2 {x: -camera_frame.w.x, y: -camera_frame.w.y};
-        //let mouse_world_pos = &mut Vector2 {x: mouse_pos.x, y: mouse_pos.y};
-
-        //let world_pos_scale = Vector2 {x: camera_world_pos.x / mouse_world_pos.x, y: camera_world_pos.y / mouse_world_pos.y};
-
-//        println!("{}", "Camera World Position");
-//        println!("{:?}", camera_world_pos);
-
-        //let world_pos_scale = Vector2 {x: 0.898678771250003 / 10.031551765622623, y: 0.9381503312395915 / 10.423892569328794};
-        //mouse_world_pos.x *= world_pos_scale.x;
-        //mouse_world_pos.y *= world_pos_scale.y;
-
-//        println!("{}", "Mouse World Position");
-//        println!("{:?}", mouse_world_pos);
-
-//        let old_zoom = self.zoom;
-//        let new_zoom = old_zoom + zoom_scale;
-//        self.zoom = new_zoom;
 
 //        if mouse_scroll > 0.0 && self.zoom < UPPER_BOUND {
 //            let new_zoom = self.interpolate_zoom(zoom_scale, self.zoom, LOWER_BOUND);
 //
-//            // TODO: Find camera frame width and height
 //            // TODO: Change 0.5 to mouse position in screen coord
 
-        // TODO: Get window coord convert to camera coord convert to world coord, set as position on each frame
 //
 //            // Offset the camera to keep it centered
 //            let delta_zoom_inverse = self.zoom / new_zoom;
@@ -174,37 +155,15 @@ impl Camera {
 //
 //            self.position += vector2(x_offset_factor, y_offset_factor);
 //            self.zoom = new_zoom;
-//
-//
-//        } else if mouse_scroll < 0.0 && self.zoom > LOWER_BOUND {
-//            let new_zoom = self.interpolate_zoom(zoom_scale, self.zoom, UPPER_BOUND);
-//
-//            // TODO: Find camera frame width and height
-//            // TODO: Change 0.5 to mouse position in screen coord
-//
-//            // Offset the camera to keep it centered
-//            let delta_zoom_inverse = self.zoom / new_zoom;
-//
-//            let height = camera_frame.j.y;
-//            let width = camera_frame.i.x;
-//
-//            let x_offset_factor = (1.0 - delta_zoom_inverse) * 0.5;
-//            let y_offset_factor = (1.0 - delta_zoom_inverse) * 0.5;
-//
-//            self.position += vector2(x_offset_factor, y_offset_factor);
-//            self.zoom = new_zoom;
-//        }
-
     }
-
-    // Smooth zooming
-    fn interpolate_zoom(&mut self, value: f64, start: f64, end: f64) -> f64 {
-        return start + (end - start) * value;
-    }
-
 }
 
-pub fn translate_mouse_to_camera(vec: &mut Vector2, window_size: (u32, u32)) {
+// Smooth zooming
+fn interpolate_zoom(value: f64, start: f64, end: f64) -> f64 {
+    return start + (end - start) * value;
+}
+
+pub fn translate_to_camera(vec: &mut Vector2, window_size: (u32, u32)) {
     vec.x = vec.x / window_size.0 as f64 * 2.0 - 1.0;
     vec.y = -(vec.y / window_size.1 as f64 * 2.0 - 1.0);
 }

@@ -140,10 +140,6 @@ fn main() {
 
                     },
                     Event::MouseWheel {timestamp: _, window_id: _, which: _, x: _, y, direction: _} => {
-                        println!("{}", "In func!");
-                        println!("{:?}", camera_frame);
-                        println!("{}", "After func!");
-                        
                         camera.set_zoom(&mouse_state, y, &window, camera_frame);
                     },
                     Event::KeyDown { keycode: Some(Keycode::L), .. } => {
