@@ -65,7 +65,7 @@ impl Camera {
         window: &SDL2Facade,
         camera_frame: Mat4) {
 
-        const ZOOM_SPEED: f64 = 0.005;
+        const ZOOM_SPEED: f64 = 0.008;
         const LOWER_BOUND: f64 = 0.015;
         const UPPER_BOUND: f64 = 0.15;
 
@@ -74,12 +74,11 @@ impl Camera {
         let mouse_pos: &mut Vector2 = &mut Vector2 { x: ms.x() as f64, y: ms.y() as f64 };
         let camera_center: &mut Vector2 = &mut Vector2 {x: window.window().size().0 as f64 / 2.0, y: window.window().size().1 as f64 / 2.0};
 
-        translate_to_camera(mouse_pos, window.window().size());
-        translate_camera_to_world(mouse_pos, camera_frame);
+        translate_to_camera_coord(mouse_pos, window.window().size());
+        translate_camera_to_world_coord(mouse_pos, camera_frame);
 
-        translate_to_camera(camera_center, window.window().size());
-        translate_camera_to_world(camera_center, camera_frame);
-
+        translate_to_camera_coord(camera_center, window.window().size());
+        translate_camera_to_world_coord(camera_center, camera_frame);
 
 
         // Zoom in to cursor
@@ -88,16 +87,16 @@ impl Camera {
             let old_zoom = self.zoom;
             let new_zoom = vector2(interpolate_zoom(zoom_scale, old_zoom.x, UPPER_BOUND), interpolate_zoom(zoom_scale, old_zoom.x, UPPER_BOUND));
 
-            let delta_cord = Vector2 {x: (mouse_pos.x - camera_center.x) * (new_zoom.x - old_zoom.x), y: (mouse_pos.y - camera_center.y) * (new_zoom.y - old_zoom.y)};
+            let mouse_vec = Vector2 {x: (mouse_pos.x - camera_center.x) * (new_zoom.x - old_zoom.x), y: (mouse_pos.y - camera_center.y) * (new_zoom.y - old_zoom.y)};
 
             if old_zoom.x != new_zoom.x || old_zoom.y != new_zoom.y {
-                let scale_delta_cord = Vector2 {x: new_zoom.x / old_zoom.x, y: new_zoom.y / old_zoom.y};
-                let camera_pos = Vector2 {x: self.position.x * scale_delta_cord.x, y: self.position.y * scale_delta_cord.y};
-                self.position = camera_pos + delta_cord;
+                let delta_zoom = Vector2 {x: new_zoom.x / old_zoom.x, y: new_zoom.y / old_zoom.y};
+                let camera_pos = Vector2 {x: self.position.x * delta_zoom.x, y: self.position.y * delta_zoom.y};
+                self.position = camera_pos + mouse_vec;
                 self.zoom = new_zoom;
             }
 
-            // Zooming out from camera_center of camera
+            // Zooming out from center of camera
         } else if mouse_scroll < 0.0 && self.zoom.x > LOWER_BOUND {
 
             let old_zoom = self.zoom;
@@ -117,12 +116,12 @@ fn interpolate_zoom(value: f64, start: f64, end: f64) -> f64 {
     return start + (end - start) * value;
 }
 
-pub fn translate_to_camera(vec: &mut Vector2, window_size: (u32, u32)) {
+pub fn translate_to_camera_coord(vec: &mut Vector2, window_size: (u32, u32)) {
     vec.x = vec.x / window_size.0 as f64 * 2.0 - 1.0;
     vec.y = -(vec.y / window_size.1 as f64 * 2.0 - 1.0);
 }
 
-pub fn translate_camera_to_world(vec: &mut Vector2, matrix: Mat4) {
+pub fn translate_camera_to_world_coord(vec: &mut Vector2, matrix: Mat4) {
     let inverse_matrix = matrix.inverse_matrix4();
     let temp_vec2 = Vector2{x: vec.x, y: vec.y};
     let new_vec2 = inverse_matrix.multiply_vec2(temp_vec2);
