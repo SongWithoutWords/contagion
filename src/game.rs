@@ -3,7 +3,7 @@ use crate::presentation::ui::gui::Component;
 use crate::presentation::camera::Camera;
 use crate::simulation::control::Control;
 
-use crate::presentation;
+use crate::{presentation, main_menu};
 
 use glium_sdl2::SDL2Facade;
 use sdl2::{EventPump};
@@ -16,6 +16,7 @@ use crate::presentation::ui::glium_text::FontTexture;
 use crate::simulation::game_state::GameState;
 use crate::simulation;
 use crate::scene::*;
+
 
 
 pub struct Game {
@@ -50,9 +51,11 @@ impl Scene for Game {
               delta_time: f64)
               -> UpdateResult {
         match self.game_state {
-            GameState{terminate, ..} =>
+            GameState{terminate, transition_menu, ..} =>
                 {
                     if terminate {return UpdateResult::Exit}
+                    if transition_menu {self.game_state.transition_menu = false;
+                        return UpdateResult::Transition(Box::new(main_menu::MainMenu::new()))}
                 }
         }
         let keyboard_state = event_pump.keyboard_state();
