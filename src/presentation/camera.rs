@@ -34,7 +34,6 @@ impl Camera {
                 0.0
             }
         }
-
         let acceleration = Vector2 {
             x: key_pressed(ks, Scancode::D) - key_pressed(ks, Scancode::A),
             y: key_pressed(ks, Scancode::W) - key_pressed(ks, Scancode::S),

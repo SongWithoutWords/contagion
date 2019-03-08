@@ -9,6 +9,7 @@ use crate::core::geo::segment2::*;
 
 use crate::simulation::ai::pathfinding::find_path;
 use crate::simulation::ai::path::Path;
+use crate::simulation::state::MoveMode;
 
 use crate::presentation::audio::sound_effects::*;
 
@@ -174,6 +175,21 @@ pub fn update(args: &UpdateArgs, state: &mut State) {
     }
 }
 
+// update when game is paused for updating police path
+pub fn update_when_paused(args: &UpdateArgs, state: &mut State) {
+    // Update police path if there is one
+    for i in 0..state.entities.len() {
+        match &state.entities[i].behaviour {
+            b @ Behaviour::Cop { .. } => {
+                // simulate_cop(args, &mut entities, i),
+                let behaviour = update_cop_when_paused(&args, state, i, b.clone());
+                state.entities[i].behaviour = behaviour
+            }
+            _ => ()
+        }
+    }
+}
+
 fn handle_collision(
     args: &UpdateArgs,
     entities: &mut Vec<Entity>,
@@ -256,6 +272,43 @@ fn can_see(
     return true;
 }
 
+fn update_cop_when_paused(
+    _args: &UpdateArgs,
+    sim_state: &mut State,
+    index: usize,
+    behaviour: Behaviour) -> Behaviour {
+
+    let entities = &mut sim_state.entities;
+    let buildings = &sim_state.buildings;
+    let building_outlines = &sim_state.building_outlines;
+
+    match behaviour {
+        Behaviour::Cop { rounds_in_magazine, state } => {
+            match state {
+                CopState::Moving { waypoint, mode: _, path: _ } => {
+                    match find_path(entities[index].position, waypoint, buildings, building_outlines) {
+                        Some(path) => {
+                            Behaviour::Cop {
+                                rounds_in_magazine: rounds_in_magazine,
+                                state: CopState::Moving { waypoint, mode: MoveMode::MoveAttacking, path: Some(path) }
+                            }
+                        }
+                        _ => {
+                            let current_behaviour = Behaviour::Cop { rounds_in_magazine, state };
+                            current_behaviour
+                        }
+                    }
+                }
+                _ => {
+                    let current_behaviour = Behaviour::Cop { rounds_in_magazine, state };
+                    current_behaviour
+                }
+            }
+        }
+        _ => panic!("Entity at index should be a cop!")
+    }
+}
+
 fn update_cop(
     args: &UpdateArgs,
     sim_state: &mut State,
@@ -336,7 +389,7 @@ fn update_cop(
                         }
                     }
                 }
-                CopState::Moving { waypoint } => {
+                CopState::Moving { waypoint, mode: _, path: _ } => {
                     match find_path(entities[index].position, waypoint, buildings, building_outlines) {
                         None => {
                             Behaviour::Cop {
@@ -362,7 +415,7 @@ fn update_cop(
                                         entities[index].accelerate_along_vector(delta, args.dt, COP_MOVEMENT_FORCE);
                                         Behaviour::Cop {
                                             rounds_in_magazine: rounds_in_magazine,
-                                            state: CopState::Moving { waypoint }
+                                            state: CopState::Moving { waypoint, mode: MoveMode::MoveAttacking, path: Some(path) }
                                         }
                                     }
                                 }
@@ -449,7 +502,8 @@ fn update_cop(
                             }
                         } else {
                             // Remain in idle state
-                            behaviour
+                            let current_behaviour = Behaviour::Cop { rounds_in_magazine, state };
+                            current_behaviour
                         }
                     }
                 }

@@ -16,18 +16,19 @@ use std::time::Instant;
 use glium::draw_parameters::Blend;
 use glium_sdl2::SDL2Facade;
 use sdl2::{EventPump, Sdl};
-use sdl2::keyboard::Keycode;
 
 use crate::core::scalar:: *;
 use crate::core::vector:: *;
 use crate::presentation::audio::sound_effects:: *;
 use crate::presentation::ui::glium_text;
-use crate::presentation::ui::gui::{CURRENT,ActiveWindow};
+use crate::scenes::main_menu;
+use crate::scenes::scene::{Scene, UpdateResult};
 
 pub mod constants;
 pub mod core;
 pub mod presentation;
 pub mod simulation;
+pub mod scenes;
 
 fn init() -> Result<((Sdl, SDL2Facade, EventPump),
                      presentation::display::Textures,
@@ -74,93 +75,34 @@ fn main() {
         ..Default::default()
     };
 
-    let mut state = simulation::initial_state::initial_state(100, rand::random::<u32>());
-    let mut ui = presentation::ui::gui::Component::init_demo();
-    let mut camera = presentation::camera::Camera::new();
-    let mut control = simulation::control::Control::new();
-
+//    let mut scene: Box<Scene> = Box::new(game::Game::new());
+    let mut scene: Box<Scene> = Box::new(main_menu::MainMenu::new());
     let mut last_frame = Instant::now();
-    let mut game_paused = false;
-    let mut terminate = false;
 
     // Handle the sound effects for the game
     music::start_context::<Music, TheSound, _>(&_sdl_context, 200, || {
 
-        // Load the sound effects (bind the mp3 files with the enum)
+
         load_sound_effects();
 
-        // Play the background music until the end of the program
+
         play_background();
 
-        // main game loop
         'main_game_loop: loop {
-            if terminate {
-                break 'main_game_loop
-            }
             // Compute delta time
             let duration = last_frame.elapsed();
             let delta_time = duration.as_secs() as Scalar + 1e-9 * duration.subsec_nanos() as Scalar;
             last_frame = Instant::now();
-            let keyboard_state = event_pump.keyboard_state();
-            let mouse_state = event_pump.mouse_state();
 
-            camera.update(&keyboard_state, delta_time);
+            let opt_next_scene = scene.update(&mut event_pump, &window, delta_time);
 
-            let camera_frame = camera.compute_matrix();
+            match opt_next_scene {
+                UpdateResult::Exit => break,
+                UpdateResult::Continue => (),
+                UpdateResult::Transition(next_scene) => scene = next_scene,
+            };
 
-            // Event loop: polls for events sent to all windows
-            for event in event_pump.poll_iter() {
-                use sdl2::event::Event;
-                match event {
-                    // TODO: refactor into control
-                    // Exit window if escape key pressed or quit event triggered
-                    Event::Quit { .. } => {
-                        break 'main_game_loop;
-                    }
-                    Event::KeyDown { keycode: Some(Keycode::P), .. } => {
-                        game_paused = !game_paused;
-                    },
-                    Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
-                        unsafe {
-                            if CURRENT == ActiveWindow::Menu {
-                                CURRENT = ActiveWindow::Game;
-                                game_paused = false;
-                            }
-                            else if CURRENT == ActiveWindow::Instruction {
-                                CURRENT = ActiveWindow::Menu;
-                            }
-                            else if CURRENT == ActiveWindow::Game {
-                                CURRENT = ActiveWindow::Menu;
-                                game_paused = true;
-                            }
-                        }
-
-                    },
-                    Event::MouseWheel {timestamp: _, window_id: _, which: _, x: _, y, direction: _} => {
-                        camera.set_zoom(&mouse_state, y, &window, camera_frame);
-                    },
-                    Event::KeyDown { keycode: Some(Keycode::L), .. } => {
-                        println!("Debug info:");
-                        println!("  DT:               {:?}", delta_time);
-                        println!("  FPS:              {:?}", 1.0 / delta_time);
-                        println!("  Entity count:     {:?}", state.entities.len());
-                        println!("  Projectile count: {:?}", state.projectiles.len());
-                    },
-                    _ => {
-                        ui.handle_event(event, &mut control, &window, camera_frame, &mut state, &mut game_paused, &mut terminate);
-                    }
-                }
-            }
-
-            if !game_paused {
-                let _not_paused_game = simulation::update::update(
-                    &simulation::update::UpdateArgs { dt: delta_time },
-                    &mut state);
-            }
-
-            let mut target = window.draw();
-            presentation::display::display(&mut target, &window, &programs, &textures, &params, &state, camera_frame, &mut ui, &font, &control);
-            target.finish().unwrap();
+            scene.render(&window, &programs, &textures, &params, &font);
         }
     });
 }

@@ -2,6 +2,8 @@ use crate::core::vector::*;
 use crate::core::scalar::Scalar;
 use crate::core::geo::polygon::*;
 
+use crate::simulation::ai::path::Path;
+
 use std::collections::HashSet;
 
 pub struct State {
@@ -58,11 +60,11 @@ pub const COP_ANGULAR_ACCURACY_STD_DEV: Scalar = 0.1;
 
 pub const COP_MAGAZINE_CAPACITY: i64 = 6;
 
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub enum Behaviour {
     Cop {
         rounds_in_magazine: i64,
-        state: CopState,
+        state: CopState
     },
     Dead,
     Human,
@@ -71,7 +73,7 @@ pub enum Behaviour {
 
 pub const COP_MIN_DISTANCE_FROM_WAYPOINT_SQUARED: Scalar = 0.01;
 
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub enum CopState {
     Aiming {
         aim_time_remaining: Scalar,
@@ -79,6 +81,8 @@ pub enum CopState {
     },
     Moving {
         waypoint: Vector2,
+        mode: MoveMode,
+        path: Option<Path>
     },
     Reloading {
         reload_time_remaining: Scalar,
@@ -105,4 +109,10 @@ pub const CASING_SPEED: Scalar = 1.0;
 pub enum ProjectileKind {
     Bullet,
     Casing,
+}
+
+#[derive(Copy, Clone, PartialEq)]
+pub enum MoveMode {
+    MoveAttacking,
+    Sprinting
 }
