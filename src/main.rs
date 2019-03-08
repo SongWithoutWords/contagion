@@ -82,7 +82,9 @@ fn main() {
     // Handle the sound effects for the game
     music::start_context::<Music, TheSound, _>(&_sdl_context, 200, || {
 
+
         load_sound_effects();
+
 
         play_background();
 

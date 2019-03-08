@@ -16,9 +16,10 @@ use crate::presentation::ui::glium_text::FontTexture;
 use crate::simulation::game_state::GameState;
 use crate::simulation;
 use crate::scenes::scene::*;
-use crate::scenes::main_menu;
+use crate::scenes::{main_menu, loss_screen};
+use core::borrow::Borrow;
 
-
+#[derive(Clone)]
 pub struct Game {
     pub state: State,
     pub gui: Component,
@@ -51,16 +52,19 @@ impl Scene for Game {
               delta_time: f64)
               -> UpdateResult {
         match self.game_state {
-            GameState{terminate, transition_menu, transition_game, ..} =>
+            GameState{terminate, transition_menu, transition_game, zombies_win, humans_win, ..} =>
                 {
                     if terminate {return UpdateResult::Exit}
                     if transition_game {self.game_state.transition_game = false;
                         return UpdateResult::Transition(Box::new(Game::new()))}
                     if transition_menu {self.game_state.transition_menu = false;
                         return UpdateResult::Transition(Box::new(main_menu::MainMenu::new()))}
+                    if zombies_win {self.game_state.zombies_win = false;
+                        return UpdateResult::Transition(Box::new(loss_screen::LossScreen::new(self.clone().state)))}
                 }
         }
         let keyboard_state = event_pump.keyboard_state();
+        let mouse_state = event_pump.mouse_state();
         self.camera.update(&keyboard_state, delta_time);
         for event in event_pump.poll_iter() {
             use sdl2::event::Event;
@@ -75,10 +79,10 @@ impl Scene for Game {
                     println!("  FPS:              {:?}", 1.0 / delta_time);
                     println!("  Entity count:     {:?}", self.state.entities.len());
                     println!("  Projectile count: {:?}", self.state.projectiles.len());
-                }
-                Event::MouseWheel { timestamp: _, window_id: _, which: _, x: _, y, direction: _ } => {
-                    self.camera.set_zoom(y);
-                }
+                },
+                Event::MouseWheel {timestamp: _, window_id: _, which: _, x: _, y, direction: _} => {
+                    self.camera.set_zoom(&mouse_state, y, &window, self.camera.compute_matrix());
+                },
                 _ => {
                     self.gui.handle_event(event, &window, self.camera.compute_matrix(),
                                                             &mut self.state, &mut self.game_state,
