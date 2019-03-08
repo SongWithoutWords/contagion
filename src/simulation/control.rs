@@ -4,6 +4,7 @@ use crate::core::matrix::*;
 use crate::core::geo::intersect::rectangle_point::*;
 use crate::core::geo::segment2::*;
 use crate::simulation::game_state::GameState;
+use crate::simulation::state::MoveMode;
 
 use glium_sdl2::SDL2Facade;
 use sdl2::event::Event;
@@ -167,7 +168,7 @@ impl Control {
                 for i in &state.selection {
                     match state.entities[*i].behaviour {
                         Behaviour::Cop { ref mut state, .. } => {
-                            *state = CopState::Moving { waypoint: *m_pos }
+                            *state = CopState::Moving { waypoint: *m_pos, mode: MoveMode::MoveAttacking, path: None }
                         }
                         _ => ()
                     }
@@ -177,7 +178,7 @@ impl Control {
                 for i in &state.selection {
                     match state.entities[*i].behaviour {
                         Behaviour::Cop { ref mut state, .. } => {
-                            *state = CopState::Sprinting { waypoint: *m_pos }
+                            *state = CopState::Moving { waypoint: *m_pos, mode: MoveMode::Sprinting, path: None }
                         }
                         _ => ()
                     }

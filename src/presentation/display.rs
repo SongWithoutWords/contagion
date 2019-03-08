@@ -262,6 +262,53 @@ fn push_building_vertices(buffer: &mut Vec<ColorVertex>, building: &Polygon, col
     buffer.push(vertex2);
 }
 
+fn push_path_vertices(buffer: &mut Vec<ColorVertex>, point1: Vector2, point2: Vector2) {
+    let color = [0.0, 0.0, 0.0, 1.0];
+    let lambda = 0.03;
+
+    // case 1, point1 is bottom left and point2 is top right or vice versa
+    let mut top_left = Vector2 { x: point1.x - lambda, y: point1.y + lambda };
+    let mut top_right = Vector2 { x: point2.x - lambda, y: point2.y + lambda };
+    let mut bot_right = Vector2 { x: point2.x + lambda, y: point2.y - lambda };
+    let mut bot_left = Vector2 { x: point1.x + lambda, y: point1.y - lambda };
+
+    // case 2, point1 is top left and point2 is bottom right or vice versa
+    if (point1.x <= point2.x && point1.y >= point2.y) || (point2.x <= point1.x && point2.y >= point1.y) {
+        top_left = Vector2 {x: point1.x - lambda, y: point1.y - lambda};
+        top_right = Vector2 {x: point1.x + lambda, y: point1.y + lambda};
+        bot_right = Vector2 {x: point2.x - lambda, y: point2.y - lambda};
+        bot_left = Vector2 {x: point2.x + lambda, y: point2.y + lambda};
+    }
+
+    let vertex0 = ColorVertex {
+        position: top_left.as_f32_array(),
+        tex_coords: [0.0, 1.0],
+        color
+    };
+    let vertex1 = ColorVertex {
+        position: top_right.as_f32_array(),
+        tex_coords: [1.0, 1.0],
+        color
+    };
+    let vertex2 = ColorVertex {
+        position: bot_left.as_f32_array(),
+        tex_coords: [0.0, 0.0],
+        color
+    };
+    let vertex3 = ColorVertex {
+        position: bot_right.as_f32_array(),
+        tex_coords: [1.0, 0.0],
+        color
+    };
+
+    buffer.push(vertex0);
+    buffer.push(vertex1);
+    buffer.push(vertex2);
+    buffer.push(vertex1);
+    buffer.push(vertex3);
+    buffer.push(vertex2);
+}
+
 fn draw_sprites<U>(
     frame: &mut glium::Frame,
     window: &glium_sdl2::SDL2Facade,
@@ -371,6 +418,7 @@ pub fn display(
     let mut vertex_buffers = enum_map!{_ => vec!()};
     let mut vertex_buffers_gui = enum_map!{_ => vec!()};
     let mut vertex_buffers_building = vec!();
+    let mut vertex_buffers_path = vec!();
     let mut text_buffers = vec!();
 
     let mut cop_count = 0;
@@ -500,6 +548,45 @@ pub fn display(
     for building in &state.buildings {
         let color = [0.1, 0.1, 0.1, 1.0];
         push_building_vertices(&mut vertex_buffers_building, building, color);
+    }
+
+    // Compute vertices for cop paths
+    for entity in &state.entities {
+        match &entity.behaviour {
+            Behaviour::Cop{ rounds_in_magazine: _, state } => {
+                match state {
+                    CopState::Moving { waypoint: _, mode: _, path } => {
+                        match path {
+                            None => {
+                                // Do nothing
+                            },
+                            Some(path) => {
+                                let path_vec = path.to_vec();
+                                for i in 0..(path_vec.len() - 1) {
+                                    push_path_vertices(&mut vertex_buffers_path, path_vec[i], path_vec[i+1]);
+                                }
+                            }
+                        }
+                    }
+                    _ => ()
+                }
+            }
+            _ => ()
+        };
+    }
+
+    // Render paths
+    {
+        let uniforms = uniform! {
+            matrix: camera_frame
+        };
+        draw_color_sprites(
+            frame,
+            window,
+            &vertex_buffers_path,
+            &programs.shape_program,
+            params,
+            &uniforms);
     }
 
     // Render buildings
