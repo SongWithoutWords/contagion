@@ -169,6 +169,7 @@ pub fn update(args: &UpdateArgs, state: &mut State) {
             Some((_, i)) => {
                 state.entities[i].behaviour = Behaviour::Dead;
                 p.velocity = Vector2::zero();
+                #[cfg(not(target_os = "macos"))]
                 play_zombie_dead();
             }
         }
@@ -201,10 +202,12 @@ fn handle_collision(
     match (&entities[i].behaviour, &entities[j].behaviour) {
         (Behaviour::Human, Behaviour::Zombie) | (Behaviour::Cop { .. }, Behaviour::Zombie) => {
             entities[i].behaviour = Behaviour::Zombie;
+            #[cfg(not(target_os = "macos"))]
             play_person_infected();
         }
         (Behaviour::Zombie, Behaviour::Human) | (Behaviour::Zombie, Behaviour::Cop { .. }) => {
             entities[j].behaviour = Behaviour::Zombie;
+            #[cfg(not(target_os = "macos"))]
             play_person_infected()
         }
         _ => ()
@@ -380,6 +383,7 @@ fn update_cop(
                                 kind: ProjectileKind::Casing
                             });
 
+                        #[cfg(not(target_os = "macos"))]
                         play_shotgun();
 
                         Behaviour::Cop {
@@ -429,6 +433,7 @@ fn update_cop(
                     // Play the reload sound when half-done reloading
                     if reload_time_remaining > half_reload_time &&
                         half_reload_time > new_reload_time_remaining {
+                        #[cfg(not(target_os = "macos"))]
                         play_reload();
                     }
 

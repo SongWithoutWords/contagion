@@ -1,5 +1,6 @@
 #[derive(Clone)]
 pub struct GameState {
+    pub tick: usize,
     pub game_paused: bool,
     pub terminate: bool,
     pub transition_game: bool,
@@ -12,9 +13,10 @@ pub struct GameState {
 impl GameState {
     pub fn new() -> GameState{
         GameState {
+            tick: 0,
+            game_paused: false,
             transition_game: false,
             transition_menu: false,
-            game_paused: false,
             terminate: false,
             humans_win: false,
             zombies_win: false,
