@@ -8,7 +8,7 @@ Source: https://github.com/tomaka/glium_text
 extern crate libc;
 extern crate freetype_sys as freetype;
 
-use glium::DrawParameters;
+use glium::{DrawParameters};
 use glium::backend::Context;
 use glium::backend::Facade;
 use std::borrow::Cow;
@@ -584,3 +584,18 @@ fn get_nearest_po2(mut x: u32) -> u32 {
     x = x | (x >> 16);
     x + 1
 }
+
+//pub fn draw_text(text_display: String,
+//                 color: [f32;4],
+//                 matrix: [[f32;4];4],
+//                 frame: &mut Frame,
+//                 font: &FontTexture,
+//                 window: &SDL2Facade) {
+//    let system = TextSystem::new(window);
+//    let str_slice: &str = &text_display[..];
+//    let text = TextDisplay::new(&system, font, str_slice);
+//    let color = color;
+//    let text_width = text.get_width();
+//    let (w, h) = frame.get_dimensions();
+//    draw(&text, &system, frame, matrix, color);
+//}

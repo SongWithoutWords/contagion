@@ -17,7 +17,6 @@ use crate::simulation::game_state::GameState;
 use crate::simulation;
 use crate::scenes::scene::*;
 use crate::scenes::{main_menu, loss_screen};
-use core::borrow::Borrow;
 
 #[derive(Clone)]
 pub struct Game {
@@ -52,15 +51,21 @@ impl Scene for Game {
               delta_time: f64)
               -> UpdateResult {
         match self.game_state {
-            GameState{terminate, transition_menu, transition_game, zombies_win, humans_win, ..} =>
+            GameState{terminate, transition_menu, transition_game, zombies_win, ..} =>
                 {
                     if terminate {return UpdateResult::Exit}
                     if transition_game {self.game_state.transition_game = false;
                         return UpdateResult::Transition(Box::new(Game::new()))}
                     if transition_menu {self.game_state.transition_menu = false;
                         return UpdateResult::Transition(Box::new(main_menu::MainMenu::new()))}
-                    if zombies_win {self.game_state.zombies_win = false;
-                        return UpdateResult::Transition(Box::new(loss_screen::LossScreen::new(self.clone().state)))}
+                    if zombies_win {
+                        self.game_state.tick += 1;
+                        // wait 2 seconds
+                        if self.game_state.tick == 120 {
+                            self.game_state.zombies_win = false;
+                            return UpdateResult::Transition(Box::new(loss_screen::LossScreen::new(self.clone().state)))
+                        }
+                    }
                 }
         }
         let keyboard_state = event_pump.keyboard_state();
