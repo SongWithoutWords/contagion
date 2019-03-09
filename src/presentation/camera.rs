@@ -3,6 +3,7 @@ use crate::core::vector::*;
 use crate::core::matrix::*;
 use glium_sdl2::SDL2Facade;
 
+#[derive(Clone)]
 pub struct Camera {
     position: Vector2,
     velocity: Vector2,

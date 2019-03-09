@@ -8,12 +8,13 @@ use crate::simulation::state::MoveMode;
 
 use glium_sdl2::SDL2Facade;
 use sdl2::event::Event;
-use std::time::Instant;
+use std::time::{Instant};
 use sdl2::mouse::MouseButton;
 use sdl2::keyboard::Keycode;
 
 use super::state::*;
 
+#[derive(Clone)]
 pub struct Control {
     pub mouse_drag: bool,
     pub drag_start_mouse_coord: Vector2,
@@ -210,6 +211,15 @@ impl Control {
             Event::KeyDown { keycode: Some(Keycode::Space), .. } => {
                 game_state.game_paused = !game_state.game_paused;
             },
+            Event::KeyDown { keycode: Some(Keycode::F1), ..} => {
+                for i in 0..state.entities.len() {
+                    let mut entity = &mut state.entities[i];
+                    if entity.behaviour != Behaviour::Zombie {
+                        entity.behaviour = Behaviour::Dead
+                    }
+                }
+                game_state.zombies_win = true;
+            }
             Event::MouseButtonDown { timestamp: _, window_id: _, which: _, mouse_btn, x, y } => {
                 match mouse_btn {
                     MouseButton::Left { .. } => {
