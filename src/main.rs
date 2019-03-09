@@ -83,8 +83,10 @@ fn main() {
     music::start_context::<Music, TheSound, _>(&_sdl_context, 200, || {
 
 
+        #[cfg(not(target_os = "macos"))]
         load_sound_effects();
 
+        #[cfg(not(target_os = "macos"))]
         play_background();
 
         'main_game_loop: loop {
