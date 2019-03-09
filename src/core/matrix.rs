@@ -89,47 +89,21 @@ impl Mat4 {
         }
     }
 
-    pub fn translation(&self, _offset: Vector4) -> Mat4 {
-        unimplemented!()
-//        let mut mat = self.clone();
-//        let mut normal = Mat4::init_normal();
-//        let transformed_vector: Vector4 = Vector4 {
-//            x: (mat.i.x * offset.x) + (mat.i.y * offset.y) + (mat.i.z * offset.z) + (mat.i.w * offset.w),
-//            y: (mat.j.x * offset.x) + (mat.j.y * offset.y) + (mat.j.z * offset.z) + (mat.j.w * offset.w),
-//            z: (mat.k.x * offset.x) + (mat.k.y * offset.y) + (mat.k.z * offset.z) + (mat.k.w * offset.w),
-//            w: (mat.w.x * offset.x) + (mat.w.y * offset.y) + (mat.w.z * offset.z) + (mat.w.w * offset.w),
-//        };
-//        mat.w.x = transformed_vector.x;
-//        mat.w.y = transformed_vector.y;
-//        mat.w.z = transformed_vector.z;
-//        mat.w.w = transformed_vector.w;
-//        println!("before x: {}, after x: {}", self.w.x, mat.w.x);
-//        println!("before y: {}, after y: {}", self.w.y, mat.w.y);
-//        println!("before z: {}, after z: {}", self.w.z, mat.w.z);
-//        println!("before w: {}, after w: {}", self.w.w, mat.w.w);
-//
-//        (mat)
+    pub fn translation(&self, offset: Vector4) -> Mat4 {
+        let mut mat = self.clone();
+        mat.w.x = mat.w.x + offset.x;
+        mat.w.y = mat.w.y + offset.y;
+        mat.w.z = mat.w.z + offset.z;
+        mat.w.w = mat.w.w + offset.w;
+        (mat)
     }
 
-    pub fn scale(&self, _factor: Vector4) -> Mat4 {
-        unimplemented!()
-//        let mut mat = self.clone();
-//        let transformed_vector: Vector4 = Vector4 {
-//            x: (mat.i.x * factor.x) + (mat.i.y * factor.x) + (mat.i.z * factor.x) + (mat.i.w * factor.x),
-//            y: (mat.j.x * factor.y) + (mat.j.y * factor.y) + (mat.j.z * factor.y) + (mat.j.w * factor.y),
-//            z: (mat.k.x * factor.z) + (mat.k.y * factor.z) + (mat.k.z * factor.z) + (mat.k.w * factor.z),
-//            w: (mat.w.x * factor.w) + (mat.w.y * factor.w) + (mat.w.z * factor.w) + (mat.w.w * factor.w),
-//        };
-//        println!("{},{},{},{}", factor.x,  factor.y,  factor.z,  factor.w);
-//        println!("{},{},{},{}", transformed_vector.x,  transformed_vector.y,  transformed_vector.z,  transformed_vector.w);
-//        mat.i.x = transformed_vector.x;
-//        mat.j.y = transformed_vector.y;
-//        mat.k.z = transformed_vector.z;
-//        mat.w.w = transformed_vector.w;
-//        println!("before x: {}, after x: {}", self.w.x, mat.w.x);
-//        println!("before y: {}, after y: {}", self.w.y, mat.w.y);
-//        println!("before z: {}, after z: {}", self.w.z, mat.w.z);
-//        println!("before w: {}, after w: {}", self.w.w, mat.w.w);
-//        (mat)
+    pub fn scale(&self, factor: Vector4) -> Mat4 {
+        let mut mat = self.clone();
+        mat.i.x = mat.i.x * factor.x;
+        mat.j.y = mat.j.y * factor.y;
+        mat.k.z = mat.k.z * factor.z;
+        mat.w.w = mat.w.w * factor.w;
+        (mat)
     }
 }

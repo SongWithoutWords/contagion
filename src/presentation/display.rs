@@ -1217,12 +1217,12 @@ pub fn display_loss_screen (
     }
 
     // Render Entities
-//    let mut mat  = Mat4::init_normal();
+    let mat  = Mat4::init_normal();
     let mut cop_count = 0;
     let mut _dead_count = 0;
     let mut human_count = 0;
     let mut zombie_count = 0;
-    let mut _score = 0;
+    let mut score = 0;
     for entity in &state.entities {
         match entity.behaviour {
             Behaviour::Cop{..} => {cop_count+=1;},
@@ -1231,11 +1231,11 @@ pub fn display_loss_screen (
             Behaviour::Zombie => {zombie_count+=1;},
         };
         // score is total of alive humans
-        _score += cop_count + human_count;
+        score += cop_count + human_count;
     }
     // score is then multiplied by 100 then subtract zombie and dead count
-    _score = _score*100 - zombie_count;
-    if _score < 0 {_score = 0};
+    score = score*100 - zombie_count;
+    if score < 0 {score = 0};
 
     let system = glium_text::TextSystem::new(window);
     let text_1_loss = "Humanity Perished...".to_string();
@@ -1244,25 +1244,30 @@ pub fn display_loss_screen (
     let text = glium_text::TextDisplay::new(&system, font, str_slice);
     let color = [1.0, 1.0, 0.0, 1.0f32];
     let _font_scale_down = 1.5;
-    let text_width = text.get_width();
+    let text_width = text.get_width() as f64;
     let (w, h) = frame.get_dimensions();
     let _text_offset = 1.0 / text_width;
-//    let mut scale_factor = Vector4 {x: 2.0/text_width, y: 2.0 * (w as f64) / (h as f64) / text_width , z: 1.0, w: 1.0};
-//    println!("scale_factor: {},{},{},{}", scale_factor.x, scale_factor.y, scale_factor.z, scale_factor.w);
-//    let mut translation_offset = Vector4{x: -1.0, y: 0.3, z: 0.0, w: 1.0};
-//    let mut matrix = mat.scale(scale_factor).as_f32_array();
-    let matrix = [
-        [2.0 / text_width, 0.0, 0.0, 0.0],
-        [0.0, 2.0 * (w as f32) / (h as f32) / text_width, 0.0, 0.0],
-        [0.0, 0.0, 1.0, 0.0],
-        [-1.0, 0.3, 0.0, 1.0f32],
-    ];
-    glium_text::draw(&text, &system, frame, matrix, color);
-//
-//    // Score
-//    let text_display = format!("Score: {}", score);
-//    let color = [1.0, 1.0, 0.0, 1.0f32];
-//    let translate_offset = Vector4{x: 0.0, y: -0.2, z: 0.0, w: 1.0};
-//    matrix = mat.translation(translate_offset).as_f32_array();
-//    glium_text::draw_text(text_display, color, matrix, frame, font, window);
+    let  scale_factor = Vector4 {x: 2.0/text_width, y: 2.0 * (w as f64) / (h as f64) / text_width , z: 1.0, w: 1.0};
+    let  translation_offset = Vector4{x: -1.0, y: 0.3, z: 0.0, w: 0.0};
+    let mut matrix = mat.scale(scale_factor).translation(translation_offset);
+    glium_text::draw(&text, &system, frame, matrix.as_f32_array(), color);
+
+    // Score
+    let text_display = format!("Score: {}", score);
+    let str_slice: &str = &text_display[..];
+    let text = glium_text::TextDisplay::new(&system, font, str_slice);
+    let color = [1.0, 1.0, 0.0, 1.0f32];
+    let scale_factor = Vector4 {x: 0.5, y:0.5, z: 1.0, w: 1.0};
+    let translate_offset = Vector4{x: 0.1, y: -0.2, z: 0.0, w: 0.0};
+    matrix = matrix.scale(scale_factor).translation(translate_offset);
+    glium_text::draw(&text, &system, frame, matrix.as_f32_array(), color);
+
+    // Stats
+    let text_display = format!("Cops: {}, Civilians: {}, Zombies: {}", cop_count, human_count, zombie_count);
+    let str_slice: &str = &text_display[..];
+    let text = glium_text::TextDisplay::new(&system, font, str_slice);
+    let color = [1.0, 1.0, 0.0, 1.0f32];
+    let translate_offset = Vector4{x: 0.0, y: -0.2, z: 0.0, w: 0.0};
+    matrix = matrix.translation(translate_offset);
+    glium_text::draw(&text, &system, frame, matrix.as_f32_array(), color);
 }

@@ -49,7 +49,7 @@ impl Camera {
 
         // Middle mouse button pans camera
         if ms.middle() {
-            let PAN_SPEED: Scalar = 0.05;
+            let pan_speed: Scalar = 0.05;
 
             let mouse_pos: &mut Vector2 = &mut Vector2 { x: ms.x() as f64, y: ms.y() as f64 };
             let camera_center: &mut Vector2 = &mut Vector2 {x: window.window().size().0 as f64 / 2.0, y: window.window().size().1 as f64 / 2.0};
@@ -63,7 +63,7 @@ impl Camera {
             let zoom = self.zoom;
             let mouse_vec = Vector2 {x: (mouse_pos.x - camera_center.x) * zoom.x, y: (mouse_pos.y - camera_center.y) * zoom.y};
 
-            self.position += mouse_vec * PAN_SPEED;
+            self.position += mouse_vec * pan_speed;
 
         }
     }
