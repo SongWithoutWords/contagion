@@ -24,6 +24,9 @@ impl Camera {
     pub fn update(
         &mut self,
         ks: &sdl2::keyboard::KeyboardState,
+        ms: &sdl2::mouse::MouseState,
+        window: &SDL2Facade,
+        camera_frame: Mat4,
         delta_time: Scalar) {
 
         use sdl2::keyboard::Scancode;
@@ -43,7 +46,25 @@ impl Camera {
         self.position += delta_time * self.velocity;
         self.velocity -= delta_time * Self::DRAG_FACTOR * self.velocity;
 
+        // Middle mouse button pans camera
+        if ms.middle() {
+            let PAN_SPEED: Scalar = 0.05;
 
+            let mouse_pos: &mut Vector2 = &mut Vector2 { x: ms.x() as f64, y: ms.y() as f64 };
+            let camera_center: &mut Vector2 = &mut Vector2 {x: window.window().size().0 as f64 / 2.0, y: window.window().size().1 as f64 / 2.0};
+
+            translate_to_camera_coord(mouse_pos, window.window().size());
+            translate_camera_to_world_coord(mouse_pos, camera_frame);
+
+            translate_to_camera_coord(camera_center, window.window().size());
+            translate_camera_to_world_coord(camera_center, camera_frame);
+
+            let zoom = self.zoom;
+            let mouse_vec = Vector2 {x: (mouse_pos.x - camera_center.x) * zoom.x, y: (mouse_pos.y - camera_center.y) * zoom.y};
+
+            self.position += mouse_vec * PAN_SPEED;
+
+        }
     }
 
     // Camera frame in world coordinates

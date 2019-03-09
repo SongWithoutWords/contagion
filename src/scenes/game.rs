@@ -62,7 +62,7 @@ impl Scene for Game {
         }
         let keyboard_state = event_pump.keyboard_state();
         let mouse_state = event_pump.mouse_state();
-        self.camera.update(&keyboard_state, delta_time);
+        self.camera.update(&keyboard_state, &mouse_state, &window, self.camera.compute_matrix(), delta_time);
         for event in event_pump.poll_iter() {
             use sdl2::event::Event;
             match event {

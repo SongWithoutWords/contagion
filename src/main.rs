@@ -85,7 +85,6 @@ fn main() {
 
         load_sound_effects();
 
-
         play_background();
 
         'main_game_loop: loop {
