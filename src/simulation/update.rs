@@ -324,6 +324,211 @@ fn update_cop(
     match behaviour {
         Behaviour::Cop { rounds_in_magazine, state } => {
             match state {
+                CopState::AttackingZombie { target_index, attacking_zombie_state } => {
+                    //println!("{:?}", attacking_zombie_state);
+                    match attacking_zombie_state {
+                        AttackingZombieState::Starting => {
+                            // Reload if no ammo
+                            if rounds_in_magazine <= 0 {
+                                return Behaviour::Cop {
+                                    rounds_in_magazine,
+                                    state: CopState::AttackingZombie {
+                                        target_index,
+                                        attacking_zombie_state: AttackingZombieState::Reloading { reload_time_remaining: COP_RELOAD_COOLDOWN }
+                                    },
+                                };
+                            }
+
+                            // Aim
+                            let aim_time_distribution =
+                                Exp::new(COP_AIM_TIME_MEAN);
+                            return Behaviour::Cop {
+                                rounds_in_magazine,
+                                state: CopState::AttackingZombie {
+                                    target_index,
+                                    attacking_zombie_state: AttackingZombieState::Aiming { aim_time_remaining: aim_time_distribution.sample(&mut sim_state.rng) }
+                                },
+                            };
+                        }
+                        AttackingZombieState::Aiming { mut aim_time_remaining } => {
+                            // Stop aiming if the target is already dead
+                            if entities[target_index].behaviour == Behaviour::Dead {
+                                return Behaviour::Cop {
+                                    rounds_in_magazine,
+                                    state: CopState::AttackingZombie {
+                                        target_index,
+                                        attacking_zombie_state: AttackingZombieState::Ending
+                                    },
+                                };
+                            }
+
+                            // Chase target if target is not visible
+                            if !can_see(buildings,
+                                        entities[index].position,
+                                        entities[target_index].position) {
+                                return Behaviour::Cop {
+                                    rounds_in_magazine,
+                                    state: CopState::AttackingZombie {
+                                        target_index,
+                                        attacking_zombie_state: AttackingZombieState::Chasing{ path: None }
+                                    },
+                                };
+                            }
+
+                            // Aiming
+                            let my_pos = entities[index].position;
+                            let target_pos = entities[target_index].position;
+                            let delta = target_pos - my_pos;
+                            entities[index].look_along_vector(delta, args.dt);
+
+                            aim_time_remaining -= args.dt;
+                            if aim_time_remaining > 0.0 {
+                                // Taking aim, do nothing
+                                return Behaviour::Cop {
+                                    rounds_in_magazine,
+                                    state: CopState::AttackingZombie {
+                                        target_index,
+                                        attacking_zombie_state: AttackingZombieState::Aiming{ aim_time_remaining }
+                                    },
+                                };
+                            } else {
+                                let angular_deviation =
+                                    Normal::new(0.0, COP_ANGULAR_ACCURACY_STD_DEV).sample(&mut sim_state.rng);
+
+                                // Finished aiming, take the shot
+                                let delta_normal = delta.rotate_by(angular_deviation);
+
+                                // Spawn outside of the entity - don't want to shoot the entity itself
+                                let spawn_pos = entities[index].position +
+                                    BULLET_SPAWN_DISTANCE_MULTIPLIER * ENTITY_RADIUS * delta_normal;
+
+                                // Fire at the target
+                                sim_state.projectiles.push(
+                                    Projectile {
+                                        position: spawn_pos,
+                                        velocity: BULLET_SPEED * delta_normal,
+                                        kind: ProjectileKind::Bullet
+                                    });
+
+                                sim_state.projectiles.push(
+                                    Projectile {
+                                        position: spawn_pos,
+                                        // Casing ejects from the right of the weapon
+                                        velocity: CASING_SPEED * delta_normal.right(),
+                                        kind: ProjectileKind::Casing
+                                    });
+
+                                #[cfg(not(target_os = "macos"))]
+                                    play_shotgun();
+
+                                // Attack finished, return to end state
+                                println!("Attack finished");
+                                return Behaviour::Cop {
+                                    rounds_in_magazine,
+                                    state: CopState::AttackingZombie {
+                                        target_index,
+                                        attacking_zombie_state: AttackingZombieState::Ending
+                                    },
+                                };
+                            }
+                        }
+                        AttackingZombieState::Reloading { reload_time_remaining } => {
+                            let half_reload_time = 0.5 * COP_RELOAD_COOLDOWN;
+                            let new_reload_time_remaining = reload_time_remaining - args.dt;
+
+                            // Play the reload sound when half-done reloading
+                            if reload_time_remaining > half_reload_time &&
+                                half_reload_time > new_reload_time_remaining {
+                                #[cfg(not(target_os = "macos"))]
+                                    play_reload();
+                            }
+
+                            if reload_time_remaining > 0.0 {
+                                // Reloading, do nothing
+                                return Behaviour::Cop {
+                                    rounds_in_magazine,
+                                    state: CopState::AttackingZombie {
+                                        target_index,
+                                        attacking_zombie_state: AttackingZombieState::Reloading {
+                                            reload_time_remaining: new_reload_time_remaining
+                                        }
+                                    },
+                                };
+                            } else {
+                                // Finished reloading, replenish rounds
+                                return Behaviour::Cop {
+                                    rounds_in_magazine,
+                                    state: CopState::AttackingZombie {
+                                        target_index,
+                                        attacking_zombie_state: AttackingZombieState::Starting
+                                    },
+                                };
+                            }
+                        }
+                        AttackingZombieState::Chasing { .. } => {
+                            match find_path(entities[index].position, entities[target_index].position, buildings, building_outlines) {
+                                None => {
+                                    // No path to zombie possible, end chase
+                                    // TODO: maybe some indication of no path
+                                    return Behaviour::Cop {
+                                        rounds_in_magazine,
+                                        state: CopState::AttackingZombie {
+                                            target_index,
+                                            attacking_zombie_state: AttackingZombieState::Ending
+                                        },
+                                    };
+                                },
+                                Some(path) => {
+                                    match path.to_vec().get(1) {
+                                        None => {
+                                            return Behaviour::Cop {
+                                                rounds_in_magazine,
+                                                state: CopState::AttackingZombie {
+                                                    target_index,
+                                                    attacking_zombie_state: AttackingZombieState::Ending
+                                                },
+                                            };
+                                        },
+                                        Some(&node) => {
+                                            let delta = node - entities[index].position;
+
+                                            // If there's a path, and we can't see the target, keep moving
+                                            if !can_see(buildings,
+                                                        entities[index].position,
+                                                        entities[target_index].position) {
+                                                entities[index].accelerate_along_vector(delta, args.dt, COP_MOVEMENT_FORCE);
+                                                return Behaviour::Cop {
+                                                    rounds_in_magazine,
+                                                    state: CopState::AttackingZombie {
+                                                        target_index,
+                                                        attacking_zombie_state: AttackingZombieState::Chasing { path: Some(path) }
+                                                    },
+                                                };
+                                            }
+
+                                            // Can see the target, aim
+                                            let aim_time_distribution =
+                                                Exp::new(COP_AIM_TIME_MEAN);
+                                            return Behaviour::Cop {
+                                                rounds_in_magazine,
+                                                state: CopState::AttackingZombie {
+                                                    target_index,
+                                                    attacking_zombie_state: AttackingZombieState::Aiming { aim_time_remaining: aim_time_distribution.sample(&mut sim_state.rng) }
+                                                },
+                                            };
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        AttackingZombieState::Ending => {
+                            return Behaviour::Cop {
+                                rounds_in_magazine,
+                                state: CopState::Idle,
+                            };
+                        }
+                    }
+                }
                 CopState::Aiming { mut aim_time_remaining, target_index } => {
 
                     // Stop aiming if the target is already dead
@@ -367,7 +572,7 @@ fn update_cop(
                         let spawn_pos = entities[index].position +
                             BULLET_SPAWN_DISTANCE_MULTIPLIER * ENTITY_RADIUS * delta_normal;
 
-                        // Fire at the taget
+                        // Fire at the target
                         sim_state.projectiles.push(
                             Projectile {
                                 position: spawn_pos,
@@ -392,36 +597,47 @@ fn update_cop(
                         }
                     }
                 }
-                CopState::Moving { waypoint, mode: _, path: _ } => {
-                    match find_path(entities[index].position, waypoint, buildings, building_outlines) {
-                        None => {
-                            Behaviour::Cop {
-                                rounds_in_magazine: rounds_in_magazine,
-                                state: CopState::Idle
-                            }
-                        },
-                        Some(path) => {
-                            match path.to_vec().get(1) {
-                                None => Behaviour::Cop {
-                                    rounds_in_magazine: rounds_in_magazine,
-                                    state: CopState::Idle
+                CopState::Moving { waypoint, mode, path: _ } => {
+                    match mode {
+                        MoveMode::Moving => {
+                            match find_path(entities[index].position, waypoint, buildings, building_outlines) {
+                                None => {
+                                    Behaviour::Cop {
+                                        rounds_in_magazine: rounds_in_magazine,
+                                        state: CopState::Idle
+                                    }
                                 },
-                                Some(&node) => {
-                                    let delta = node - entities[index].position;
-
-                                    if waypoint == node && delta.length_squared() < COP_MIN_DISTANCE_FROM_WAYPOINT_SQUARED {
-                                        Behaviour::Cop {
+                                Some(path) => {
+                                    match path.to_vec().get(1) {
+                                        None => Behaviour::Cop {
                                             rounds_in_magazine: rounds_in_magazine,
                                             state: CopState::Idle
-                                        }
-                                    } else {
-                                        entities[index].accelerate_along_vector(delta, args.dt, COP_MOVEMENT_FORCE);
-                                        Behaviour::Cop {
-                                            rounds_in_magazine: rounds_in_magazine,
-                                            state: CopState::Moving { waypoint, mode: MoveMode::Moving, path: Some(path) }
+                                        },
+                                        Some(&node) => {
+                                            let delta = node - entities[index].position;
+
+                                            if waypoint == node && delta.length_squared() < COP_MIN_DISTANCE_FROM_WAYPOINT_SQUARED {
+                                                Behaviour::Cop {
+                                                    rounds_in_magazine: rounds_in_magazine,
+                                                    state: CopState::Idle
+                                                }
+                                            } else {
+                                                entities[index].accelerate_along_vector(delta, args.dt, COP_MOVEMENT_FORCE);
+                                                Behaviour::Cop {
+                                                    rounds_in_magazine: rounds_in_magazine,
+                                                    state: CopState::Moving { waypoint, mode: MoveMode::Moving, path: Some(path) }
+                                                }
+                                            }
                                         }
                                     }
                                 }
+                            }
+                        }
+                        MoveMode::Sprinting => {
+                            // TODO:
+                            Behaviour::Cop {
+                                rounds_in_magazine: rounds_in_magazine,
+                                state: CopState::Idle
                             }
                         }
                     }

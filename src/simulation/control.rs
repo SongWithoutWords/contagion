@@ -187,8 +187,10 @@ impl Control {
                             if zombie_index == -1 {
                                 *state = CopState::Moving { waypoint: *m_pos, mode: MoveMode::Moving, path: None }
                             } else {
-                                // TODO
-
+                                *state = CopState::AttackingZombie {
+                                    target_index: zombie_index as usize,
+                                    attacking_zombie_state: AttackingZombieState::Starting
+                                }
                             }
                         }
                         _ => ()

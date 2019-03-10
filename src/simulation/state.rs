@@ -75,7 +75,7 @@ pub enum Behaviour {
 
 pub const COP_MIN_DISTANCE_FROM_WAYPOINT_SQUARED: Scalar = 0.01;
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum CopState {
     Aiming {
         aim_time_remaining: Scalar,
@@ -88,6 +88,10 @@ pub enum CopState {
     },
     Reloading {
         reload_time_remaining: Scalar,
+    },
+    AttackingZombie {
+        target_index: usize,
+        attacking_zombie_state: AttackingZombieState
     },
     Idle
 }
@@ -113,8 +117,22 @@ pub enum ProjectileKind {
     Casing,
 }
 
-// TOOD: add another move mode
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Clone, PartialEq, Debug)]
+pub enum AttackingZombieState {
+    Starting,
+    Aiming {
+        aim_time_remaining: Scalar
+    },
+    Reloading {
+        reload_time_remaining: Scalar
+    },
+    Chasing {
+        path: Option<Path>
+    },
+    Ending,
+}
+
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub enum MoveMode {
     Moving,
     Sprinting

@@ -262,8 +262,7 @@ fn push_building_vertices(buffer: &mut Vec<ColorVertex>, building: &Polygon, col
     buffer.push(vertex2);
 }
 
-fn push_path_vertices(buffer: &mut Vec<ColorVertex>, point1: Vector2, point2: Vector2) {
-    let color = [0.0, 0.0, 0.0, 1.0];
+fn push_path_vertices(buffer: &mut Vec<ColorVertex>, point1: Vector2, point2: Vector2, color: [f32; 4]) {
     let lambda = 0.03;
 
     // case 1, point1 is bottom left and point2 is top right or vice versa
@@ -562,10 +561,30 @@ pub fn display(
                             },
                             Some(path) => {
                                 let path_vec = path.to_vec();
+                                let color = [0.0, 0.0, 0.0, 1.0];
                                 for i in 0..(path_vec.len() - 1) {
-                                    push_path_vertices(&mut vertex_buffers_path, path_vec[i], path_vec[i+1]);
+                                    push_path_vertices(&mut vertex_buffers_path, path_vec[i], path_vec[i+1], color);
                                 }
                             }
+                        }
+                    }
+                    CopState::AttackingZombie { target_index: _, attacking_zombie_state } => {
+                        match attacking_zombie_state {
+                            AttackingZombieState::Chasing { path } => {
+                                match path {
+                                    None => {
+                                        // Do nothing
+                                    },
+                                    Some(path) => {
+                                        let path_vec = path.to_vec();
+                                        let color = [1.0, 0.0, 0.0, 1.0];
+                                        for i in 0..(path_vec.len() - 1) {
+                                            push_path_vertices(&mut vertex_buffers_path, path_vec[i], path_vec[i+1], color);
+                                        }
+                                    }
+                                }
+                            }
+                            _ => ()
                         }
                     }
                     _ => ()
@@ -574,6 +593,7 @@ pub fn display(
             _ => ()
         };
     }
+
 
     // Render paths
     {
