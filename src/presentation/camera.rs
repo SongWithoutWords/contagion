@@ -86,7 +86,7 @@ impl Camera {
         camera_frame: Mat4) {
 
         // Zoom parameters
-        const ZOOM_SPEED: f64 = 0.008;
+        const ZOOM_SPEED: f64 = 0.05;
         const LOWER_BOUND: f64 = 0.015;
         const UPPER_BOUND: f64 = 0.15;
 
@@ -117,17 +117,20 @@ impl Camera {
                 self.zoom = new_zoom;
             }
 
-            // Zooming out from center of camera
+            // Zooming out from cursor
         } else if mouse_scroll < 0.0 && self.zoom.x > LOWER_BOUND {
 
             let old_zoom = self.zoom;
             let new_zoom = vector2(interpolate_zoom(zoom_scale, old_zoom.x, LOWER_BOUND), interpolate_zoom(zoom_scale, old_zoom.y, LOWER_BOUND));
 
-            camera_center.x *= new_zoom.x;
-            camera_center.y *= new_zoom.y;
+            let mouse_vec = Vector2 {x: (mouse_pos.x - camera_center.x) * (new_zoom.x - old_zoom.x), y: (mouse_pos.y - camera_center.y) * (new_zoom.y - old_zoom.y)};
 
-            self.zoom = new_zoom;
-            self.position = *camera_center;
+            if old_zoom.x != new_zoom.x || old_zoom.y != new_zoom.y {
+                let delta_zoom = Vector2 {x: new_zoom.x / old_zoom.x, y: new_zoom.y / old_zoom.y};
+                let camera_pos = Vector2 {x: self.position.x * delta_zoom.x, y: self.position.y * delta_zoom.y};
+                self.position = camera_pos + mouse_vec;
+                self.zoom = new_zoom;
+            }
         }
     }
 }
