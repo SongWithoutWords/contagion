@@ -11,16 +11,23 @@ use crate::simulation::ai::pathfinding::find_path;
 use crate::simulation::ai::path::Path;
 use crate::simulation::state::MoveMode;
 
-use crate::presentation::audio::sound_effects::*;
-
 use super::state::*;
+
+#[derive(Copy, Clone, Hash, PartialEq, Eq)]
+pub enum Sound {
+    Gunshot,
+    Reload,
+    PersonInfected,
+    ZombieDeath,
+}
 
 pub struct UpdateArgs {
     pub dt: Scalar
 }
 
+pub fn update(args: &UpdateArgs, state: &mut State) -> Vec<Sound> {
 
-pub fn update(args: &UpdateArgs, state: &mut State) {
+    let mut sounds = vec!();
 
     const DOUBLE_ENTITY_RADIUS_SQUARED: f64 = 4.0 * ENTITY_RADIUS * ENTITY_RADIUS;
 
@@ -48,7 +55,7 @@ pub fn update(args: &UpdateArgs, state: &mut State) {
             let delta_length_squared = delta.length_squared();
 
             if delta_length_squared < DOUBLE_ENTITY_RADIUS_SQUARED {
-                handle_collision(args, &mut state.entities, i, j, &delta, delta_length_squared);
+                handle_collision(args, &mut state.entities, i, j, &delta, delta_length_squared, &mut sounds);
             }
         }
 
@@ -86,7 +93,7 @@ pub fn update(args: &UpdateArgs, state: &mut State) {
         match &state.entities[i].behaviour {
             b @ Behaviour::Cop { .. } => {
                 // simulate_cop(args, &mut entities, i),
-                let behaviour = update_cop(&args, state, i, b.clone());
+                let behaviour = update_cop(&args, state, i, &mut sounds, b.clone());
                 state.entities[i].behaviour = behaviour
             }
             Behaviour::Dead =>
@@ -169,11 +176,14 @@ pub fn update(args: &UpdateArgs, state: &mut State) {
             Some((_, i)) => {
                 state.entities[i].behaviour = Behaviour::Dead;
                 p.velocity = Vector2::zero();
-                #[cfg(not(target_os = "macos"))]
-                play_zombie_dead();
+                // #[cfg(not(target_os = "macos"))]
+                // play_zombie_dead();
+                sounds.push(Sound::ZombieDeath);
             }
         }
     }
+
+    sounds
 }
 
 // update when game is paused for updating police path
@@ -196,19 +206,18 @@ fn handle_collision(
     i: usize,
     j: usize,
     delta: &Vector2,
-    delta_length_squared: f64) {
+    delta_length_squared: f64,
+    sounds: &mut Vec<Sound>) {
 
     // Spread the infection from zombies to others
     match (&entities[i].behaviour, &entities[j].behaviour) {
         (Behaviour::Human, Behaviour::Zombie) | (Behaviour::Cop { .. }, Behaviour::Zombie) => {
             entities[i].behaviour = Behaviour::Zombie;
-            #[cfg(not(target_os = "macos"))]
-            play_person_infected();
+            sounds.push(Sound::PersonInfected);
         }
         (Behaviour::Zombie, Behaviour::Human) | (Behaviour::Zombie, Behaviour::Cop { .. }) => {
             entities[j].behaviour = Behaviour::Zombie;
-            #[cfg(not(target_os = "macos"))]
-            play_person_infected()
+            sounds.push(Sound::PersonInfected);
         }
         _ => ()
     }
@@ -263,12 +272,9 @@ fn can_see(
     to: Vector2) -> bool {
 
     for building in buildings {
-
         let num_intersects = building.num_intersects(from, to);
-
         if num_intersects > 0 {
             return false;
-
         }
     };
     return true;
@@ -315,6 +321,7 @@ fn update_cop(
     args: &UpdateArgs,
     sim_state: &mut State,
     index: usize,
+    sounds: &mut Vec<Sound>,
     behaviour: Behaviour) -> Behaviour {
 
     let entities = &mut sim_state.entities;
@@ -418,8 +425,7 @@ fn update_cop(
                                         kind: ProjectileKind::Casing
                                     });
 
-                                #[cfg(not(target_os = "macos"))]
-                                    play_shotgun();
+                                sounds.push(Sound::Gunshot);
 
                                 // Attack finished, return to end state
                                 println!("Attack finished");
@@ -439,8 +445,7 @@ fn update_cop(
                             // Play the reload sound when half-done reloading
                             if reload_time_remaining > half_reload_time &&
                                 half_reload_time > new_reload_time_remaining {
-                                #[cfg(not(target_os = "macos"))]
-                                    play_reload();
+                                    sounds.push(Sound::Reload);
                             }
 
                             if reload_time_remaining > 0.0 {
@@ -588,8 +593,7 @@ fn update_cop(
                                 kind: ProjectileKind::Casing
                             });
 
-                        #[cfg(not(target_os = "macos"))]
-                        play_shotgun();
+                        sounds.push(Sound::Gunshot);
 
                         Behaviour::Cop {
                             rounds_in_magazine: rounds_in_magazine - 1,
@@ -649,8 +653,7 @@ fn update_cop(
                     // Play the reload sound when half-done reloading
                     if reload_time_remaining > half_reload_time &&
                         half_reload_time > new_reload_time_remaining {
-                        #[cfg(not(target_os = "macos"))]
-                        play_reload();
+                            sounds.push(Sound::Reload);
                     }
 
                     if reload_time_remaining > 0.0 {
