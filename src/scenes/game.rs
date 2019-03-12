@@ -106,10 +106,6 @@ impl Scene for Game {
                 &simulation::update::UpdateArgs { dt: delta_time },
                 &mut self.state);
             presentation::audio::sound_effects::play_sounds(&sounds);
-        } else {
-            simulation::update::update_when_paused(
-                &simulation::update::UpdateArgs { dt: delta_time },
-                &mut self.state);
         }
         UpdateResult::Continue
     }

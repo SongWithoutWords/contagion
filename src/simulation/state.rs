@@ -48,7 +48,7 @@ impl Entity {
     }
 }
 
-pub const COP_MOVEMENT_FORCE: Scalar = 1.0;
+pub const COP_MOVEMENT_FORCE: Scalar = 1.5;
 pub const CIVILIAN_MOVEMENT_FORCE: Scalar = 1.0;
 pub const ZOMBIE_MOVEMENT_FORCE: Scalar = 1.5;
 
@@ -62,6 +62,10 @@ pub const COP_ANGULAR_ACCURACY_STD_DEV: Scalar = 0.1;
 
 pub const COP_MAGAZINE_CAPACITY: i64 = 6;
 
+pub const ZOMBIE_SIGHT_RADIUS: f64 = 200.0 * ENTITY_RADIUS * ENTITY_RADIUS;
+pub const HUMAN_SIGHT_RADIUS: f64 = 400.0 * ENTITY_RADIUS * ENTITY_RADIUS;
+pub const COP_SIGHT_RADIUS: f64 = 500.0 * ENTITY_RADIUS * ENTITY_RADIUS;
+
 #[derive(Clone, PartialEq)]
 pub enum Behaviour {
     Cop {
@@ -70,7 +74,9 @@ pub enum Behaviour {
     },
     Dead,
     Human,
-    Zombie
+    Zombie {
+        state: ZombieState
+    }
 }
 
 pub const COP_MIN_DISTANCE_FROM_WAYPOINT_SQUARED: Scalar = 0.01;
@@ -94,6 +100,17 @@ pub enum CopState {
         attacking_zombie_state: AttackingZombieState
     },
     Idle
+}
+
+#[derive(Clone, PartialEq)]
+pub enum ZombieState {
+    Chasing {
+        target_index: usize
+    },
+    Moving {
+        waypoint: Vector2
+    },
+    Roaming
 }
 
 pub const PROJECTILE_DRAG: Scalar = 1.0;

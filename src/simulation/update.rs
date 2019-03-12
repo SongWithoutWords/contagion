@@ -1,5 +1,3 @@
-extern crate music;
-
 use rand::distributions::*;
 
 use crate::core::geo::circle::*;
@@ -94,17 +92,20 @@ pub fn update(args: &UpdateArgs, state: &mut State) -> Vec<Sound> {
             b @ Behaviour::Cop { .. } => {
                 // simulate_cop(args, &mut entities, i),
                 let behaviour = update_cop(&args, state, i, &mut sounds, b.clone());
-                state.entities[i].behaviour = behaviour
+                state.entities[i].behaviour = behaviour;
             }
             Behaviour::Dead =>
             // Do nothing
                 (),
             Behaviour::Human =>
             // Run from zombies!
-                simulate_human(args, &mut state.entities, i),
-            Behaviour::Zombie =>
-            // Chase humans and cops!
-                simulate_zombie(args, state, i)
+                simulate_human(args, &mut state.entities, &state.buildings, i),
+            b @ Behaviour::Zombie { .. } => {
+                // Chase humans and cops!
+//                simulate_zombie(args, state, i)
+                let behaviour = update_zombie(&args, state, i, b.clone());
+                state.entities[i].behaviour = behaviour;
+            }
         }
     }
 
@@ -186,20 +187,6 @@ pub fn update(args: &UpdateArgs, state: &mut State) -> Vec<Sound> {
     sounds
 }
 
-// update when game is paused for updating police path
-pub fn update_when_paused(args: &UpdateArgs, state: &mut State) {
-    // Update police path if there is one
-    for i in 0..state.entities.len() {
-        match &state.entities[i].behaviour {
-            b @ Behaviour::Cop { .. } => {
-                let behaviour = update_cop_when_paused(&args, state, i, b.clone());
-                state.entities[i].behaviour = behaviour
-            }
-            _ => ()
-        }
-    }
-}
-
 fn handle_collision(
     args: &UpdateArgs,
     entities: &mut Vec<Entity>,
@@ -211,12 +198,12 @@ fn handle_collision(
 
     // Spread the infection from zombies to others
     match (&entities[i].behaviour, &entities[j].behaviour) {
-        (Behaviour::Human, Behaviour::Zombie) | (Behaviour::Cop { .. }, Behaviour::Zombie) => {
-            entities[i].behaviour = Behaviour::Zombie;
+        (Behaviour::Human, Behaviour::Zombie { .. }) | (Behaviour::Cop { .. }, Behaviour::Zombie { .. }) => {
+            entities[i].behaviour = Behaviour::Zombie { state: ZombieState::Roaming };
             sounds.push(Sound::PersonInfected);
         }
-        (Behaviour::Zombie, Behaviour::Human) | (Behaviour::Zombie, Behaviour::Cop { .. }) => {
-            entities[j].behaviour = Behaviour::Zombie;
+        (Behaviour::Zombie { .. }, Behaviour::Human) | (Behaviour::Zombie { .. }, Behaviour::Cop { .. }) => {
+            entities[j].behaviour = Behaviour::Zombie { state: ZombieState::Roaming };
             sounds.push(Sound::PersonInfected);
         }
         _ => ()
@@ -278,43 +265,6 @@ fn can_see(
         }
     };
     return true;
-}
-
-fn update_cop_when_paused(
-    _args: &UpdateArgs,
-    sim_state: &mut State,
-    index: usize,
-    behaviour: Behaviour) -> Behaviour {
-
-    let entities = &mut sim_state.entities;
-    let buildings = &sim_state.buildings;
-    let building_outlines = &sim_state.building_outlines;
-
-    match behaviour {
-        Behaviour::Cop { rounds_in_magazine, state } => {
-            match state {
-                CopState::Moving { waypoint, mode: _, path: _ } => {
-                    match find_path(entities[index].position, waypoint, buildings, building_outlines) {
-                        Some(path) => {
-                            Behaviour::Cop {
-                                rounds_in_magazine: rounds_in_magazine,
-                                state: CopState::Moving { waypoint, mode: MoveMode::Moving, path: Some(path) }
-                            }
-                        }
-                        _ => {
-                            let current_behaviour = Behaviour::Cop { rounds_in_magazine, state };
-                            current_behaviour
-                        }
-                    }
-                }
-                _ => {
-                    let current_behaviour = Behaviour::Cop { rounds_in_magazine, state };
-                    current_behaviour
-                }
-            }
-        }
-        _ => panic!("Entity at index should be a cop!")
-    }
 }
 
 fn update_cop(
@@ -691,7 +641,7 @@ fn update_cop(
                             match entities[i].behaviour {
 
                                 // Target zombies
-                                Behaviour::Zombie => {
+                                Behaviour::Zombie { .. } => {
                                     let delta = entities[i].position - my_pos;
                                     let distance_sqr = delta.length_squared();
                                     if distance_sqr < min_distance_sqr {
@@ -736,51 +686,106 @@ fn update_cop(
     }
 }
 
-fn simulate_zombie(args: &UpdateArgs, sim_state: &mut State, index: usize) {
+fn update_zombie(
+    args: &UpdateArgs,
+    sim_state: &mut State,
+    index: usize,
+    behaviour: Behaviour) -> Behaviour {
 
     let entities = &mut sim_state.entities;
     let buildings = &sim_state.buildings;
-    let building_outlines = &sim_state.building_outlines;
 
     let my_pos = entities[index].position;
 
-    let mut min_path: Option<Path> = None;
-    let mut min_cost = INFINITY;
+    match behaviour {
+        Behaviour::Zombie { state } => {
+            match state {
+                ZombieState::Chasing { target_index } => {
+                    let target_pos = entities[target_index].position;
+                    let delta = target_pos - my_pos;
 
-    for i in 0..entities.len() {
-        match entities[i].behaviour {
+                    entities[index].accelerate_along_vector(delta, args.dt, ZOMBIE_MOVEMENT_FORCE);
 
-            // Chase humans and cops
-            Behaviour::Cop { .. } | Behaviour::Human => {
-                match find_path(my_pos, entities[i].position, buildings, building_outlines) {
-                    None => (),
-                    Some(path) => if path.cost < min_cost {
-                        min_cost = path.cost;
-                        min_path = Some(path);
+                    match entities[target_index].behaviour {
+                        // If alive, check line of sight
+                        Behaviour::Cop { .. } | Behaviour::Human => {
+                            if delta.length_squared() < ZOMBIE_SIGHT_RADIUS && can_see(buildings,my_pos,target_pos) {
+                                // Continue chasing
+                                Behaviour::Zombie { state: ZombieState::Chasing { target_index } }
+                            } else {
+                                // Go to last known position
+                                Behaviour::Zombie {
+                                    state: ZombieState::Moving { waypoint: target_pos }
+                                }
+                            }
+                        }
+                        // Otherwise return to roaming
+                        _ => Behaviour::Zombie { state: ZombieState::Roaming },
+                    }
+                }
+                ZombieState::Moving { waypoint } => {
+                    match closest_human(my_pos, entities, buildings) {
+                        // Continue moving
+                        None => {
+                            let delta = waypoint - my_pos;
+                            entities[index].accelerate_along_vector(delta, args.dt, ZOMBIE_MOVEMENT_FORCE);
+
+                            if delta.length_squared() < COP_MIN_DISTANCE_FROM_WAYPOINT_SQUARED {
+                                Behaviour::Zombie { state: ZombieState::Roaming }
+                            } else {
+                                Behaviour::Zombie { state: ZombieState::Moving { waypoint } }
+                            }
+                        },
+                        // Start chasing nearest human
+                        Some(i) => {
+                            let delta = entities[i].position - my_pos;
+                            entities[index].accelerate_along_vector(delta, args.dt, ZOMBIE_MOVEMENT_FORCE);
+                            Behaviour::Zombie { state: ZombieState::Chasing { target_index: i } }
+                        }
+                    }
+                }
+                ZombieState::Roaming => {
+                    // Attempt to acquire a target
+                    match closest_human(my_pos, entities, buildings) {
+                        None => Behaviour::Zombie { state: ZombieState::Roaming },
+                        Some(i) => {
+                            let delta = entities[i].position - my_pos;
+                            entities[index].accelerate_along_vector(delta, args.dt, ZOMBIE_MOVEMENT_FORCE);
+                            Behaviour::Zombie { state: ZombieState::Chasing { target_index: i} }
+                        }
                     }
                 }
             }
+        }
+        _ => panic!("Entity at index should be a zombie!")
+    }
+}
 
-            // Skip everything else
+// Get the index of the closest human in line of sight and sight radius
+fn closest_human(my_pos: Vector2, entities: &Vec<Entity>, buildings: &Vec<Polygon>) -> Option<usize> {
+    let mut min_distance_sqr = INFINITY;
+    let mut closest_index: Option<usize> = None;
+
+    for i in 0..entities.len() {
+        match entities[i].behaviour {
+            Behaviour::Cop { .. } | Behaviour::Human => {
+                let delta_squared = (my_pos - entities[i].position).length_squared();
+                if delta_squared < ZOMBIE_SIGHT_RADIUS &&
+                    can_see(buildings, my_pos, entities[i].position) &&
+                    delta_squared < min_distance_sqr {
+
+                    min_distance_sqr = delta_squared;
+                    closest_index = Some(i);
+                }
+            }
             _ => ()
         }
     }
 
-    match min_path {
-        None => (),
-        Some(path) => {
-            match path.to_vec().get(1) {
-                None => (),
-                Some(&node) => {
-                    let delta = node - my_pos;
-                    entities[index].accelerate_along_vector(delta, args.dt, ZOMBIE_MOVEMENT_FORCE);
-                }
-            }
-        }
-    }
+    closest_index
 }
 
-fn simulate_human(args: &UpdateArgs, entities: &mut Vec<Entity>, index: usize) {
+fn simulate_human(args: &UpdateArgs, entities: &mut Vec<Entity>, buildings: &Vec<Polygon>, index: usize) {
     let my_pos = entities[index].position;
 
     let mut min_delta = Vector2::zero();
@@ -790,10 +795,13 @@ fn simulate_human(args: &UpdateArgs, entities: &mut Vec<Entity>, index: usize) {
         match entities[i].behaviour {
 
             // Run from zombies
-            Behaviour::Zombie => {
+            Behaviour::Zombie { .. } => {
                 let delta = entities[i].position - my_pos;
                 let distance_sqr = delta.length_squared();
-                if distance_sqr < min_distance_sqr {
+                if distance_sqr < HUMAN_SIGHT_RADIUS &&
+                    can_see(buildings, my_pos, entities[i].position) &&
+                    distance_sqr < min_distance_sqr {
+
                     min_delta = delta;
                     min_distance_sqr = distance_sqr;
                 }

@@ -50,7 +50,9 @@ pub fn initial_state(entity_count: u32, random_seed: u32) -> State {
             }
         }
         else if i < cop_count + zombie_count {
-            Behaviour::Zombie
+            Behaviour::Zombie {
+                state: ZombieState::Roaming
+            }
         }
         else {
             Behaviour::Human
@@ -60,10 +62,10 @@ pub fn initial_state(entity_count: u32, random_seed: u32) -> State {
 
     // Generate some buildings
     let mut building_x = 0.0;
-    while building_x < side_length_of_spawn_area {
+    while building_x < 2.0 * side_length_of_spawn_area {
         let mut building_y = 0.0;
 
-        while building_y < side_length_of_spawn_area {
+        while building_y < 2.0 * side_length_of_spawn_area {
             buildings.push(Polygon(vec![
                 Vector2 { x: building_x, y: building_y },
                 Vector2 { x: building_x + 10.0, y: building_y },
