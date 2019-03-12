@@ -1,0 +1,53 @@
+Team 12 Playable Game Submission
+
+Note: we are using a late day and are not submitting our playable game until Monday, March 11th.
+
+Please checkout the `playable` tag to evaluate our submission
+- We will add this tag for our submission on Monday, March 11th.
+
+Link to project: https://github.com/SongWithoutWords/contagion
+
+* MILESTONE REQUIREMENTS *
+
+For this milestone you should have a complete playable game. You should continue to support all features from prior milestones. You should support robust continuous play with no memory leaks, crashes or glitches, and be able to extensive playability testing, alignment with game development plan.
+
+(75%) Milestone requirements:
+  - [x] Include complete playable prior-milestone implementation
+  - [x] Sustain progressive, non-repetitive gameplay for 6min or more including all new features. The game should not terminate early and should allow infinite even if repetitive gameplay
+  - [x] Support real-time response rate (i.e. lag-free input).
+  - [x] Include proper memory management (no excessive allocation or leaks). The game should not have any undefined behavior, memory leaks or random crashes. The game should not hog memory even after extended play time.
+  - [x] The game should robustly handle any user input. Unexpected inputs or environment settings should be correctly handled and reported.
+  - [x] The gameplay should be real-time (no lag). This included improving your collision handling using effective detection strategies. You should support dozens simultaneously moving main or background assets.
+  - [~] The game should allow for some form of state saving for play “reload”. Users should be able to pause and restart in a graceful (if not perfect) manner.
+     - Can play/pause the game but we do not have save/load yet
+  - [x] The physical effects should be correctly integrated in time and should not be locked to the machine’s speed by correctly handling the simulation time step and integration.
+  - [x] Stable game code supporting continuing execution and graceful termination.
+
+(25%) Creative: You should implement one or more additional creative elements. These can
+include additional assets, rendering effects, complex gameplay logic, or pre-emptive
+implementation of one or more features from subsequent milestones.
+
+* FEATURES COMPLETED FROM THIS MILESTONE DEVELOPMENT PLAN *
+  - Audio (completed previously)
+  - UI for basic game setup (main menu, frontend UI flow)
+
+* FEATURES COMPLETED FROM PAST MILESTONE DEVELOPMENT PLANS *
+  - Can zoom into and out of cursor
+  - Can issue specific attack orders to individual police
+
+* ADDITIONAL COMPLETED FEATURES *
+  - More sophisticated police AI
+    - Uses a stack of states, so that police can enter a new state and then return to their previous state
+    - For example, a cop can chase a zombie, fire at them, reload, and then resume chasing without player intervention
+  - Line of sight for civilians and zombies
+  - Improved performance by reducing number of zombie AI pathfinding
+    - They only pursue entities they can see, next milestone they will follow gunshot sounds
+  - Display police path to their waypoint or target
+  - Can pan the camera by dragging with the middle mouse (still needs some improvement)
+  - Created sprites for planned melee combat system
+  - UI icons and code to display the number of zombies, police, and civilians in the game world
+
+* FEATURES NOT COMPLTED FROM THIS MILESTONE DEVELOPMENT PLAN *
+  - Building barricades
+  - Calling in government reinforcements
+  - Game end screen with scoring system (work has begun but has not been integrated)
