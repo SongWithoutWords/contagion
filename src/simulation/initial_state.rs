@@ -46,7 +46,7 @@ pub fn initial_state(entity_count: u32, random_seed: u32) -> State {
         let behaviour = if i < cop_count {
             Behaviour::Cop {
                 rounds_in_magazine: COP_MAGAZINE_CAPACITY,
-                state: CopState::Idle
+                state_stack: vec!()
             }
         }
         else if i < cop_count + zombie_count {

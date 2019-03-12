@@ -552,42 +552,21 @@ pub fn display(
     // Compute vertices for cop paths
     for entity in &state.entities {
         match &entity.behaviour {
-            Behaviour::Cop{ rounds_in_magazine: _, state } => {
-                match state {
-                    CopState::Moving { waypoint: _, mode: _, path } => {
-                        match path {
-                            None => {
-                                // Do nothing
-                            },
-                            Some(path) => {
-                                let path_vec = path.to_vec();
-                                let color = [0.0, 0.0, 0.0, 1.0];
-                                for i in 0..(path_vec.len() - 1) {
-                                    push_path_vertices(&mut vertex_buffers_path, path_vec[i], path_vec[i+1], color);
-                                }
-                            }
+            Behaviour::Cop{ state_stack, .. } => {
+                let path = match state_stack.last() {
+                    Some(CopState::Moving { path, .. }) => path,
+                    Some(CopState::AttackingZombie { path, .. }) => path,
+                    _ => &None
+                };
+                match path {
+                    Some(path) => {
+                        let path_vec = path.to_vec();
+                        let color = [0.0, 0.0, 0.0, 1.0];
+                        for i in 0..(path_vec.len() - 1) {
+                            push_path_vertices(&mut vertex_buffers_path, path_vec[i], path_vec[i+1], color);
                         }
                     }
-                    CopState::AttackingZombie { target_index: _, attacking_zombie_state } => {
-                        match attacking_zombie_state {
-                            AttackingZombieState::Chasing { path } => {
-                                match path {
-                                    None => {
-                                        // Do nothing
-                                    },
-                                    Some(path) => {
-                                        let path_vec = path.to_vec();
-                                        let color = [1.0, 0.0, 0.0, 1.0];
-                                        for i in 0..(path_vec.len() - 1) {
-                                            push_path_vertices(&mut vertex_buffers_path, path_vec[i], path_vec[i+1], color);
-                                        }
-                                    }
-                                }
-                            }
-                            _ => ()
-                        }
-                    }
-                    _ => ()
+                    None => ()
                 }
             }
             _ => ()

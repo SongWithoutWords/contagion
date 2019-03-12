@@ -70,7 +70,13 @@ pub const COP_SIGHT_RADIUS: f64 = 500.0 * ENTITY_RADIUS * ENTITY_RADIUS;
 pub enum Behaviour {
     Cop {
         rounds_in_magazine: i64,
-        state: CopState
+        // state: CopState
+
+        // A stack of the cop's states
+        // - The current state is the state on top of the stack
+        // - When the cop finishes with a state that state is popped from the stack
+        // - If there are no states in the stack, the cop is idle
+        state_stack: Vec<CopState>
     },
     Dead,
     Human,
@@ -79,7 +85,7 @@ pub enum Behaviour {
     }
 }
 
-pub const COP_MIN_DISTANCE_FROM_WAYPOINT_SQUARED: Scalar = 0.01;
+pub const COP_MIN_DISTANCE_FROM_WAYPOINT_SQUARED: Scalar = 0.1;
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum CopState {
@@ -97,9 +103,8 @@ pub enum CopState {
     },
     AttackingZombie {
         target_index: usize,
-        attacking_zombie_state: AttackingZombieState
+        path: Option<Path>,
     },
-    Idle
 }
 
 #[derive(Clone, PartialEq)]
@@ -132,21 +137,6 @@ pub const CASING_SPEED: Scalar = 1.0;
 pub enum ProjectileKind {
     Bullet,
     Casing,
-}
-
-#[derive(Clone, PartialEq, Debug)]
-pub enum AttackingZombieState {
-    Starting,
-    Aiming {
-        aim_time_remaining: Scalar
-    },
-    Reloading {
-        reload_time_remaining: Scalar
-    },
-    Chasing {
-        path: Option<Path>
-    },
-    Ending,
 }
 
 #[derive(Copy, Clone, PartialEq, Debug)]

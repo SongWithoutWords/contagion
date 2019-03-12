@@ -182,9 +182,21 @@ impl Control {
             let Entity {position, behaviour, ..} = &mut simulation.entities[*i];
 
             match behaviour {
-                Behaviour::Cop { ref mut state, .. } => {
+                Behaviour::Cop { ref mut state_stack, .. } => {
+
+                    // Make the cop stop what they are doing
+                    state_stack.clear();
+
+                    let path = find_path(
+                        *position,
+                        m_pos,
+                        &simulation.buildings,
+                        &simulation.building_outlines);
+
                     // If no zombie clicked, issue regular move order, else issue special attack order
-                    *state = match zombie_index {
+
+
+                    state_stack.push(match zombie_index {
                         None =>
                             CopState::Moving {
                                 waypoint: m_pos,
@@ -192,18 +204,14 @@ impl Control {
                                     PoliceOrder::Move => MoveMode::Moving,
                                     PoliceOrder::Sprint => MoveMode::Sprinting,
                                 },
-                                path: find_path(
-                                    *position,
-                                    m_pos,
-                                    &simulation.buildings,
-                                    &simulation.building_outlines)
+                                path: path
                             },
                         Some(index) =>
                             CopState::AttackingZombie {
                                 target_index: index,
-                                attacking_zombie_state: AttackingZombieState::Starting
+                                path: path
                             }
-                    }
+                    })
                 }
                 _ => ()
             }
