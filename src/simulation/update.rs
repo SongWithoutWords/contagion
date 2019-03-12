@@ -540,7 +540,7 @@ fn update_zombie(
                     match entities[target_index].behaviour {
                         // If alive, check line of sight
                         Behaviour::Cop { .. } | Behaviour::Human => {
-                            if delta.length_squared() < ZOMBIE_SIGHT_RADIUS && can_see(buildings,my_pos,target_pos) {
+                            if delta.length_squared() < ZOMBIE_SIGHT_RADIUS_SQUARE && can_see(buildings,my_pos,target_pos) {
                                 // Continue chasing
                                 Behaviour::Zombie { state: ZombieState::Chasing { target_index } }
                             } else {
@@ -601,7 +601,7 @@ fn closest_human(my_pos: Vector2, entities: &Vec<Entity>, buildings: &Vec<Polygo
         match entities[i].behaviour {
             Behaviour::Cop { .. } | Behaviour::Human => {
                 let delta_squared = (my_pos - entities[i].position).length_squared();
-                if delta_squared < ZOMBIE_SIGHT_RADIUS &&
+                if delta_squared < ZOMBIE_SIGHT_RADIUS_SQUARE &&
                     can_see(buildings, my_pos, entities[i].position) &&
                     delta_squared < min_distance_sqr {
 
@@ -629,7 +629,7 @@ fn simulate_human(args: &UpdateArgs, entities: &mut Vec<Entity>, buildings: &Vec
             Behaviour::Zombie { .. } => {
                 let delta = entities[i].position - my_pos;
                 let distance_sqr = delta.length_squared();
-                if distance_sqr < HUMAN_SIGHT_RADIUS &&
+                if distance_sqr < HUMAN_SIGHT_RADIUS_SQUARE &&
                     can_see(buildings, my_pos, entities[i].position) &&
                     distance_sqr < min_distance_sqr {
 
