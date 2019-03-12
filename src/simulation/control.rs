@@ -5,6 +5,7 @@ use crate::core::geo::intersect::rectangle_point::*;
 use crate::core::geo::segment2::*;
 use crate::simulation::game_state::GameState;
 use crate::simulation::state::MoveMode;
+use crate::simulation::ai::pathfinding::*;
 
 use glium_sdl2::SDL2Facade;
 use sdl2::event::Event;
@@ -126,16 +127,14 @@ impl Control {
     }
 
     // Issue an order to selected police
-    pub fn issue_police_order(&mut self, order: PoliceOrder, state: &mut State, window: &SDL2Facade, camera_frame: Mat4, mouse_pos: Vector2) {
-        let m_pos = &mut Vector2{ x: mouse_pos.x, y: mouse_pos.y };
-        translate_mouse_to_camera(m_pos, window.window().size());
-        translate_camera_to_world(m_pos, camera_frame);
-
-        let buildings = &state.buildings;
+    pub fn issue_police_order(&mut self, order: PoliceOrder, simulation: &mut State, window: &SDL2Facade, camera_frame: Mat4, mouse_pos: Vector2) {
+        let mut m_pos = Vector2{ x: mouse_pos.x, y: mouse_pos.y };
+        translate_mouse_to_camera(&mut m_pos, window.window().size());
+        translate_camera_to_world(&mut m_pos, camera_frame);
 
         // Check if m_pos is inside a building
-        for building in buildings {
-            if building.contains_point(*m_pos) {
+        for building in &simulation.buildings {
+            if building.contains_point(m_pos) {
                 let mut distance_squared = INFINITY;
                 let mut normal = Vector2::zero();
                 let normals = building.normals();
@@ -145,7 +144,7 @@ impl Control {
                         p1: building.get(i),
                         p2: building.get((i + 1) % building.num_sides())
                     };
-                    let dist_i = seg_i.dist_squared(*m_pos);
+                    let dist_i = seg_i.dist_squared(m_pos);
 
                     if distance_squared > dist_i {
                         distance_squared = dist_i;
@@ -162,50 +161,51 @@ impl Control {
             }
         }
 
-        match order {
-            PoliceOrder::Move => {
-                let mut zombie_index:i32 = -1;
+        let mut zombie_index = None;
 
-                // Check if any zombie is within the click
-                for i in 0..state.entities.len() {
-                    let entity = &mut state.entities[i];
-                    match entity.behaviour {
-                        Behaviour::Zombie {..} => {
-                            let entity_pos = entity.position;
-                            if is_click_on_entity(entity_pos, *m_pos) {
-                                zombie_index = i as i32;
-                            }
-                        }
-                        _ => ()
+        // Check if any zombie is within the click
+        for i in 0..simulation.entities.len() {
+            let entity = &mut simulation.entities[i];
+            match entity.behaviour {
+                Behaviour::Zombie {..} => {
+                    let entity_pos = entity.position;
+                    if is_click_on_entity(entity_pos, m_pos) {
+                        zombie_index = Some(i);
                     }
                 }
-
-                for i in &state.selection {
-                    match state.entities[*i].behaviour {
-                        Behaviour::Cop { ref mut state, .. } => {
-                            // If no zombie clicked, issue regular move order, else issue special attack order
-                            if zombie_index == -1 {
-                                *state = CopState::Moving { waypoint: *m_pos, mode: MoveMode::Moving, path: None }
-                            } else {
-                                *state = CopState::AttackingZombie {
-                                    target_index: zombie_index as usize,
-                                    attacking_zombie_state: AttackingZombieState::Starting
-                                }
-                            }
-                        }
-                        _ => ()
-                    }
-                }
+                _ => ()
             }
-            PoliceOrder::Sprint => {
-                for i in &state.selection {
-                    match state.entities[*i].behaviour {
-                        Behaviour::Cop { ref mut state, .. } => {
-                            *state = CopState::Moving { waypoint: *m_pos, mode: MoveMode::Sprinting, path: None }
-                        }
-                        _ => ()
+        }
+
+        for i in &simulation.selection {
+
+            let Entity {position, behaviour, ..} = &mut simulation.entities[*i];
+
+            match behaviour {
+                Behaviour::Cop { ref mut state, .. } => {
+                    // If no zombie clicked, issue regular move order, else issue special attack order
+                    *state = match zombie_index {
+                        None =>
+                            CopState::Moving {
+                                waypoint: m_pos,
+                                mode: match order {
+                                    PoliceOrder::Move => MoveMode::Moving,
+                                    PoliceOrder::Sprint => MoveMode::Sprinting,
+                                },
+                                path: find_path(
+                                    *position,
+                                    m_pos,
+                                    &simulation.buildings,
+                                    &simulation.building_outlines)
+                            },
+                        Some(index) =>
+                            CopState::AttackingZombie {
+                                target_index: index,
+                                attacking_zombie_state: AttackingZombieState::Starting
+                            }
                     }
                 }
+                _ => ()
             }
         }
     }
