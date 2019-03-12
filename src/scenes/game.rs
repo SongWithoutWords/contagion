@@ -87,7 +87,7 @@ impl Scene for Game {
                     println!("  Projectile count: {:?}", self.state.projectiles.len());
                 },
                 Event::MouseWheel {timestamp: _, window_id: _, which: _, x: _, y, direction: _} => {
-                    self.camera.set_zoom(&mouse_state, y, &window, self.camera.compute_matrix());
+                    self.camera.cursor_zoom(&mouse_state, y, &window, self.camera.compute_matrix());
                 },
                 Event::MouseButtonDown {timestamp: _, window_id: _, which: _, mouse_btn: MouseButton::Middle , x, y: _} => {
 

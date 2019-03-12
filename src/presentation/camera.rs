@@ -85,7 +85,7 @@ impl Camera {
         })
     }
 
-    pub fn set_zoom(
+    pub fn cursor_zoom(
         &mut self,
         ms: &sdl2::mouse::MouseState,
         scroll: i32,
