@@ -5,15 +5,17 @@ use crate::core::geo::intersect::rectangle_point::*;
 use crate::core::geo::segment2::*;
 use crate::simulation::game_state::GameState;
 use crate::simulation::state::MoveMode;
+use crate::simulation::ai::pathfinding::*;
 
 use glium_sdl2::SDL2Facade;
 use sdl2::event::Event;
-use std::time::Instant;
+use std::time::{Instant};
 use sdl2::mouse::MouseButton;
 use sdl2::keyboard::Keycode;
 
 use super::state::*;
 
+#[derive(Clone)]
 pub struct Control {
     pub mouse_drag: bool,
     pub drag_start_mouse_coord: Vector2,
@@ -46,10 +48,8 @@ impl Control {
             let entity = &mut state.entities[i];
             match entity.behaviour {
                 Behaviour::Cop {..} => {
-                    let x_pos: Scalar = entity.position.x;
-                    let y_pos: Scalar = entity.position.y;
-                    if m_pos.x <= x_pos + 0.5 && m_pos.x >= x_pos - 0.5
-                        && m_pos.y <= y_pos + 0.5 && m_pos.y >= y_pos - 0.5 {
+                    let entity_pos = entity.position;
+                    if is_click_on_entity(entity_pos, *m_pos) {
                         state.selection.insert(i);
                         break;
                     }
@@ -127,16 +127,14 @@ impl Control {
     }
 
     // Issue an order to selected police
-    pub fn issue_police_order(&mut self, order: PoliceOrder, state: &mut State, window: &SDL2Facade, camera_frame: Mat4, mouse_pos: Vector2) {
-        let m_pos = &mut Vector2{ x: mouse_pos.x, y: mouse_pos.y };
-        translate_mouse_to_camera(m_pos, window.window().size());
-        translate_camera_to_world(m_pos, camera_frame);
-
-        let buildings = &state.buildings;
+    pub fn issue_police_order(&mut self, order: PoliceOrder, simulation: &mut State, window: &SDL2Facade, camera_frame: Mat4, mouse_pos: Vector2) {
+        let mut m_pos = Vector2{ x: mouse_pos.x, y: mouse_pos.y };
+        translate_mouse_to_camera(&mut m_pos, window.window().size());
+        translate_camera_to_world(&mut m_pos, camera_frame);
 
         // Check if m_pos is inside a building
-        for building in buildings {
-            if building.contains_point(*m_pos) {
+        for building in &simulation.buildings {
+            if building.contains_point(m_pos) {
                 let mut distance_squared = INFINITY;
                 let mut normal = Vector2::zero();
                 let normals = building.normals();
@@ -146,7 +144,7 @@ impl Control {
                         p1: building.get(i),
                         p2: building.get((i + 1) % building.num_sides())
                     };
-                    let dist_i = seg_i.dist_squared(*m_pos);
+                    let dist_i = seg_i.dist_squared(m_pos);
 
                     if distance_squared > dist_i {
                         distance_squared = dist_i;
@@ -163,26 +161,51 @@ impl Control {
             }
         }
 
-        match order {
-            PoliceOrder::Move => {
-                for i in &state.selection {
-                    match state.entities[*i].behaviour {
-                        Behaviour::Cop { ref mut state, .. } => {
-                            *state = CopState::Moving { waypoint: *m_pos, mode: MoveMode::MoveAttacking, path: None }
-                        }
-                        _ => ()
+        let mut zombie_index = None;
+
+        // Check if any zombie is within the click
+        for i in 0..simulation.entities.len() {
+            let entity = &mut simulation.entities[i];
+            match entity.behaviour {
+                Behaviour::Zombie {..} => {
+                    let entity_pos = entity.position;
+                    if is_click_on_entity(entity_pos, m_pos) {
+                        zombie_index = Some(i);
                     }
                 }
+                _ => ()
             }
-            PoliceOrder::Sprint => {
-                for i in &state.selection {
-                    match state.entities[*i].behaviour {
-                        Behaviour::Cop { ref mut state, .. } => {
-                            *state = CopState::Moving { waypoint: *m_pos, mode: MoveMode::Sprinting, path: None }
-                        }
-                        _ => ()
+        }
+
+        for i in &simulation.selection {
+
+            let Entity {position, behaviour, ..} = &mut simulation.entities[*i];
+
+            match behaviour {
+                Behaviour::Cop { ref mut state, .. } => {
+                    // If no zombie clicked, issue regular move order, else issue special attack order
+                    *state = match zombie_index {
+                        None =>
+                            CopState::Moving {
+                                waypoint: m_pos,
+                                mode: match order {
+                                    PoliceOrder::Move => MoveMode::Moving,
+                                    PoliceOrder::Sprint => MoveMode::Sprinting,
+                                },
+                                path: find_path(
+                                    *position,
+                                    m_pos,
+                                    &simulation.buildings,
+                                    &simulation.building_outlines)
+                            },
+                        Some(index) =>
+                            CopState::AttackingZombie {
+                                target_index: index,
+                                attacking_zombie_state: AttackingZombieState::Starting
+                            }
                     }
                 }
+                _ => ()
             }
         }
     }
@@ -210,6 +233,19 @@ impl Control {
             Event::KeyDown { keycode: Some(Keycode::Space), .. } => {
                 game_state.game_paused = !game_state.game_paused;
             },
+            Event::KeyDown { keycode: Some(Keycode::F1), ..} => {
+                for i in 0..state.entities.len() {
+                    let mut entity = &mut state.entities[i];
+                    match entity.behaviour {
+                        Behaviour::Zombie { .. } => (),
+                        _ => entity.behaviour = Behaviour::Dead
+                    }
+//                    if entity.behaviour != Behaviour::Zombie {
+//                        entity.behaviour = Behaviour::Dead
+//                    }
+                }
+                game_state.zombies_win = true;
+            }
             Event::MouseButtonDown { timestamp: _, window_id: _, which: _, mouse_btn, x, y } => {
                 match mouse_btn {
                     MouseButton::Left { .. } => {
@@ -265,7 +301,7 @@ impl Control {
                             // double right click to sprint
                             self.issue_police_order(PoliceOrder::Sprint, state, &window, camera_frame, mouse_pos);
                         } else {
-                            // single right click for attack move
+                            // single right click for attack or attack move
                             self.issue_police_order(PoliceOrder::Move, state, &window, camera_frame, mouse_pos);
                         }
                         self.last_right_click_time = current_time;
@@ -298,7 +334,15 @@ pub fn translate_world_to_camera(vec: &mut Vector2, matrix: Mat4) {
     vec.y = new_vec2.y;
 }
 
+fn is_click_on_entity(entity_pos: Vector2, m_pos: Vector2) -> bool {
+    let entity_delta = 0.5;
+    let x_pos = entity_pos.x;
+    let y_pos = entity_pos.y;
+    return m_pos.x <= x_pos + entity_delta && m_pos.x >= x_pos - entity_delta
+        && m_pos.y <= y_pos + entity_delta && m_pos.y >= y_pos - entity_delta;
+}
+
 pub enum PoliceOrder {
     Move,
-    Sprint
+    Sprint,
 }

@@ -79,4 +79,31 @@ impl Mat4 {
             [self.w.x as f32, self.w.y as f32, self.w.z as f32, self.w.w as f32],
         ]
     }
+
+    pub fn init_normal() -> Mat4 {
+        Mat4 {
+            i: Vector4 {x: 1.0, y: 0.0, z: 0.0, w: 0.0},
+            j: Vector4 {x: 0.0, y: 1.0, z: 0.0, w: 0.0},
+            k: Vector4 {x: 0.0, y: 0.0, z: 1.0, w: 0.0},
+            w: Vector4 {x: 0.0, y: 0.0, z: 0.0, w: 1.0},
+        }
+    }
+
+    pub fn translation(&self, offset: Vector4) -> Mat4 {
+        let mut mat = self.clone();
+        mat.w.x = mat.w.x + offset.x;
+        mat.w.y = mat.w.y + offset.y;
+        mat.w.z = mat.w.z + offset.z;
+        mat.w.w = mat.w.w + offset.w;
+        (mat)
+    }
+
+    pub fn scale(&self, factor: Vector4) -> Mat4 {
+        let mut mat = self.clone();
+        mat.i.x = mat.i.x * factor.x;
+        mat.j.y = mat.j.y * factor.y;
+        mat.k.z = mat.k.z * factor.z;
+        mat.w.w = mat.w.w * factor.w;
+        (mat)
+    }
 }

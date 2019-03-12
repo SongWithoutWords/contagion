@@ -6,6 +6,7 @@ use crate::simulation::ai::path::Path;
 
 use std::collections::HashSet;
 
+#[derive(Clone)]
 pub struct State {
     pub entities: Vec<Entity>,
     pub buildings: Vec<Polygon>,
@@ -18,6 +19,7 @@ pub struct State {
 pub const ENTITY_RADIUS: Scalar = 0.5;
 pub const ENTITY_DRAG: Scalar = 1.0;
 
+#[derive(Clone)]
 pub struct Entity {
     pub position: Vector2,
     pub velocity: Vector2,
@@ -79,7 +81,7 @@ pub enum Behaviour {
 
 pub const COP_MIN_DISTANCE_FROM_WAYPOINT_SQUARED: Scalar = 0.01;
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum CopState {
     Aiming {
         aim_time_remaining: Scalar,
@@ -92,6 +94,10 @@ pub enum CopState {
     },
     Reloading {
         reload_time_remaining: Scalar,
+    },
+    AttackingZombie {
+        target_index: usize,
+        attacking_zombie_state: AttackingZombieState
     },
     Idle
 }
@@ -128,8 +134,23 @@ pub enum ProjectileKind {
     Casing,
 }
 
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Clone, PartialEq, Debug)]
+pub enum AttackingZombieState {
+    Starting,
+    Aiming {
+        aim_time_remaining: Scalar
+    },
+    Reloading {
+        reload_time_remaining: Scalar
+    },
+    Chasing {
+        path: Option<Path>
+    },
+    Ending,
+}
+
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub enum MoveMode {
-    MoveAttacking,
+    Moving,
     Sprinting
 }

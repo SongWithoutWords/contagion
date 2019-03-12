@@ -23,6 +23,7 @@ use crate::presentation::audio::sound_effects:: *;
 use crate::presentation::ui::glium_text;
 use crate::scenes::main_menu;
 use crate::scenes::scene::{Scene, UpdateResult};
+use crate::simulation::update::Sound;
 
 pub mod constants;
 pub mod core;
@@ -75,12 +76,11 @@ fn main() {
         ..Default::default()
     };
 
-//    let mut scene: Box<Scene> = Box::new(game::Game::new());
     let mut scene: Box<Scene> = Box::new(main_menu::MainMenu::new());
     let mut last_frame = Instant::now();
 
     // Handle the sound effects for the game
-    music::start_context::<Music, TheSound, _>(&_sdl_context, 200, || {
+    music::start_context::<Music, Sound, _>(&_sdl_context, 200, || {
 
         load_sound_effects();
 
