@@ -13,7 +13,8 @@ For this milestone you should have a complete playable game. You should continue
 
 (75%) Milestone requirements:
   - [x] Include complete playable prior-milestone implementation
-  - [x] Sustain progressive, non-repetitive gameplay for 6min or more including all new features. The game should not terminate early and should allow infinite even if repetitive gameplay
+  - [~] Sustain progressive, non-repetitive gameplay for 6min or more including all new features. The game should not terminate early and should allow infinite even if repetitive gameplay
+    - Our game does not terminate early, and may support 6 minutes or more of gameplay depending on the initial state, but does not support infinite gameplay because the game is designed with a finite number of entities, to be won or lost within a finite amount of time
   - [x] Support real-time response rate (i.e. lag-free input).
   - [x] Include proper memory management (no excessive allocation or leaks). The game should not have any undefined behavior, memory leaks or random crashes. The game should not hog memory even after extended play time.
   - [x] The game should robustly handle any user input. Unexpected inputs or environment settings should be correctly handled and reported.
