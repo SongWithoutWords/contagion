@@ -1,5 +1,3 @@
-extern crate music;
-
 use crate::simulation::update::Sound;
 
 

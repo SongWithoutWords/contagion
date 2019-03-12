@@ -1,5 +1,3 @@
-extern crate music;
-
 use rand::distributions::*;
 
 use crate::core::geo::circle::*;
