@@ -8,6 +8,7 @@ pub struct Camera {
     position: Vector2,
     velocity: Vector2,
     zoom: Vector2,
+    initial_mouse_pos: Vector2,
 }
 
 impl Camera {
@@ -15,12 +16,13 @@ impl Camera {
         Camera {
             position: Vector2::zero(),
             velocity: Vector2::zero(),
-            zoom: Vector2 {x: 0.09 as f64, y: 0.09 as f64}  // set initial zoom level
+            zoom: Vector2 {x: 0.09 as f64, y: 0.09 as f64},  // set initial zoom level
+            initial_mouse_pos: Vector2 {x: 0.0 as f64, y: 0.0 as f64}
         }
     }
 
     const DRAG_FACTOR: Scalar = 8.0;
-    const ACCELERATION_FACTOR: Scalar = 10.0;
+    const ACCELERATION_FACTOR: Scalar = 12.0;
 
     pub fn update(
         &mut self,
@@ -49,29 +51,20 @@ impl Camera {
 
         // Middle mouse button pans camera
         if ms.middle() {
-//            static INITIAL_MOUSE_POS: Vector2 = Vector2 {x: ms.x() as f64, y: ms.y() as f64};
-//            println!("{}", "position");
-//            println!("{:?}", INITIAL_MOUSE_POS);
 
+            let initial_mouse_pos: &mut Vector2 = &mut Vector2 {x: self.initial_mouse_pos.x, y: self.initial_mouse_pos.y};
+            translate_to_camera_coord(initial_mouse_pos, window.window().size());
+            translate_camera_to_world_coord(initial_mouse_pos, camera_frame);
 
-//            let mouse_pos: &mut Vector2 = &mut Vector2 { x: ms.x() as f64, y: ms.y() as f64 };
-//            let camera_center: &mut Vector2 = &mut Vector2 {x: window.window().size().0 as f64 / 2.0, y: window.window().size().1 as f64 / 2.0};
-//
-//            translate_to_camera_coord(mouse_pos, window.window().size());
-//            translate_camera_to_world_coord(mouse_pos, camera_frame);
-//
-//            translate_to_camera_coord(camera_center, window.window().size());
-//            translate_camera_to_world_coord(camera_center, camera_frame);
-//
-//            // TODO: Don't use camera center but last world position
-//            let zoom = self.zoom;
-//            let mouse_vec = Vector2 {x: (mouse_pos.x - self.position.x) * zoom.x, y: (mouse_pos.y - self.position.y) * zoom.y};
-//
-//            let camera_pos = Vector2 {x: self.position.x * zoom.x, y: self.position.y * zoom.y};
-//            self.position = camera_pos + mouse_vec;
-//            println!("{}", "position");
-//            println!("{:?}", self.position);
+            let mouse_pos: &mut Vector2 = &mut Vector2 { x: ms.x() as f64, y: ms.y() as f64 };
+            translate_to_camera_coord(mouse_pos, window.window().size());
+            translate_camera_to_world_coord(mouse_pos, camera_frame);
 
+            let zoom  = self.zoom;
+
+            let mouse_vec = Vector2 { x: (initial_mouse_pos.x - mouse_pos.x) * zoom.x, y: (initial_mouse_pos.y - mouse_pos.y) * zoom.y };
+
+            self.velocity += delta_time * Self::ACCELERATION_FACTOR * mouse_vec;
         }
     }
 
@@ -83,6 +76,11 @@ impl Camera {
             k : Vector4 {x: 0.0, y: 0.0, z: 1.0, w: 0.0},
             w : Vector4 {x: -self.position.x, y: -self.position.y, z: 0.0, w: 1.0},
         })
+    }
+
+    pub fn camera_pan(&mut self, mouse_pos_x: i32, mouse_pos_y: i32) {
+        let initial_mouse_pos = &mut Vector2 {x: mouse_pos_x as f64, y: mouse_pos_y as f64};
+        self.initial_mouse_pos = *initial_mouse_pos;
     }
 
     pub fn cursor_zoom(
