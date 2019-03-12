@@ -8,6 +8,7 @@ use crate::{presentation};
 use glium_sdl2::SDL2Facade;
 use sdl2::{EventPump};
 use sdl2::keyboard::Keycode;
+use sdl2::mouse::MouseButton;
 
 use crate::presentation::display::Programs;
 use crate::presentation::display::Textures;
@@ -88,6 +89,10 @@ impl Scene for Game {
                 Event::MouseWheel {timestamp: _, window_id: _, which: _, x: _, y, direction: _} => {
                     self.camera.set_zoom(&mouse_state, y, &window, self.camera.compute_matrix());
                 },
+                Event::MouseButtonDown {timestamp: _, window_id: _, which: _, mouse_btn: MouseButton::Middle , x, y: _} => {
+
+                },
+
                 _ => {
                     self.gui.handle_event(event, &window, self.camera.compute_matrix(),
                                                             &mut self.state, &mut self.game_state,

@@ -49,21 +49,28 @@ impl Camera {
 
         // Middle mouse button pans camera
         if ms.middle() {
-            let pan_speed: Scalar = 0.05;
+//            static INITIAL_MOUSE_POS: Vector2 = Vector2 {x: ms.x() as f64, y: ms.y() as f64};
+//            println!("{}", "position");
+//            println!("{:?}", INITIAL_MOUSE_POS);
 
-            let mouse_pos: &mut Vector2 = &mut Vector2 { x: ms.x() as f64, y: ms.y() as f64 };
-            let camera_center: &mut Vector2 = &mut Vector2 {x: window.window().size().0 as f64 / 2.0, y: window.window().size().1 as f64 / 2.0};
 
-            translate_to_camera_coord(mouse_pos, window.window().size());
-            translate_camera_to_world_coord(mouse_pos, camera_frame);
-
-            translate_to_camera_coord(camera_center, window.window().size());
-            translate_camera_to_world_coord(camera_center, camera_frame);
-
-            let zoom = self.zoom;
-            let mouse_vec = Vector2 {x: (mouse_pos.x - camera_center.x) * zoom.x, y: (mouse_pos.y - camera_center.y) * zoom.y};
-
-            self.position += mouse_vec * pan_speed;
+//            let mouse_pos: &mut Vector2 = &mut Vector2 { x: ms.x() as f64, y: ms.y() as f64 };
+//            let camera_center: &mut Vector2 = &mut Vector2 {x: window.window().size().0 as f64 / 2.0, y: window.window().size().1 as f64 / 2.0};
+//
+//            translate_to_camera_coord(mouse_pos, window.window().size());
+//            translate_camera_to_world_coord(mouse_pos, camera_frame);
+//
+//            translate_to_camera_coord(camera_center, window.window().size());
+//            translate_camera_to_world_coord(camera_center, camera_frame);
+//
+//            // TODO: Don't use camera center but last world position
+//            let zoom = self.zoom;
+//            let mouse_vec = Vector2 {x: (mouse_pos.x - self.position.x) * zoom.x, y: (mouse_pos.y - self.position.y) * zoom.y};
+//
+//            let camera_pos = Vector2 {x: self.position.x * zoom.x, y: self.position.y * zoom.y};
+//            self.position = camera_pos + mouse_vec;
+//            println!("{}", "position");
+//            println!("{:?}", self.position);
 
         }
     }
