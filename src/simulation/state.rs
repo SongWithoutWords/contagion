@@ -46,7 +46,7 @@ impl Entity {
     }
 }
 
-pub const COP_MOVEMENT_FORCE: Scalar = 1.0;
+pub const COP_MOVEMENT_FORCE: Scalar = 1.5;
 pub const CIVILIAN_MOVEMENT_FORCE: Scalar = 1.0;
 pub const ZOMBIE_MOVEMENT_FORCE: Scalar = 1.5;
 
@@ -59,6 +59,10 @@ pub const COP_AIM_TIME_MEAN: Scalar = 1.0;
 pub const COP_ANGULAR_ACCURACY_STD_DEV: Scalar = 0.1;
 
 pub const COP_MAGAZINE_CAPACITY: i64 = 6;
+
+pub const ZOMBIE_SIGHT_RADIUS: f64 = 200.0 * ENTITY_RADIUS * ENTITY_RADIUS;
+pub const HUMAN_SIGHT_RADIUS: f64 = 400.0 * ENTITY_RADIUS * ENTITY_RADIUS;
+pub const COP_SIGHT_RADIUS: f64 = 500.0 * ENTITY_RADIUS * ENTITY_RADIUS;
 
 #[derive(Clone, PartialEq)]
 pub enum Behaviour {
