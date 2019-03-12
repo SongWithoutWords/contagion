@@ -85,7 +85,7 @@ pub enum Behaviour {
     }
 }
 
-pub const COP_MIN_DISTANCE_FROM_WAYPOINT_SQUARED: Scalar = 0.1;
+pub const COP_MIN_DISTANCE_FROM_WAYPOINT_SQUARED: Scalar = 0.2;
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum CopState {
