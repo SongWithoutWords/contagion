@@ -40,11 +40,7 @@ fn init() -> Result<((Sdl, SDL2Facade, EventPump),
     let window_tuple = presentation::graphics::renderer::create_window();
     let window = window_tuple.1;
 
-//    let font = glium_text::FontTexture::new(
-//        &window,
-//        File::open("assets/fonts/consola.ttf").unwrap(),
-//        150,
-//    ).unwrap();
+    // initialize fonts and package
     let consola_font = Font::new("Consola", "assets/fonts/consola.ttf", &window);
     let mut fonts = FontPkg::new();
     fonts.push(consola_font);
