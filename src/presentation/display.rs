@@ -13,6 +13,7 @@ use crate::presentation::ui::gui::GuiType;
 use crate::presentation::ui::glium_text;
 use crate::presentation::ui::glium_text::FontTexture;
 use crate::presentation::ui::gui::Component;
+use crate::presentation::graphics::font::FontPkg;
 
 // Enum ordered by draw order
 #[derive(Copy, Clone, Debug, Enum, PartialEq)]
@@ -193,9 +194,9 @@ fn push_gui_vertices(buffer: &mut Vec<ColorVertex>, ui: &Gui) {
 
     match ui.id {
         GuiType::SelectionDrag => {color = [0.105, 0.214, 0.124, 0.3]},
-        GuiType::Button{..} => {color = [0.6, 0.7, 0.8, 0.5]},
+        GuiType::Button{..} => {color = [0.6, 0.7, 0.8, 0.0]},
         GuiType::Window => {color= [0.0, 0.0, 0.0, 0.7]},
-        GuiType::Menu {..} => {color= [0.6, 0.7, 0.8, 0.5]},
+        GuiType::Menu {..} => {color= [0.6, 0.7, 0.8, 0.0]},
         _ => (),
     };
 
@@ -404,9 +405,10 @@ pub fn display(
     params: &glium::DrawParameters,
     state: &State, camera_frame: Mat4,
     ui: &mut Component,
-    font: &FontTexture,
+    fonts: &FontPkg,
     control: &Control
 ) {
+    let font = fonts.get("Consola").unwrap();
 
     frame.clear_color(0.2, 0.2, 0.2, 1.0);
 
@@ -734,7 +736,7 @@ pub fn display(
                     tex: &textures.sprite_textures[_gui_type],
                 };
             // Draw the text showing the number of cops next to the UI cop icon
-            draw_cop_num(window, selection_count,frame, &font);
+            draw_cop_num(window, selection_count,frame, &font.medres());
             draw_color_sprites(
                 frame,
                 window,
@@ -749,7 +751,7 @@ pub fn display(
                     tex: &textures.sprite_textures[_gui_type],
                 };
             // Draw the text showing the number of cops next to the UI cop icon
-            draw_remaining_zombie_num(window, zombie_count, frame, &font);
+            draw_remaining_zombie_num(window, zombie_count, frame, &font.lowres());
             draw_color_sprites(
                 frame,
                 window,
@@ -764,7 +766,7 @@ pub fn display(
                     tex: &textures.sprite_textures[_gui_type],
                 };
             // Draw the text showing the number of cops next to the UI cop icon
-            draw_remaining_civilian_num(window, human_count, frame, &font);
+            draw_remaining_civilian_num(window, human_count, frame, &font.lowres());
             draw_color_sprites(
                 frame,
                 window,
@@ -779,7 +781,7 @@ pub fn display(
                     tex: &textures.sprite_textures[_gui_type],
                 };
             // Draw the text showing the number of cops next to the UI cop icon
-            draw_remaining_cop_num(window, cop_count, frame, &font);
+            draw_remaining_cop_num(window, cop_count, frame, &font.lowres());
             draw_color_sprites(
                 frame,
                 window,
@@ -794,6 +796,7 @@ pub fn display(
     }
 
     // Render Menu Text
+    let mat = Mat4::init_id_matrix();
     for i in 0..text_buffers.len() {
         let system = glium_text::TextSystem::new(window);
         let mut text_to_display = "".to_string();
@@ -809,22 +812,17 @@ pub fn display(
         let text_display = format!("{}", text_to_display);
 //        println!("{:?}", text_display);
         let str_slice: &str = &text_display[..];
-        let text = glium_text::TextDisplay::new(&system, font, str_slice);
+        let text = glium_text::TextDisplay::new(&system, font.medres(), str_slice);
         let color = [1.0, 1.0, 1.0, 1.0f32];
-        let text_width=text.get_width();
-        let text_height = 0.07;
+        let text_width = text.get_width() as f64;
+        let text_height = 0.06;
         let dimensions = _menu_buttons[i];
-        let button_width = (dimensions.1.x - dimensions.0.x) as f32;
-        let x_align = (dimensions.0.x) as f32;
-        let y_align = (dimensions.0.y) as f32;
-
-        let matrix = [
-            [button_width / text_width , 0.0, 0.0, 0.0],
-            [0.0, text_height, 0.0, 0.0],
-            [0.0, 0.0, 1.0, 0.0],
-            [x_align, y_align - 0.05, 0.0, 1.0f32],
-        ];
-        glium_text::draw(&text, &system, frame, matrix, color);
+        let button_width = dimensions.1.x - dimensions.0.x;
+        let x_align = dimensions.0.x;
+        let y_align = (dimensions.0.y) - 0.07;
+        let menu_matrix = mat.translation(Vector4{x: x_align, y: y_align, z: 0.0, w: 0.0})
+            .scale(Vector4{x: button_width/text_width, y: text_height, z: 1.0, w: 1.0}).as_f32_array();
+        glium_text::draw(&text, &system, frame, menu_matrix, color);
     }
 
 }
@@ -944,17 +942,12 @@ pub fn display_main_menu (
     textures: &Textures,
     params: &glium::DrawParameters,
     ui: &mut Component,
-    font: &FontTexture,
+    fonts: &FontPkg,
 ) {
-
+    let font = fonts.get("Consola").unwrap();
     frame.clear_color(0.160, 0.160, 0.160, 1.0);
 
-    let _camera_frame =[
-        [1.0, 0.0, 0.0, 0.0],
-        [0.0, 1.0, 0.0, 0.0],
-        [0.0, 0.0, 1.0, 0.0],
-        [0.0, 0.0, 0.0, 1.0f32],
-    ];
+    let mat = Mat4::init_id_matrix();
 
 //    draw_background(frame, window, textures, programs, camera_frame, params);
 
@@ -1002,12 +995,7 @@ pub fn display_main_menu (
     }
 
     // Render GUI
-    let mat_gui = [
-        [1.0, 0.0, 0.0, 0.0],
-        [0.0, 1.0, 0.0, 0.0],
-        [0.0, 0.0, 1.0, 0.0],
-        [0.0, 0.0, 0.0, 1.0f32],
-    ];
+    let mat_gui = mat.as_f32_array();
     for (_gui_type, vertex_buffer) in &vertex_buffers_gui {
         if _gui_type == SpriteType::MenuWindow {
             if ui.active_window == ActiveWindow::Menu {
@@ -1075,31 +1063,27 @@ pub fn display_main_menu (
         }
         let text_display = format!("{}", text_to_display);
         let str_slice: &str = &text_display[..];
-        let text = glium_text::TextDisplay::new(&system, font, str_slice);
+        let text = glium_text::TextDisplay::new(&system, font.medres(), str_slice);
         let color = [1.0, 1.0, 1.0, 1.0f32];
-        let text_width=text.get_width();
-        let text_height = 0.07;
+        let text_width = text.get_width() as f64;
+        let text_height = 0.06;
         let dimensions = _menu_buttons[i];
-        let button_width = (dimensions.1.x - dimensions.0.x) as f32;
-        let x_align = (dimensions.0.x) as f32;
-        let y_align = (dimensions.0.y) as f32;
+        let button_width = dimensions.1.x - dimensions.0.x;
+        let x_align = dimensions.0.x;
+        let y_align = (dimensions.0.y) - 0.07;
 
-        let matrix = [
-            [button_width / text_width , 0.0, 0.0, 0.0],
-            [0.0, text_height, 0.0, 0.0],
-            [0.0, 0.0, 1.0, 0.0],
-            [x_align, y_align - 0.05, 0.0, 1.0f32],
-        ];
-        glium_text::draw(&text, &system, frame, matrix, color);
+        let menu_matrix = mat.translation(Vector4{x: x_align, y: y_align, z: 0.0, w: 0.0})
+            .scale(Vector4{x: button_width/text_width, y: text_height, z: 1.0, w: 1.0}).as_f32_array();
+        glium_text::draw(&text, &system, frame, menu_matrix, color);
     }
 
     // Render Title
     if ui.active_window == ActiveWindow::MainMenu {
         let system = glium_text::TextSystem::new(window);
-        let text_display = "Contagion (placeholder)".to_string();
+        let text_display = "CONTAGION".to_string();
         let str_slice: &str = &text_display[..];
-        let text = glium_text::TextDisplay::new(&system, font, str_slice);
-        let color = [1.0, 1.0, 0.0, 1.0f32];
+        let text = glium_text::TextDisplay::new(&system, font.highres(), str_slice);
+        let color = [1.0, 1.0, 1.0, 0.9f32];
         let _font_scale_down = 1.5;
         let text_width = text.get_width();
         let (w, h) = frame.get_dimensions();
@@ -1122,18 +1106,11 @@ pub fn display_loss_screen (
     params: &glium::DrawParameters,
     ui: &mut Component,
     state: &State,
-    font: &FontTexture,
+    fonts: &FontPkg,
 ) {
-
+    let font = fonts.get("Consola").unwrap();
     frame.clear_color(0.0, 0.0, 0.0, 1.0);
-
-    let _camera_frame =[
-        [1.0, 0.0, 0.0, 0.0],
-        [0.0, 1.0, 0.0, 0.0],
-        [0.0, 0.0, 1.0, 0.0],
-        [0.0, 0.0, 0.0, 1.0f32],
-    ];
-
+    let mat = Mat4::init_id_matrix();
 //    draw_background(frame, window, textures, programs, camera_frame, params);
 
     let mut vertex_buffers_gui = enum_map!{_ => vec!()};
@@ -1159,12 +1136,163 @@ pub fn display_loss_screen (
     }
 
     // Render GUI
-    let mat_gui = [
-        [1.0, 0.0, 0.0, 0.0],
-        [0.0, 1.0, 0.0, 0.0],
-        [0.0, 0.0, 1.0, 0.0],
-        [0.0, 0.0, 0.0, 1.0f32],
-    ];
+    let mat_gui = mat.as_f32_array();
+    for (_gui_type, vertex_buffer) in &vertex_buffers_gui {
+        if _gui_type == SpriteType::Button {
+            let uniforms = uniform! {
+                    matrix: mat_gui,
+                };
+            draw_color_sprites(
+                frame,
+                window,
+                &vertex_buffer,
+                &programs.gui_program,
+                params,
+                &uniforms);
+        }
+    }
+
+
+    // Render Menu Text
+    for i in 0..text_buffers.len() {
+        let system = glium_text::TextSystem::new(window);
+        let mut text_to_display = "".to_string();
+        let button = text_buffers[i].clone();
+        match button.id.clone() {
+            GuiType::Button { text } => {
+                text_to_display = text;
+            }
+            GuiType::Menu {text,..} => {
+                text_to_display = text;
+            }
+            _ => ()
+        }
+        let text_display = format!("{}", text_to_display);
+        let str_slice: &str = &text_display[..];
+        let text = glium_text::TextDisplay::new(&system, font.medres(), str_slice);
+        let color = [1.0, 1.0, 1.0, 1.0f32];
+        let text_width= (text.get_width() as f64) - 0.02;
+        let text_height = 0.06;
+        let dimensions = _menu_buttons[i];
+        let button_width = dimensions.1.x - dimensions.0.x;
+        let x_align = dimensions.0.x;
+        let y_align = (dimensions.0.y) - 0.07;
+
+        let menu_matrix = mat.translation(Vector4{x: x_align, y: y_align, z: 0.0, w: 0.0})
+                                    .scale(Vector4{x: button_width/text_width, y: text_height, z: 1.0, w: 1.0}).as_f32_array();
+//        let menu_matrix = [
+//            [button_width / text_width , 0.0, 0.0, 0.0],
+//            [0.0, text_height, 0.0, 0.0],
+//            [0.0, 0.0, 1.0, 0.0],
+//            [x_align, y_align - 0.05, 0.0, 1.0f32],
+//        ];
+        glium_text::draw(&text, &system, frame, menu_matrix, color);
+    }
+
+    // Render Entities
+    let mat  = Mat4::init_id_matrix();
+    let mut cop_count = 0;
+    let mut _dead_count = 0;
+    let mut human_count = 0;
+    let mut zombie_count = 0;
+    let mut score ;
+    for entity in &state.entities {
+        match entity.behaviour {
+            Behaviour::Cop{..} => {cop_count+=1;},
+            Behaviour::Dead => {_dead_count+=1;},
+            Behaviour::Human => {human_count+=1;},
+            Behaviour::Zombie{..} => {zombie_count+=1;},
+        };
+//        // score is total of alive humans
+//        score += cop_count + human_count;
+    }
+//    // score is then multiplied by 100 then subtract zombie and dead count
+//    score = score*100 - zombie_count;
+//    if score < 0 {score = 0};
+    // score is total of alive humans
+    score = cop_count + human_count;
+    score = (score - zombie_count) * 100;
+    if score < 0 {score = 0};
+
+    let system = glium_text::TextSystem::new(window);
+    let text_1_loss = "Humanity Perished...".to_string();
+    let text_display = format!("{}", text_1_loss);
+    let str_slice: &str = &text_display[..];
+    let text = glium_text::TextDisplay::new(&system, font.medres(), str_slice);
+    let color = [1.0, 1.0, 0.0, 1.0f32];
+    let _font_scale_down = 1.5;
+    let text_width = text.get_width() as f64;
+    let (w, h) = frame.get_dimensions();
+    let _text_offset = 1.0 / text_width;
+    let  scale_factor = Vector4 {x: 2.0/text_width, y: 2.0 * (w as f64) / (h as f64) / text_width , z: 1.0, w: 1.0};
+    let  translation_offset = Vector4{x: -1.0, y: 0.3, z: 0.0, w: 0.0};
+    let mut matrix = mat.scale(scale_factor).translation(translation_offset);
+    glium_text::draw(&text, &system, frame, matrix.as_f32_array(), color);
+
+    // Score
+    let text_display = format!("Score: {}", score);
+    let str_slice: &str = &text_display[..];
+    let text = glium_text::TextDisplay::new(&system, font.medres(), str_slice);
+    let color = [1.0, 1.0, 0.0, 1.0f32];
+    let scale_factor = Vector4 {x: 0.5, y:0.5, z: 1.0, w: 1.0};
+    let translate_offset = Vector4{x: 0.1, y: -0.2, z: 0.0, w: 0.0};
+    matrix = matrix.scale(scale_factor).translation(translate_offset);
+    glium_text::draw(&text, &system, frame, matrix.as_f32_array(), color);
+
+    // Stats
+    let text_display = format!("Cops: {}, Civilians: {}, Zombies: {}", cop_count, human_count, zombie_count);
+    let str_slice: &str = &text_display[..];
+    let text = glium_text::TextDisplay::new(&system, font.medres(), str_slice);
+    let color = [1.0, 1.0, 0.0, 1.0f32];
+    let translate_offset = Vector4{x: 0.0, y: -0.2, z: 0.0, w: 0.0};
+    matrix = matrix.translation(translate_offset);
+    glium_text::draw(&text, &system, frame, matrix.as_f32_array(), color);
+}
+
+pub fn display_victory_screen (
+    frame: &mut glium::Frame,
+    window: &glium_sdl2::SDL2Facade,
+    programs: &Programs,
+    _textures: &Textures,
+    params: &glium::DrawParameters,
+    ui: &mut Component,
+    state: &State,
+    font: &FontTexture,
+) {
+
+    // background color
+    frame.clear_color(0.0, 0.0, 0.0, 1.0);
+
+    // initialize identity matrix
+    let mat  = Mat4::init_id_matrix();
+
+    /* Comment this line out for future addition for background texture */
+    // draw_background(frame, window, textures, programs, camera_frame, params);
+
+    let mut vertex_buffers_gui = enum_map!{_ => vec!()};
+    let mut text_buffers = vec!();
+    let mut menu_buttons: Vec<(Vector2, Vector2, Vector2, Vector2)> = vec![];
+
+    // Compute vertices for GUI
+    for component in &mut ui.components {
+        match &component.id {
+            GuiType::Button {..} => {
+                let button_dimensions = component.get_dimension();
+                text_buffers.push(Box::new(component.clone()));
+                menu_buttons.push(button_dimensions);
+                push_gui_vertices(&mut vertex_buffers_gui[SpriteType::Button], component);
+
+            }
+            GuiType::Score => (),
+            GuiType::Timer => (),
+            GuiType::Window => (),
+            GuiType::Menu{..} => (),
+            _ => (),
+        };
+    }
+
+    // Render GUI
+    let mat_gui = mat.as_f32_array();
     for (_gui_type, vertex_buffer) in &vertex_buffers_gui {
         if _gui_type == SpriteType::Button {
             let uniforms = uniform! {
@@ -1201,7 +1329,7 @@ pub fn display_loss_screen (
         let color = [1.0, 1.0, 1.0, 1.0f32];
         let text_width=text.get_width();
         let text_height = 0.07;
-        let dimensions = _menu_buttons[i];
+        let dimensions = menu_buttons[i];
         let button_width = (dimensions.1.x - dimensions.0.x) as f32;
         let x_align = (dimensions.0.x) as f32;
         let y_align = (dimensions.0.y) as f32;
@@ -1216,12 +1344,11 @@ pub fn display_loss_screen (
     }
 
     // Render Entities
-    let mat  = Mat4::init_normal();
     let mut cop_count = 0;
     let mut _dead_count = 0;
     let mut human_count = 0;
     let mut zombie_count = 0;
-    let mut score = 0;
+    let mut score ;
     for entity in &state.entities {
         match entity.behaviour {
             Behaviour::Cop{..} => {cop_count+=1;},
@@ -1229,16 +1356,15 @@ pub fn display_loss_screen (
             Behaviour::Human => {human_count+=1;},
             Behaviour::Zombie{..} => {zombie_count+=1;},
         };
-        // score is total of alive humans
-        score += cop_count + human_count;
     }
-    // score is then multiplied by 100 then subtract zombie and dead count
-    score = score*100 - zombie_count;
+    // score is total of alive humans
+    score = cop_count + human_count;
+    score = (score - zombie_count) * 100;
     if score < 0 {score = 0};
 
     let system = glium_text::TextSystem::new(window);
-    let text_1_loss = "Humanity Perished...".to_string();
-    let text_display = format!("{}", text_1_loss);
+    let text_1_win = "Humanity Prevailed!".to_string();
+    let text_display = format!("{}", text_1_win);
     let str_slice: &str = &text_display[..];
     let text = glium_text::TextDisplay::new(&system, font, str_slice);
     let color = [1.0, 1.0, 0.0, 1.0f32];
