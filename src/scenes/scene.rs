@@ -3,7 +3,7 @@ use glium_sdl2::SDL2Facade;
 use crate::presentation::display::Programs;
 use glium::DrawParameters;
 use crate::presentation::display::Textures;
-use crate::presentation::ui::glium_text::FontTexture;
+use crate::presentation::graphics::font::FontPkg;
 
 pub enum UpdateResult {
     Exit,
@@ -24,5 +24,5 @@ pub trait Scene {
               programs: &Programs,
               textures: &Textures,
               params:&DrawParameters,
-              font:&FontTexture);
+              fonts:&FontPkg);
 }

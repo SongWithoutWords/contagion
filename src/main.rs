@@ -10,7 +10,6 @@ extern crate rand;
 extern crate rand_xorshift;
 extern crate sdl2;
 
-use std::fs::File;
 use std::time::Instant;
 
 use glium::draw_parameters::Blend;
@@ -20,10 +19,10 @@ use sdl2::{EventPump, Sdl};
 use crate::core::scalar:: *;
 use crate::core::vector:: *;
 use crate::presentation::audio::sound_effects:: *;
-use crate::presentation::ui::glium_text;
 use crate::scenes::main_menu;
 use crate::scenes::scene::{Scene, UpdateResult};
 use crate::simulation::update::Sound;
+use crate::presentation::graphics::font::{Font, FontPkg};
 
 pub mod constants;
 pub mod core;
@@ -34,25 +33,29 @@ pub mod scenes;
 fn init() -> Result<((Sdl, SDL2Facade, EventPump),
                      presentation::display::Textures,
                      presentation::display::Programs,
-                     glium_text::FontTexture),
+                     FontPkg),
     String> {
 
     // initialize window and eventpump
     let window_tuple = presentation::graphics::renderer::create_window();
     let window = window_tuple.1;
 
-    let font = glium_text::FontTexture::new(
-        &window,
-        File::open("assets/fonts/consola.ttf").unwrap(),
-        30,
-    ).unwrap();
+//    let font = glium_text::FontTexture::new(
+//        &window,
+//        File::open("assets/fonts/consola.ttf").unwrap(),
+//        150,
+//    ).unwrap();
+    let consola_font = Font::new("Consola", "assets/fonts/consola.ttf", &window);
+    let mut fonts = FontPkg::new();
+    fonts.push(consola_font);
+
     let textures = presentation::display::load_textures(&window);
 
     let programs = presentation::display::load_programs(&window);
 
     let window_tuple: (Sdl, SDL2Facade, EventPump) = (window_tuple.0, window, window_tuple.2);
 
-    Ok((window_tuple, textures, programs, font))
+    Ok((window_tuple, textures, programs, fonts))
 }
 
 
@@ -61,7 +64,7 @@ fn main() {
     let (window_tuple,
         textures,
         programs,
-        font) = match init() {
+        fonts) = match init() {
         Ok(t) => t,
         Err(err) => {
             println!("{}", err);
@@ -100,7 +103,7 @@ fn main() {
                 UpdateResult::Transition(next_scene) => scene = next_scene,
             };
 
-            scene.render(&window, &programs, &textures, &params, &font);
+            scene.render(&window, &programs, &textures, &params, &fonts);
         }
     });
 }

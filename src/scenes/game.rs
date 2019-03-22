@@ -13,11 +13,11 @@ use sdl2::mouse::MouseButton;
 use crate::presentation::display::Programs;
 use crate::presentation::display::Textures;
 use glium::DrawParameters;
-use crate::presentation::ui::glium_text::FontTexture;
 use crate::simulation::game_state::GameState;
 use crate::simulation;
 use crate::scenes::scene::*;
 use crate::scenes::{main_menu, loss_screen};
+use crate::presentation::graphics::font::FontPkg;
 
 #[derive(Clone)]
 pub struct Game {
@@ -115,7 +115,7 @@ impl Scene for Game {
               programs:&Programs,
               textures:&Textures,
               params:&DrawParameters,
-              font:&FontTexture) {
+              fonts:&FontPkg) {
 
         let mut target = window.draw();
         presentation::display::display(&mut target,
@@ -125,7 +125,7 @@ impl Scene for Game {
                                        &params,
                                        &self.state,
                                        self.camera.compute_matrix(),
-                                       &mut self.gui, &font,
+                                       &mut self.gui, &fonts,
                                        &self.control);
         target.finish().unwrap();
     }
