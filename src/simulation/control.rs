@@ -18,6 +18,7 @@ use super::state::*;
 #[derive(Clone)]
 pub struct Control {
     pub mouse_drag: bool,
+    pub shift_pressed: bool,
     pub drag_start_mouse_coord: Vector2,
     pub drag_vertex_start: Vector2,
     pub drag_vertex_end: Vector2,
@@ -30,6 +31,7 @@ impl Control {
 
         Control {
             mouse_drag: false,
+            shift_pressed: false,
             drag_start_mouse_coord: Vector2::zero(),
             drag_vertex_start: Vector2::zero(),
             drag_vertex_end: Vector2::zero(),
@@ -39,7 +41,9 @@ impl Control {
     }
 
     pub fn click_select(&mut self, state: &mut State, window: &SDL2Facade, camera_frame: Mat4, mouse_pos: Vector2) {
-        state.selection.clear();
+        if !self.shift_pressed {
+            state.selection.clear();
+        }
         let m_pos = &mut Vector2{ x : mouse_pos.x, y : mouse_pos.y};
         translate_mouse_to_camera(m_pos, window.window().size());
         translate_camera_to_world(m_pos, camera_frame);
@@ -98,7 +102,9 @@ impl Control {
     }
 
     pub fn drag_select(&mut self, state: &mut State, window: &SDL2Facade, camera_frame: Mat4, mouse_end: Vector2) {
-        state.selection.clear();
+        if !self.shift_pressed {
+            state.selection.clear();
+        }
         let m_start_pos = &mut Vector2{ x : self.drag_start_mouse_coord.x, y : self.drag_start_mouse_coord.y};
         let m_end_pos = &mut Vector2{ x : mouse_end.x, y : mouse_end.y};
         translate_mouse_to_camera(m_start_pos, window.window().size());
@@ -238,21 +244,37 @@ impl Control {
 
     pub fn handle_event(&mut self, event: Event, window: &SDL2Facade, camera_frame: Mat4, state: &mut State, game_state: &mut GameState) {
         match event {
-            Event::KeyDown { keycode: Some(Keycode::Space), .. } => {
-                game_state.game_paused = !game_state.game_paused;
-            },
-            Event::KeyDown { keycode: Some(Keycode::F1), ..} => {
-                for i in 0..state.entities.len() {
-                    let mut entity = &mut state.entities[i];
-                    match entity.behaviour {
-                        Behaviour::Zombie { .. } => (),
-                        _ => entity.behaviour = Behaviour::Dead
+            Event::KeyDown { keycode: Some(key), ..} => {
+                match key {
+                    Keycode::Space => {
+                        game_state.game_paused = !game_state.game_paused;
                     }
+                    Keycode::F1 => {
+                        for i in 0..state.entities.len() {
+                            let mut entity = &mut state.entities[i];
+                            match entity.behaviour {
+                                Behaviour::Zombie { .. } => (),
+                                _ => entity.behaviour = Behaviour::Dead
+                            }
 //                    if entity.behaviour != Behaviour::Zombie {
 //                        entity.behaviour = Behaviour::Dead
 //                    }
+                        }
+                        game_state.zombies_win = true;
+                    }
+                    Keycode::LShift => {
+                        self.shift_pressed = true;
+                    }
+                    _ => ()
                 }
-                game_state.zombies_win = true;
+            }
+            Event::KeyUp { keycode: Some(key), ..} => {
+                match key {
+                    Keycode::LShift => {
+                        self.shift_pressed = false;
+                    }
+                    _ => ()
+                }
             }
             Event::MouseButtonDown { timestamp: _, window_id: _, which: _, mouse_btn, x, y } => {
                 match mouse_btn {
