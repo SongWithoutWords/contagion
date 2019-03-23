@@ -256,9 +256,6 @@ impl Control {
                                 Behaviour::Zombie { .. } => (),
                                 _ => entity.behaviour = Behaviour::Dead
                             }
-//                    if entity.behaviour != Behaviour::Zombie {
-//                        entity.behaviour = Behaviour::Dead
-//                    }
                         }
                         game_state.zombies_win = true;
                     }

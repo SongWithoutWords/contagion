@@ -4,11 +4,11 @@ use sdl2::EventPump;
 use glium_sdl2::SDL2Facade;
 use crate::presentation::display::{Programs, Textures};
 use glium::DrawParameters;
-use crate::presentation::ui::glium_text::FontTexture;
 use crate::{presentation, simulation};
 use sdl2::keyboard::Keycode;
 use crate::simulation::game_state::GameState;
 use crate::scenes::game;
+use crate::presentation::graphics::font::FontPkg;
 
 pub struct MainMenu {
     gui: Component,
@@ -65,7 +65,7 @@ impl Scene for MainMenu {
               programs:&Programs,
               textures:&Textures,
               params:&DrawParameters,
-              font:&FontTexture) {
+              fonts:&FontPkg) {
 
         let mut target = window.draw();
         presentation::display::display_main_menu(&mut target,
@@ -73,7 +73,7 @@ impl Scene for MainMenu {
                                        &programs,
                                        &textures,
                                        &params,
-                                       &mut self.gui, &font);
+                                       &mut self.gui, &fonts);
         target.finish().unwrap();
     }
 }

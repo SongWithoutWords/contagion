@@ -71,10 +71,10 @@ impl Component {
         let button2 = GuiType::Button{text: "Retry".to_string()};
         let button3 = GuiType::Button{text: "Main Menu".to_string()};
         let button4 = GuiType::Button{text: "Instruction".to_string()};
-        let button_ui_1 = Gui::new(button1, 0.2, 0.05, Vector2{x: 0.0, y: -0.225});
-        let button_ui_2 = Gui::new(button2, 0.2, 0.05, Vector2{x: 0.0, y: -0.075});
-        let button_ui_3 = Gui::new(button3, 0.4, 0.05, Vector2{x: 0.0, y: 0.075});
-        let button_ui_4 = Gui::new(button4, 0.4, 0.05, Vector2{x: 0.0, y: 0.225});
+        let button_ui_1 = Gui::new(button1, 0.17, 0.09, Vector2{x: 0.0, y: -0.225});
+        let button_ui_2 = Gui::new(button2, 0.2, 0.09, Vector2{x: 0.0, y: -0.075});
+        let button_ui_3 = Gui::new(button3, 0.37, 0.09, Vector2{x: 0.0, y: 0.075});
+        let button_ui_4 = Gui::new(button4, 0.4, 0.09, Vector2{x: 0.0, y: 0.225});
         let menu_ui = Gui::new(GuiType::Menu{ _window_gui: Box::new(box_ui),
                                                        _buttons_gui: vec![Box::new(button_ui_4),
                                                                           Box::new(button_ui_3),
@@ -94,8 +94,8 @@ impl Component {
         // main menu buttons
         let button_start = GuiType::Button{text: "Start".to_string()};
         let button_exit = GuiType::Button {text: "Exit".to_string()};
-        let button_start_ui = Gui::new(button_start, 0.3, 0.05, Vector2{x:0.0, y: -0.2});
-        let button_exit_ui = Gui::new(button_exit, 0.2, 0.05, Vector2{x: 0.0, y: -0.5});
+        let button_start_ui = Gui::new(button_start, 0.25, 0.09, Vector2{x:0.0, y: -0.2});
+        let button_exit_ui = Gui::new(button_exit, 0.18, 0.09, Vector2{x: 0.0, y: -0.5});
 
         // box containment for main menu settings
         let box_ui = Gui::new(GuiType::Window, 1.8, 1.8, Vector2{x: 0.0, y: 0.0});
@@ -104,15 +104,15 @@ impl Component {
         let button_menu_instruction = GuiType::Button{text: "Instruction".to_string()};
         let button_menu_settings = GuiType::Button{text: "Advanced (WIP)".to_string()};
         let button_menu_back = GuiType::Button{text: "Back".to_string()};
-        let button_menu_instruction_ui = Gui::new(button_menu_instruction, 0.4, 0.05, Vector2{x: 0.0, y: 0.3});
-        let button_menu_settings_ui = Gui::new(button_menu_settings, 0.4, 0.05, Vector2{x: 0.0, y: 0.1});
-        let button_menu_back_ui = Gui::new(button_menu_back, 0.2, 0.05, Vector2{x: 0.0, y: -0.1});
+        let button_menu_instruction_ui = Gui::new(button_menu_instruction, 0.4, 0.09, Vector2{x: 0.0, y: 0.3});
+        let button_menu_settings_ui = Gui::new(button_menu_settings, 0.5, 0.09, Vector2{x: 0.0, y: 0.1});
+        let button_menu_back_ui = Gui::new(button_menu_back, 0.15, 0.09, Vector2{x: 0.0, y: -0.1});
         let setting_ui = Gui::new(GuiType::Menu{ _window_gui: Box::new(box_ui),
                                                           _buttons_gui: vec![Box::new(button_menu_instruction_ui),
                                                                           Box::new(button_menu_settings_ui),
                                                                           Box::new(button_menu_back_ui)],
                                                            text: "Setting".to_string()},
-                                    0.4, 0.05,
+                                    0.35, 0.09,
                                     Vector2{x: 0.0, y: -0.35});
 
         // component initialization
@@ -126,9 +126,9 @@ impl Component {
         let button_retry = GuiType::Button{text: "Retry".to_string()};
         let button_main_menu = GuiType::Button{text: "Main Menu".to_string()};
         let button_exit = GuiType::Button {text: "Exit".to_string()};
-        let button_retry_ui = Gui::new(button_retry, 0.3, 0.05, Vector2{x:-0.5, y: -0.5});
-        let button_main_menu_ui = Gui::new(button_main_menu, 0.5, 0.05, Vector2{x:0.0, y: -0.5});
-        let button_exit_ui = Gui::new(button_exit, 0.2, 0.05, Vector2{x: 0.5, y: -0.5});
+        let button_retry_ui = Gui::new(button_retry, 0.2, 0.09, Vector2{x:-0.5, y: -0.5});
+        let button_main_menu_ui = Gui::new(button_main_menu, 0.4, 0.09, Vector2{x:0.0, y: -0.5});
+        let button_exit_ui = Gui::new(button_exit, 0.15, 0.09, Vector2{x: 0.5, y: -0.5});
         Component {
             components: vec![button_retry_ui,button_main_menu_ui,button_exit_ui],
             active_window: ActiveWindow::Game

@@ -6,7 +6,7 @@ use sdl2::EventPump;
 use glium_sdl2::SDL2Facade;
 use crate::presentation::display::{Programs, Textures};
 use glium::DrawParameters;
-use crate::presentation::ui::glium_text::FontTexture;
+use crate::presentation::graphics::font::FontPkg;
 
 pub struct VictoryScreen {
     _state: State,
@@ -19,7 +19,7 @@ impl Scene for VictoryScreen {
         unimplemented!()
     }
 
-    fn render(&mut self, _window: &SDL2Facade, _programs: &Programs, _textures: &Textures, _params: &DrawParameters, _font: &FontTexture) {
+    fn render(&mut self, _window: &SDL2Facade, _programs: &Programs, _textures: &Textures, _params: &DrawParameters, _font: &FontPkg) {
         unimplemented!()
     }
 }

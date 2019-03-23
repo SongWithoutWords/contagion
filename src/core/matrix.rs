@@ -80,7 +80,7 @@ impl Mat4 {
         ]
     }
 
-    pub fn init_normal() -> Mat4 {
+    pub fn init_id_matrix() -> Mat4 {
         Mat4 {
             i: Vector4 {x: 1.0, y: 0.0, z: 0.0, w: 0.0},
             j: Vector4 {x: 0.0, y: 1.0, z: 0.0, w: 0.0},

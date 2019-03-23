@@ -6,7 +6,6 @@ use crate::core::geo::polygon::*;
 use crate::core::geo::segment2::*;
 
 use crate::simulation::ai::pathfinding::find_path;
-use crate::simulation::ai::path::Path;
 use crate::simulation::state::MoveMode;
 
 use super::state::*;

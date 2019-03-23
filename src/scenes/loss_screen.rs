@@ -6,10 +6,10 @@ use sdl2::EventPump;
 use glium_sdl2::SDL2Facade;
 use crate::presentation::display::{Programs, Textures};
 use glium::DrawParameters;
-use crate::presentation::ui::glium_text::FontTexture;
 use crate::{simulation, presentation};
 use crate::scenes::{game, main_menu};
 use sdl2::keyboard::Keycode;
+use crate::presentation::graphics::font::FontPkg;
 
 pub struct LossScreen {
     state: State,
@@ -61,7 +61,7 @@ impl Scene for LossScreen  {
         UpdateResult::Continue
     }
 
-    fn render(&mut self, window: &SDL2Facade, programs: &Programs, textures: &Textures, params: &DrawParameters, font: &FontTexture) {
+    fn render(&mut self, window: &SDL2Facade, programs: &Programs, textures: &Textures, params: &DrawParameters, fonts: &FontPkg) {
         let mut target = window.draw();
         presentation::display::display_loss_screen(&mut target,
                                                  &window,
@@ -70,7 +70,7 @@ impl Scene for LossScreen  {
                                                  &params,
                                                  &mut self.gui,
                                                  &self.state,
-                                                 &font);
+                                                 &fonts);
         target.finish().unwrap();
     }
 }
