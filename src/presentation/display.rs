@@ -13,7 +13,7 @@ use crate::presentation::ui::gui::GuiType;
 use crate::presentation::ui::glium_text;
 use crate::presentation::ui::glium_text::FontTexture;
 use crate::presentation::ui::gui::Component;
-use crate::presentation::graphics::font::FontPkg;
+use crate::presentation::graphics::font::{FontPkg};
 
 // Enum ordered by draw order
 #[derive(Copy, Clone, Debug, Enum, PartialEq)]
@@ -1257,9 +1257,9 @@ pub fn display_victory_screen (
     params: &glium::DrawParameters,
     ui: &mut Component,
     state: &State,
-    font: &FontTexture,
+    fonts: &FontPkg,
 ) {
-
+    let font = fonts.get("Consola").unwrap();
     // background color
     frame.clear_color(0.0, 0.0, 0.0, 1.0);
 
@@ -1325,7 +1325,7 @@ pub fn display_victory_screen (
         }
         let text_display = format!("{}", text_to_display);
         let str_slice: &str = &text_display[..];
-        let text = glium_text::TextDisplay::new(&system, font, str_slice);
+        let text = glium_text::TextDisplay::new(&system, font.medres(), str_slice);
         let color = [1.0, 1.0, 1.0, 1.0f32];
         let text_width=text.get_width();
         let text_height = 0.07;
@@ -1366,7 +1366,7 @@ pub fn display_victory_screen (
     let text_1_win = "Humanity Prevailed!".to_string();
     let text_display = format!("{}", text_1_win);
     let str_slice: &str = &text_display[..];
-    let text = glium_text::TextDisplay::new(&system, font, str_slice);
+    let text = glium_text::TextDisplay::new(&system, font.highres(), str_slice);
     let color = [1.0, 1.0, 0.0, 1.0f32];
     let _font_scale_down = 1.5;
     let text_width = text.get_width() as f64;
@@ -1380,7 +1380,7 @@ pub fn display_victory_screen (
     // Score
     let text_display = format!("Score: {}", score);
     let str_slice: &str = &text_display[..];
-    let text = glium_text::TextDisplay::new(&system, font, str_slice);
+    let text = glium_text::TextDisplay::new(&system, font.medres(), str_slice);
     let color = [1.0, 1.0, 0.0, 1.0f32];
     let scale_factor = Vector4 {x: 0.5, y:0.5, z: 1.0, w: 1.0};
     let translate_offset = Vector4{x: 0.1, y: -0.2, z: 0.0, w: 0.0};
@@ -1390,7 +1390,7 @@ pub fn display_victory_screen (
     // Stats
     let text_display = format!("Cops: {}, Civilians: {}, Zombies: {}", cop_count, human_count, zombie_count);
     let str_slice: &str = &text_display[..];
-    let text = glium_text::TextDisplay::new(&system, font, str_slice);
+    let text = glium_text::TextDisplay::new(&system, font.medres(), str_slice);
     let color = [1.0, 1.0, 0.0, 1.0f32];
     let translate_offset = Vector4{x: 0.0, y: -0.2, z: 0.0, w: 0.0};
     matrix = matrix.translation(translate_offset);

@@ -135,6 +135,20 @@ impl Component {
         }
     }
 
+    pub fn init_victory_gui() -> Component {
+        let button_retry = GuiType::Button{text: "Retry".to_string()};
+        let button_main_menu = GuiType::Button{text: "Main Menu".to_string()};
+        let button_exit = GuiType::Button {text: "Exit".to_string()};
+        let button_retry_ui = Gui::new(button_retry, 0.2, 0.09, Vector2{x:-0.5, y: -0.5});
+        let button_main_menu_ui = Gui::new(button_main_menu, 0.4, 0.09, Vector2{x:0.0, y: -0.5});
+        let button_exit_ui = Gui::new(button_exit, 0.15, 0.09, Vector2{x: 0.5, y: -0.5});
+        Component {
+            components: vec![button_retry_ui,button_main_menu_ui,button_exit_ui],
+            active_window: ActiveWindow::Game
+        }
+    }
+
+
     pub fn handle_event(&mut self, event: Event, window: &SDL2Facade, camera_frame: Mat4, state: &mut State, game_state: &mut GameState, control: &mut Control) {
         // handle events for any menu laid on top of game
         let mut handled_event = false;
@@ -372,6 +386,39 @@ impl Component {
     }
 
     pub fn handle_loss_event(&mut self, event: &Event, window: &SDL2Facade, game_state: &mut GameState) {
+        // handle events for any menu laid on top of game
+        for i in 0..self.components.len() {
+            let component = &self.components[i];
+            match &component.id {
+                GuiType::Button {text} => {
+                    match event {
+                        Event::MouseButtonDown { timestamp: _, window_id: _, which: _, mouse_btn: _, x, y } => {
+                            let mouse_pos = &mut Vector2 { x: *x as f64, y: *y as f64 };
+                            translate_mouse_to_camera(mouse_pos, window.window().size());
+
+                            let top_left = Vector2 { x: component.top_left.x, y: component.top_left.y };
+                            let bot_right = Vector2 { x: component.bot_right.x, y: component.bot_right.y };
+                            let check_within_bound = check_bounding_box(top_left, bot_right, *mouse_pos);
+                            if check_within_bound {
+                                let display_text = text;
+                                if display_text == "Retry" {
+                                    game_state.transition_game = true;
+                                } else if display_text == "Main Menu" {
+                                    game_state.transition_menu = true;
+                                } else if display_text == "Exit" {
+                                    game_state.terminate = true;
+                                }
+                            }
+                        },
+                        __ => ()
+                    }
+                },
+                _ => ()
+            }
+        }
+    }
+
+    pub fn handle_victory_event(&mut self, event: &Event, window: &SDL2Facade, game_state: &mut GameState) {
         // handle events for any menu laid on top of game
         for i in 0..self.components.len() {
             let component = &self.components[i];
