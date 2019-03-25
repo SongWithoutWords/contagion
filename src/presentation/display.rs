@@ -532,6 +532,7 @@ pub fn display(
                         let button_dimensions = _buttons_gui[i].get_dimension();
                         text_buffers.push(_buttons_gui[i].clone());
 
+
                         _menu_buttons.push(button_dimensions);
                         push_gui_vertices(&mut vertex_buffers_gui[SpriteType::Button], &_buttons_gui[i]);
                     }
@@ -795,25 +796,26 @@ pub fn display(
 
     }
 
-    // Render Menu Text
+    // Render Menu Button Text
     let mat = Mat4::init_id_matrix();
     for i in 0..text_buffers.len() {
         let system = glium_text::TextSystem::new(window);
         let mut text_to_display = "".to_string();
-        let button = text_buffers[i].clone();
-        match button.id.clone() {
-            GuiType::Button { text } => {
-                text_to_display = text;
+        let button = &mut text_buffers[i];
+        let mut color = [1.0, 1.0, 1.0, 1.0f32];
+        match &mut button.id {
+            GuiType::Button { ref mut text , highlight} => {
+
+                text_to_display = text.clone();
+                if *highlight { color = [0.1, 0.1, 0.1, 1.0f32]}
+                if text_to_display == "Instruction" {
+                }
             }
             _ => ()
         }
-//        println!("{:?}", button.id);
-//        println!("button dimension: {:?}", button.get_dimension());
         let text_display = format!("{}", text_to_display);
-//        println!("{:?}", text_display);
         let str_slice: &str = &text_display[..];
         let text = glium_text::TextDisplay::new(&system, font.medres(), str_slice);
-        let color = [1.0, 1.0, 1.0, 1.0f32];
         let text_width = text.get_width() as f64;
         let text_height = 0.06;
         let dimensions = _menu_buttons[i];
@@ -981,7 +983,8 @@ pub fn display_main_menu (
                     let size = _buttons_gui.len();
                     for i in 0..size {
                         let button_dimensions = _buttons_gui[i].get_dimension();
-                        text_buffers.push(_buttons_gui[i].clone());
+                        let cloned = &_buttons_gui[i];
+                        text_buffers.push(cloned.clone());
 
                         _menu_buttons.push(button_dimensions);
                         push_gui_vertices(&mut vertex_buffers_gui[SpriteType::Button], &_buttons_gui[i]);
@@ -1047,24 +1050,26 @@ pub fn display_main_menu (
     }
 
 
-    // Render Menu Text
+    // Render Menu button Text
     for i in 0..text_buffers.len() {
         let system = glium_text::TextSystem::new(window);
         let mut text_to_display = "".to_string();
         let button = text_buffers[i].clone();
+        let mut color = [1.0, 1.0, 1.0, 1.0f32];
         match button.id.clone() {
-            GuiType::Button { text } => {
+            GuiType::Button { text, highlight } => {
                 text_to_display = text;
-            }
-            GuiType::Menu {text,..} => {
+                if highlight { color = [0.1, 0.1, 0.1, 1.0f32]}
+            },
+            GuiType::Menu {_buttons_gui, text, highlight, ..} => {
                 text_to_display = text;
+                if highlight { color = [0.1, 0.1, 0.1, 1.0f32]}
             }
             _ => ()
         }
         let text_display = format!("{}", text_to_display);
         let str_slice: &str = &text_display[..];
         let text = glium_text::TextDisplay::new(&system, font.medres(), str_slice);
-        let color = [1.0, 1.0, 1.0, 1.0f32];
         let text_width = text.get_width() as f64;
         let text_height = 0.06;
         let dimensions = _menu_buttons[i];
@@ -1153,14 +1158,16 @@ pub fn display_loss_screen (
     }
 
 
-    // Render Menu Text
+    // Render Button Text
     for i in 0..text_buffers.len() {
         let system = glium_text::TextSystem::new(window);
         let mut text_to_display = "".to_string();
         let button = text_buffers[i].clone();
+        let mut color = [1.0, 1.0, 1.0, 1.0f32];
         match button.id.clone() {
-            GuiType::Button { text } => {
+            GuiType::Button { text , highlight} => {
                 text_to_display = text;
+                if highlight { color = [0.1, 0.1, 0.1, 1.0f32]; }
             }
             GuiType::Menu {text,..} => {
                 text_to_display = text;
@@ -1170,7 +1177,6 @@ pub fn display_loss_screen (
         let text_display = format!("{}", text_to_display);
         let str_slice: &str = &text_display[..];
         let text = glium_text::TextDisplay::new(&system, font.medres(), str_slice);
-        let color = [1.0, 1.0, 1.0, 1.0f32];
         let text_width= (text.get_width() as f64) - 0.02;
         let text_height = 0.06;
         let dimensions = _menu_buttons[i];
@@ -1180,12 +1186,6 @@ pub fn display_loss_screen (
 
         let menu_matrix = mat.translation(Vector4{x: x_align, y: y_align, z: 0.0, w: 0.0})
                                     .scale(Vector4{x: button_width/text_width, y: text_height, z: 1.0, w: 1.0}).as_f32_array();
-//        let menu_matrix = [
-//            [button_width / text_width , 0.0, 0.0, 0.0],
-//            [0.0, text_height, 0.0, 0.0],
-//            [0.0, 0.0, 1.0, 0.0],
-//            [x_align, y_align - 0.05, 0.0, 1.0f32],
-//        ];
         glium_text::draw(&text, &system, frame, menu_matrix, color);
     }
 
@@ -1309,38 +1309,32 @@ pub fn display_victory_screen (
     }
 
 
-    // Render Menu Text
+    // Render Button Text
     for i in 0..text_buffers.len() {
         let system = glium_text::TextSystem::new(window);
         let mut text_to_display = "".to_string();
         let button = text_buffers[i].clone();
+        let mut color = [1.0, 1.0, 1.0, 1.0f32];
         match button.id.clone() {
-            GuiType::Button { text } => {
+            GuiType::Button { text, highlight} => {
                 text_to_display = text;
-            }
-            GuiType::Menu {text,..} => {
-                text_to_display = text;
+                if highlight { color = [0.1, 0.1, 0.1, 1.0f32]; }
             }
             _ => ()
         }
         let text_display = format!("{}", text_to_display);
         let str_slice: &str = &text_display[..];
         let text = glium_text::TextDisplay::new(&system, font.medres(), str_slice);
-        let color = [1.0, 1.0, 1.0, 1.0f32];
-        let text_width=text.get_width();
-        let text_height = 0.07;
+        let text_width= (text.get_width() as f64) - 0.02;
+        let text_height = 0.06;
         let dimensions = menu_buttons[i];
-        let button_width = (dimensions.1.x - dimensions.0.x) as f32;
-        let x_align = (dimensions.0.x) as f32;
-        let y_align = (dimensions.0.y) as f32;
+        let button_width = dimensions.1.x - dimensions.0.x;
+        let x_align = dimensions.0.x;
+        let y_align = (dimensions.0.y) - 0.07;
 
-        let matrix = [
-            [button_width / text_width , 0.0, 0.0, 0.0],
-            [0.0, text_height, 0.0, 0.0],
-            [0.0, 0.0, 1.0, 0.0],
-            [x_align, y_align - 0.05, 0.0, 1.0f32],
-        ];
-        glium_text::draw(&text, &system, frame, matrix, color);
+        let menu_matrix = mat.translation(Vector4{x: x_align, y: y_align, z: 0.0, w: 0.0})
+            .scale(Vector4{x: button_width/text_width, y: text_height, z: 1.0, w: 1.0}).as_f32_array();
+        glium_text::draw(&text, &system, frame, menu_matrix, color);
     }
 
     // Render Entities
