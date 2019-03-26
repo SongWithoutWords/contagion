@@ -39,6 +39,7 @@ pub enum SpriteType {
 pub struct Textures {
     sprite_textures: EnumMap<SpriteType, Texture2d>,
     background_texture: Texture2d,
+    outside_border_texture: Texture2d,
 
 }
 
@@ -78,7 +79,8 @@ pub fn load_textures(window: &glium_sdl2::SDL2Facade) -> Textures {
             SpriteType::CivilianWorldIcon
                 => load_texture(window, "assets/images/ui/civilian_world_icon.png")
         },
-        background_texture: load_texture(&window, "assets/images/background_concrete.png")
+        background_texture: load_texture(&window, "assets/images/background_concrete.png"),
+        outside_border_texture: load_texture(&window, "assets/images/grass.jpg")
     }
 }
 
@@ -343,8 +345,7 @@ fn draw_color_sprites<U>(
         params).unwrap();
 }
 
-
-fn draw_background(
+fn draw_outside_background(
     frame: &mut glium::Frame,
     window: &glium_sdl2::SDL2Facade,
     textures: &Textures,
@@ -387,6 +388,59 @@ fn draw_background(
 
     let uniforms = uniform! {
         matrix: camera_frame,
+        tex: &textures.outside_border_texture,
+    };
+    frame.draw(
+        &glium::VertexBuffer::new(window, &vertices).unwrap(),
+        &glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList),
+        &programs.background_program,
+        &uniforms,
+        params).unwrap();
+}
+
+fn draw_background(
+    frame: &mut glium::Frame,
+    window: &glium_sdl2::SDL2Facade,
+    textures: &Textures,
+    programs: &Programs,
+    camera_frame: [[f32; 4]; 4],
+    params: &glium::DrawParameters)
+{
+    // This is about as large as you can get without introducing artifacts
+    // due to floating point imprecision
+   // let extent = 1e2;
+
+    let top_left = VertexPosition {
+        position: [-25.0,  115.0],
+    };
+    let top_right = VertexPosition {
+        position: [ 115.0,  115.0],
+    };
+    let bot_left = VertexPosition {
+        position: [-25.0, -25.0],
+    };
+    let bot_right = VertexPosition {
+        position: [ 115.0, -25.0],
+    };
+
+    // tl    tr
+    //  +----+
+    //  |  / |
+    //  | /  |
+    //  +----+
+    // bl    br
+
+    let vertices = vec!(
+        top_left,
+        top_right,
+        bot_left,
+        top_right,
+        bot_right,
+        bot_left,
+    );
+
+    let uniforms = uniform! {
+        matrix: camera_frame,
         tex: &textures.background_texture,
     };
     frame.draw(
@@ -396,6 +450,9 @@ fn draw_background(
         &uniforms,
         params).unwrap();
 }
+
+
+
 
 pub fn display(
     frame: &mut glium::Frame,
@@ -413,7 +470,7 @@ pub fn display(
     frame.clear_color(0.2, 0.2, 0.2, 1.0);
 
     let camera_frame = camera_frame.as_f32_array();
-
+    draw_outside_background(frame, window, textures, programs, camera_frame, params);
     draw_background(frame, window, textures, programs, camera_frame, params);
 
     let mut vertex_buffers = enum_map!{_ => vec!()};

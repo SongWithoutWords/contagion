@@ -85,6 +85,7 @@ pub fn initial_state(entity_count: u32, random_seed: u32) -> State {
     let border_top_x = 0.0;
     let border_top_y = 0.0;
 
+
     // Lower Boundary
     buildings.push(Polygon(vec![
         Vector2 { x: border_top_x - 25.0, y: border_top_y - 24.5 },
@@ -115,6 +116,7 @@ pub fn initial_state(entity_count: u32, random_seed: u32) -> State {
         Vector2 { x: border_top_x + 115.0, y: border_top_y + 114.5 },
         Vector2 { x: border_top_x - 25.0, y: border_top_y + 114.5 }
     ]));
+
 
 
 

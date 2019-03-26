@@ -256,7 +256,6 @@ fn handle_building_collision(
     let distance = distance_squared.sqrt();
 
 
-
     if inside {
         // If the entity is inside move them to the nearest edge
         entity.position += (distance + ENTITY_RADIUS) * normal;
@@ -265,7 +264,7 @@ fn handle_building_collision(
         let overlap = ENTITY_RADIUS - distance;
 
         // Check if the entity is overlapping left/right borders, force them away if yes
-        if building.get(0).x == -24.5 || building.get(0).x == 114.5{
+        if building.get(0).x == -24.5 || building.get(0).x == 114.5 {
             entity.velocity -= args.dt * SPRING_CONSTANT * overlap * normal
         }
         else {
