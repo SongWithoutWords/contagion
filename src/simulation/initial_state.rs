@@ -1,9 +1,12 @@
+use std::collections::HashSet;
+
 use rand::*;
 use rand_xorshift::XorShiftRng;
-use std::collections::HashSet;
-use crate::core::vector::*;
-use crate::core::scalar::*;
+
 use crate::core::geo::polygon::*;
+use crate::core::scalar::*;
+use crate::core::vector::*;
+
 use super::state::*;
 
 const PORTION_OF_ENTITIES_COP: Scalar = 0.05;
@@ -16,7 +19,7 @@ pub fn initial_state(entity_count: u32, random_seed: u32) -> State {
     let human_count: u32 = entity_count - (cop_count + zombie_count);
 
     println!("Spawning {} entities: {} cops, {} zombies, and {} civilians",
-            entity_count, cop_count, zombie_count, human_count);
+             entity_count, cop_count, zombie_count, human_count);
 
     let mut state = State {
         entities: vec!(),
@@ -24,7 +27,7 @@ pub fn initial_state(entity_count: u32, random_seed: u32) -> State {
         building_outlines: vec!(),
         selection: HashSet::new(),
         projectiles: vec!(),
-        rng: XorShiftRng::seed_from_u64(random_seed as u64)
+        rng: XorShiftRng::seed_from_u64(random_seed as u64),
     };
 
     let entities = &mut state.entities;
@@ -46,15 +49,13 @@ pub fn initial_state(entity_count: u32, random_seed: u32) -> State {
         let behaviour = if i < cop_count {
             Behaviour::Cop {
                 rounds_in_magazine: COP_MAGAZINE_CAPACITY,
-                state_stack: vec!()
+                state_stack: vec!(),
             }
-        }
-        else if i < cop_count + zombie_count {
+        } else if i < cop_count + zombie_count {
             Behaviour::Zombie {
                 state: ZombieState::Roaming
             }
-        }
-        else {
+        } else {
             Behaviour::Human
         };
         entities.push(Entity { position, velocity, facing_angle, behaviour });
@@ -78,6 +79,44 @@ pub fn initial_state(entity_count: u32, random_seed: u32) -> State {
 
         building_x += 20.0;
     }
+
+    // Generate World Boundary
+
+    let border_top_x = 0.0;
+    let border_top_y = 0.0;
+
+    // Lower Boundary
+    buildings.push(Polygon(vec![
+        Vector2 { x: border_top_x - 25.0, y: border_top_y - 24.5 },
+        Vector2 { x: border_top_x + 115.0, y: border_top_y - 24.5 },
+        Vector2 { x: border_top_x + 115.0, y: border_top_y - 25.0 },
+        Vector2 { x: border_top_x - 25.0, y: border_top_y - 25.0 }
+    ]));
+
+    // Right Boundary
+    buildings.push(Polygon(vec![
+        Vector2 { x: border_top_x + 114.5, y: border_top_y + 115.0 },
+        Vector2 { x: border_top_x + 115.0, y: border_top_y + 115.0 },
+        Vector2 { x: border_top_x + 114.5, y: border_top_y - 25.0 },
+        Vector2 { x: border_top_x + 115.0, y: border_top_y - 25.0 }
+    ]));
+    // Left Boundary
+    buildings.push(Polygon(vec![
+        Vector2 { x: border_top_x - 24.5, y: border_top_y + 115.0 },
+        Vector2 { x: border_top_x - 25.0, y: border_top_y + 115.0 },
+        Vector2 { x: border_top_x - 24.5, y: border_top_y - 25.0 },
+        Vector2 { x: border_top_x - 25.0, y: border_top_y - 25.0 }
+    ]));
+
+    // Upper Boundary
+    buildings.push(Polygon(vec![
+        Vector2 { x: border_top_x - 25.0, y: border_top_y + 115.0 },
+        Vector2 { x: border_top_x + 115.0, y: border_top_y + 115.0 },
+        Vector2 { x: border_top_x + 115.0, y: border_top_y + 114.5 },
+        Vector2 { x: border_top_x - 25.0, y: border_top_y + 114.5 }
+    ]));
+
+
 
     // Generate outlines around all buildings for building A* pathfinding graphs
     for i in 0..buildings.len() {
