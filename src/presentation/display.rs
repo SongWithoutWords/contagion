@@ -80,7 +80,7 @@ pub fn load_textures(window: &glium_sdl2::SDL2Facade) -> Textures {
                 => load_texture(window, "assets/images/ui/civilian_world_icon.png")
         },
         background_texture: load_texture(&window, "assets/images/dirt.jpg"),
-        outside_border_texture: load_texture(&window, "assets/images/grass.jpg")
+        outside_border_texture: load_texture(&window, "assets/images/grass3.jpg")
     }
 }
 
