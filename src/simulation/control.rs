@@ -260,7 +260,6 @@ impl Control {
                                 _ => entity.behaviour = Behaviour::Dead
                             }
                         }
-                        game_state.zombies_win = true;
                     },
                     Keycode::F2 => {
                         for i in 0..state.entities.len() {
@@ -271,7 +270,6 @@ impl Control {
                                 _ => entity.behaviour = Behaviour::Dead
                             }
                         }
-                        game_state.humans_win = true;
                     },
                     Keycode::LShift => {
                         self.shift_pressed = true;

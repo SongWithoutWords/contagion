@@ -114,7 +114,8 @@ impl Scene for Game {
         if !self.game_state.game_paused {
             let sounds = simulation::update::update(
                 &simulation::update::UpdateArgs { dt: delta_time },
-                &mut self.state);
+                &mut self.state,
+                &mut self.game_state);
             presentation::audio::sound_effects::play_sounds(&sounds);
         }
         UpdateResult::Continue
