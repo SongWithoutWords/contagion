@@ -84,7 +84,7 @@ pub fn load_textures(window: &glium_sdl2::SDL2Facade) -> Textures {
         background_texture: load_texture(&window, "assets/images/dirt.jpg"),
         outside_border_texture: load_texture(&window, "assets/images/grass.jpg"),
         left_fence_texture: load_texture(&window, "assets/images/wall_left.jpg"),
-        top_fence_texture: load_texture(&window, "assets/images/wall_left.jpg"),
+        top_fence_texture: load_texture(&window, "assets/images/wall.jpg"),
     }
 }
 
@@ -410,8 +410,6 @@ fn draw_left_fence(
     camera_frame: [[f32; 4]; 4],
     params: &glium::DrawParameters)
 {
-    // This is about as large as you can get without introducing artifacts
-    // due to floating point imprecision
 
     let top_left = VertexPosition {
         position: [-24.5,  116.0],
@@ -462,9 +460,6 @@ fn draw_right_fence(
     camera_frame: [[f32; 4]; 4],
     params: &glium::DrawParameters)
 {
-    // This is about as large as you can get without introducing artifacts
-    // due to floating point imprecision
-
     let top_left = VertexPosition {
         position: [114.5,  116.0],
     };
@@ -514,9 +509,6 @@ fn draw_top_fence(
     camera_frame: [[f32; 4]; 4],
     params: &glium::DrawParameters)
 {
-    // This is about as large as you can get without introducing artifacts
-    // due to floating point imprecision
-
     let top_left = VertexPosition {
         position: [-26.0,  116.0],
     };
@@ -528,6 +520,56 @@ fn draw_top_fence(
     };
     let bot_right = VertexPosition {
         position: [116.0, 114.5],
+    };
+
+    // tl    tr
+    //  +----+
+    //  |  / |
+    //  | /  |
+    //  +----+
+    // bl    br
+
+    let vertices = vec!(
+        top_left,
+        top_right,
+        bot_left,
+        top_right,
+        bot_right,
+        bot_left,
+    );
+
+    let uniforms = uniform! {
+        matrix: camera_frame,
+        tex: &textures.top_fence_texture,
+    };
+    frame.draw(
+        &glium::VertexBuffer::new(window, &vertices).unwrap(),
+        &glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList),
+        &programs.background_program,
+        &uniforms,
+        params).unwrap();
+}
+
+fn draw_lower_fence(
+    frame: &mut glium::Frame,
+    window: &glium_sdl2::SDL2Facade,
+    textures: &Textures,
+    programs: &Programs,
+    camera_frame: [[f32; 4]; 4],
+    params: &glium::DrawParameters)
+{
+
+    let top_left = VertexPosition {
+        position: [-26.0,  -24.5],
+    };
+    let top_right = VertexPosition {
+        position: [116.0,  -24.5],
+    };
+    let bot_left = VertexPosition {
+        position: [-26.0, -26.0],
+    };
+    let bot_right = VertexPosition {
+        position: [116.0, -26.0],
     };
 
     // tl    tr
@@ -826,6 +868,7 @@ pub fn display(
     draw_left_fence(frame, window, textures, programs, camera_frame, params);
     draw_right_fence(frame, window, textures, programs, camera_frame, params);
     draw_top_fence(frame, window, textures, programs, camera_frame, params);
+    draw_lower_fence(frame, window, textures, programs, camera_frame, params);
 
 
     // Render shadows
