@@ -113,7 +113,7 @@ impl Camera {
         window: &SDL2Facade,
         camera_frame: Mat4) {
         // Zoom parameters
-        const ZOOM_SPEED: f64 = 0.05;
+        const ZOOM_SPEED: f64 = 0.01;
         const LOWER_BOUND: f64 = 0.015;
         const UPPER_BOUND: f64 = 0.15;
 
