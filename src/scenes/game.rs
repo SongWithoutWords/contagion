@@ -16,8 +16,10 @@ use glium::DrawParameters;
 use crate::simulation::game_state::GameState;
 use crate::simulation;
 use crate::scenes::scene::*;
-use crate::scenes::{main_menu, loss_screen};
+use crate::scenes::main_menu;
 use crate::presentation::graphics::font::FontPkg;
+use crate::scenes::victory_screen::VictoryScreen;
+use crate::scenes::loss_screen::LossScreen;
 
 #[derive(Clone)]
 pub struct Game {
@@ -52,7 +54,7 @@ impl Scene for Game {
               delta_time: f64)
               -> UpdateResult {
         match self.game_state {
-            GameState{terminate, transition_menu, transition_game, zombies_win, ..} =>
+            GameState{terminate, transition_menu, transition_game, zombies_win, humans_win, ..} =>
                 {
                     if terminate {return UpdateResult::Exit}
                     if transition_game {self.game_state.transition_game = false;
@@ -64,7 +66,15 @@ impl Scene for Game {
                         // wait 2 seconds
                         if self.game_state.tick == 120 {
                             self.game_state.zombies_win = false;
-                            return UpdateResult::Transition(Box::new(loss_screen::LossScreen::new(self.clone().state)))
+                            return UpdateResult::Transition(Box::new(LossScreen::new(self.clone().state)))
+                        }
+                    }
+                    if humans_win {
+                        self.game_state.tick += 1;
+                        // wait 2 seconds
+                        if self.game_state.tick == 120 {
+                            self.game_state.humans_win = false;
+                            return UpdateResult::Transition(Box::new(VictoryScreen::new(self.clone().state)))
                         }
                     }
                 }
@@ -104,7 +114,8 @@ impl Scene for Game {
         if !self.game_state.game_paused {
             let sounds = simulation::update::update(
                 &simulation::update::UpdateArgs { dt: delta_time },
-                &mut self.state);
+                &mut self.state,
+                &mut self.game_state);
             presentation::audio::sound_effects::play_sounds(&sounds);
         }
         UpdateResult::Continue

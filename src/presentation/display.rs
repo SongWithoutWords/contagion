@@ -13,7 +13,7 @@ use crate::presentation::ui::gui::GuiType;
 use crate::presentation::ui::glium_text;
 use crate::presentation::ui::glium_text::FontTexture;
 use crate::presentation::ui::gui::Component;
-use crate::presentation::graphics::font::FontPkg;
+use crate::presentation::graphics::font::{FontPkg};
 
 // Enum ordered by draw order
 #[derive(Copy, Clone, Debug, Enum, PartialEq)]
@@ -40,6 +40,9 @@ pub enum SpriteType {
 pub struct Textures {
     sprite_textures: EnumMap<SpriteType, Texture2d>,
     background_texture: Texture2d,
+    outside_border_texture: Texture2d,
+    left_fence_texture: Texture2d,
+    top_fence_texture: Texture2d,
 
 }
 
@@ -81,7 +84,10 @@ pub fn load_textures(window: &glium_sdl2::SDL2Facade) -> Textures {
             SpriteType::BuildingOne
                 => load_texture(window, "assets/images/building/building_one.png"),
         },
-        background_texture: load_texture(&window, "assets/images/background_concrete.png")
+        background_texture: load_texture(&window, "assets/images/dirt.jpg"),
+        outside_border_texture: load_texture(&window, "assets/images/grass.jpg"),
+        left_fence_texture: load_texture(&window, "assets/images/wall_left.jpg"),
+        top_fence_texture: load_texture(&window, "assets/images/wall.jpg"),
     }
 }
 
@@ -346,8 +352,7 @@ fn draw_color_sprites<U>(
         params).unwrap();
 }
 
-
-fn draw_background(
+fn draw_outside_background(
     frame: &mut glium::Frame,
     window: &glium_sdl2::SDL2Facade,
     textures: &Textures,
@@ -390,6 +395,257 @@ fn draw_background(
 
     let uniforms = uniform! {
         matrix: camera_frame,
+        tex: &textures.outside_border_texture,
+    };
+    frame.draw(
+        &glium::VertexBuffer::new(window, &vertices).unwrap(),
+        &glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList),
+        &programs.background_program,
+        &uniforms,
+        params).unwrap();
+}
+
+fn draw_left_fence(
+    frame: &mut glium::Frame,
+    window: &glium_sdl2::SDL2Facade,
+    textures: &Textures,
+    programs: &Programs,
+    camera_frame: [[f32; 4]; 4],
+    params: &glium::DrawParameters)
+{
+
+    let top_left = VertexPosition {
+        position: [-24.5,  116.0],
+    };
+    let top_right = VertexPosition {
+        position: [-26.0,  116.0],
+    };
+    let bot_left = VertexPosition {
+        position: [-24.5, -26.0],
+    };
+    let bot_right = VertexPosition {
+        position: [-26.0, -26.0],
+    };
+
+    // tl    tr
+    //  +----+
+    //  |  / |
+    //  | /  |
+    //  +----+
+    // bl    br
+
+    let vertices = vec!(
+        top_left,
+        top_right,
+        bot_left,
+        top_right,
+        bot_right,
+        bot_left,
+    );
+
+    let uniforms = uniform! {
+        matrix: camera_frame,
+        tex: &textures.left_fence_texture,
+    };
+    frame.draw(
+        &glium::VertexBuffer::new(window, &vertices).unwrap(),
+        &glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList),
+        &programs.background_program,
+        &uniforms,
+        params).unwrap();
+}
+
+fn draw_right_fence(
+    frame: &mut glium::Frame,
+    window: &glium_sdl2::SDL2Facade,
+    textures: &Textures,
+    programs: &Programs,
+    camera_frame: [[f32; 4]; 4],
+    params: &glium::DrawParameters)
+{
+    let top_left = VertexPosition {
+        position: [114.5,  116.0],
+    };
+    let top_right = VertexPosition {
+        position: [116.0,  116.0],
+    };
+    let bot_left = VertexPosition {
+        position: [114.5, -26.0],
+    };
+    let bot_right = VertexPosition {
+        position: [116.0, -26.0],
+    };
+
+    // tl    tr
+    //  +----+
+    //  |  / |
+    //  | /  |
+    //  +----+
+    // bl    br
+
+    let vertices = vec!(
+        top_left,
+        top_right,
+        bot_left,
+        top_right,
+        bot_right,
+        bot_left,
+    );
+
+    let uniforms = uniform! {
+        matrix: camera_frame,
+        tex: &textures.left_fence_texture,
+    };
+    frame.draw(
+        &glium::VertexBuffer::new(window, &vertices).unwrap(),
+        &glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList),
+        &programs.background_program,
+        &uniforms,
+        params).unwrap();
+}
+
+fn draw_top_fence(
+    frame: &mut glium::Frame,
+    window: &glium_sdl2::SDL2Facade,
+    textures: &Textures,
+    programs: &Programs,
+    camera_frame: [[f32; 4]; 4],
+    params: &glium::DrawParameters)
+{
+    let top_left = VertexPosition {
+        position: [-26.0,  116.0],
+    };
+    let top_right = VertexPosition {
+        position: [116.0,  116.0],
+    };
+    let bot_left = VertexPosition {
+        position: [-26.0, 114.5],
+    };
+    let bot_right = VertexPosition {
+        position: [116.0, 114.5],
+    };
+
+    // tl    tr
+    //  +----+
+    //  |  / |
+    //  | /  |
+    //  +----+
+    // bl    br
+
+    let vertices = vec!(
+        top_left,
+        top_right,
+        bot_left,
+        top_right,
+        bot_right,
+        bot_left,
+    );
+
+    let uniforms = uniform! {
+        matrix: camera_frame,
+        tex: &textures.top_fence_texture,
+    };
+    frame.draw(
+        &glium::VertexBuffer::new(window, &vertices).unwrap(),
+        &glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList),
+        &programs.background_program,
+        &uniforms,
+        params).unwrap();
+}
+
+fn draw_lower_fence(
+    frame: &mut glium::Frame,
+    window: &glium_sdl2::SDL2Facade,
+    textures: &Textures,
+    programs: &Programs,
+    camera_frame: [[f32; 4]; 4],
+    params: &glium::DrawParameters)
+{
+
+    let top_left = VertexPosition {
+        position: [-26.0,  -24.5],
+    };
+    let top_right = VertexPosition {
+        position: [116.0,  -24.5],
+    };
+    let bot_left = VertexPosition {
+        position: [-26.0, -26.0],
+    };
+    let bot_right = VertexPosition {
+        position: [116.0, -26.0],
+    };
+
+    // tl    tr
+    //  +----+
+    //  |  / |
+    //  | /  |
+    //  +----+
+    // bl    br
+
+    let vertices = vec!(
+        top_left,
+        top_right,
+        bot_left,
+        top_right,
+        bot_right,
+        bot_left,
+    );
+
+    let uniforms = uniform! {
+        matrix: camera_frame,
+        tex: &textures.top_fence_texture,
+    };
+    frame.draw(
+        &glium::VertexBuffer::new(window, &vertices).unwrap(),
+        &glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList),
+        &programs.background_program,
+        &uniforms,
+        params).unwrap();
+}
+
+fn draw_background(
+    frame: &mut glium::Frame,
+    window: &glium_sdl2::SDL2Facade,
+    textures: &Textures,
+    programs: &Programs,
+    camera_frame: [[f32; 4]; 4],
+    params: &glium::DrawParameters)
+{
+    // This is about as large as you can get without introducing artifacts
+    // due to floating point imprecision
+   // let extent = 1e2;
+
+    let top_left = VertexPosition {
+        position: [-25.0,  115.0],
+    };
+    let top_right = VertexPosition {
+        position: [ 115.0,  115.0],
+    };
+    let bot_left = VertexPosition {
+        position: [-25.0, -25.0],
+    };
+    let bot_right = VertexPosition {
+        position: [ 115.0, -25.0],
+    };
+
+    // tl    tr
+    //  +----+
+    //  |  / |
+    //  | /  |
+    //  +----+
+    // bl    br
+
+    let vertices = vec!(
+        top_left,
+        top_right,
+        bot_left,
+        top_right,
+        bot_right,
+        bot_left,
+    );
+
+    let uniforms = uniform! {
+        matrix: camera_frame,
         tex: &textures.background_texture,
     };
     frame.draw(
@@ -399,6 +655,9 @@ fn draw_background(
         &uniforms,
         params).unwrap();
 }
+
+
+
 
 pub fn display(
     frame: &mut glium::Frame,
@@ -416,8 +675,9 @@ pub fn display(
     frame.clear_color(0.2, 0.2, 0.2, 1.0);
 
     let camera_frame = camera_frame.as_f32_array();
-
+    draw_outside_background(frame, window, textures, programs, camera_frame, params);
     draw_background(frame, window, textures, programs, camera_frame, params);
+
 
     let mut vertex_buffers = enum_map!{_ => vec!()};
     let mut vertex_buffers_gui = enum_map!{_ => vec!()};
@@ -535,6 +795,7 @@ pub fn display(
                         let button_dimensions = _buttons_gui[i].get_dimension();
                         text_buffers.push(_buttons_gui[i].clone());
 
+
                         _menu_buttons.push(button_dimensions);
                         push_gui_vertices(&mut vertex_buffers_gui[SpriteType::Button], &_buttons_gui[i]);
                     }
@@ -607,6 +868,11 @@ pub fn display(
             params,
             &uniforms);
     }
+    // Draw Fence border textures
+    draw_left_fence(frame, window, textures, programs, camera_frame, params);
+    draw_right_fence(frame, window, textures, programs, camera_frame, params);
+    draw_top_fence(frame, window, textures, programs, camera_frame, params);
+    draw_lower_fence(frame, window, textures, programs, camera_frame, params);
 
 
     // Render shadows
@@ -799,25 +1065,26 @@ pub fn display(
 
     }
 
-    // Render Menu Text
+    // Render Menu Button Text
     let mat = Mat4::init_id_matrix();
     for i in 0..text_buffers.len() {
         let system = glium_text::TextSystem::new(window);
         let mut text_to_display = "".to_string();
-        let button = text_buffers[i].clone();
-        match button.id.clone() {
-            GuiType::Button { text } => {
-                text_to_display = text;
+        let button = &mut text_buffers[i];
+        let mut color = [1.0, 1.0, 1.0, 1.0f32];
+        match &mut button.id {
+            GuiType::Button { ref mut text , highlight} => {
+
+                text_to_display = text.clone();
+                if *highlight { color = [0.1, 0.1, 0.1, 1.0f32]}
+                if text_to_display == "Instruction" {
+                }
             }
             _ => ()
         }
-//        println!("{:?}", button.id);
-//        println!("button dimension: {:?}", button.get_dimension());
         let text_display = format!("{}", text_to_display);
-//        println!("{:?}", text_display);
         let str_slice: &str = &text_display[..];
         let text = glium_text::TextDisplay::new(&system, font.medres(), str_slice);
-        let color = [1.0, 1.0, 1.0, 1.0f32];
         let text_width = text.get_width() as f64;
         let text_height = 0.06;
         let dimensions = _menu_buttons[i];
@@ -985,7 +1252,8 @@ pub fn display_main_menu (
                     let size = _buttons_gui.len();
                     for i in 0..size {
                         let button_dimensions = _buttons_gui[i].get_dimension();
-                        text_buffers.push(_buttons_gui[i].clone());
+                        let cloned = &_buttons_gui[i];
+                        text_buffers.push(cloned.clone());
 
                         _menu_buttons.push(button_dimensions);
                         push_gui_vertices(&mut vertex_buffers_gui[SpriteType::Button], &_buttons_gui[i]);
@@ -1051,24 +1319,26 @@ pub fn display_main_menu (
     }
 
 
-    // Render Menu Text
+    // Render Menu button Text
     for i in 0..text_buffers.len() {
         let system = glium_text::TextSystem::new(window);
         let mut text_to_display = "".to_string();
         let button = text_buffers[i].clone();
+        let mut color = [1.0, 1.0, 1.0, 1.0f32];
         match button.id.clone() {
-            GuiType::Button { text } => {
+            GuiType::Button { text, highlight } => {
                 text_to_display = text;
-            }
-            GuiType::Menu {text,..} => {
+                if highlight { color = [0.1, 0.1, 0.1, 1.0f32]}
+            },
+            GuiType::Menu {_buttons_gui, text, highlight, ..} => {
                 text_to_display = text;
+                if highlight { color = [0.1, 0.1, 0.1, 1.0f32]}
             }
             _ => ()
         }
         let text_display = format!("{}", text_to_display);
         let str_slice: &str = &text_display[..];
         let text = glium_text::TextDisplay::new(&system, font.medres(), str_slice);
-        let color = [1.0, 1.0, 1.0, 1.0f32];
         let text_width = text.get_width() as f64;
         let text_height = 0.06;
         let dimensions = _menu_buttons[i];
@@ -1157,14 +1427,16 @@ pub fn display_loss_screen (
     }
 
 
-    // Render Menu Text
+    // Render Button Text
     for i in 0..text_buffers.len() {
         let system = glium_text::TextSystem::new(window);
         let mut text_to_display = "".to_string();
         let button = text_buffers[i].clone();
+        let mut color = [1.0, 1.0, 1.0, 1.0f32];
         match button.id.clone() {
-            GuiType::Button { text } => {
+            GuiType::Button { text , highlight} => {
                 text_to_display = text;
+                if highlight { color = [0.1, 0.1, 0.1, 1.0f32]; }
             }
             GuiType::Menu {text,..} => {
                 text_to_display = text;
@@ -1174,7 +1446,6 @@ pub fn display_loss_screen (
         let text_display = format!("{}", text_to_display);
         let str_slice: &str = &text_display[..];
         let text = glium_text::TextDisplay::new(&system, font.medres(), str_slice);
-        let color = [1.0, 1.0, 1.0, 1.0f32];
         let text_width= (text.get_width() as f64) - 0.02;
         let text_height = 0.06;
         let dimensions = _menu_buttons[i];
@@ -1184,12 +1455,6 @@ pub fn display_loss_screen (
 
         let menu_matrix = mat.translation(Vector4{x: x_align, y: y_align, z: 0.0, w: 0.0})
                                     .scale(Vector4{x: button_width/text_width, y: text_height, z: 1.0, w: 1.0}).as_f32_array();
-//        let menu_matrix = [
-//            [button_width / text_width , 0.0, 0.0, 0.0],
-//            [0.0, text_height, 0.0, 0.0],
-//            [0.0, 0.0, 1.0, 0.0],
-//            [x_align, y_align - 0.05, 0.0, 1.0f32],
-//        ];
         glium_text::draw(&text, &system, frame, menu_matrix, color);
     }
 
@@ -1261,9 +1526,9 @@ pub fn display_victory_screen (
     params: &glium::DrawParameters,
     ui: &mut Component,
     state: &State,
-    font: &FontTexture,
+    fonts: &FontPkg,
 ) {
-
+    let font = fonts.get("Consola").unwrap();
     // background color
     frame.clear_color(0.0, 0.0, 0.0, 1.0);
 
@@ -1313,38 +1578,32 @@ pub fn display_victory_screen (
     }
 
 
-    // Render Menu Text
+    // Render Button Text
     for i in 0..text_buffers.len() {
         let system = glium_text::TextSystem::new(window);
         let mut text_to_display = "".to_string();
         let button = text_buffers[i].clone();
+        let mut color = [1.0, 1.0, 1.0, 1.0f32];
         match button.id.clone() {
-            GuiType::Button { text } => {
+            GuiType::Button { text, highlight} => {
                 text_to_display = text;
-            }
-            GuiType::Menu {text,..} => {
-                text_to_display = text;
+                if highlight { color = [0.1, 0.1, 0.1, 1.0f32]; }
             }
             _ => ()
         }
         let text_display = format!("{}", text_to_display);
         let str_slice: &str = &text_display[..];
-        let text = glium_text::TextDisplay::new(&system, font, str_slice);
-        let color = [1.0, 1.0, 1.0, 1.0f32];
-        let text_width=text.get_width();
-        let text_height = 0.07;
+        let text = glium_text::TextDisplay::new(&system, font.medres(), str_slice);
+        let text_width= (text.get_width() as f64) - 0.02;
+        let text_height = 0.06;
         let dimensions = menu_buttons[i];
-        let button_width = (dimensions.1.x - dimensions.0.x) as f32;
-        let x_align = (dimensions.0.x) as f32;
-        let y_align = (dimensions.0.y) as f32;
+        let button_width = dimensions.1.x - dimensions.0.x;
+        let x_align = dimensions.0.x;
+        let y_align = (dimensions.0.y) - 0.07;
 
-        let matrix = [
-            [button_width / text_width , 0.0, 0.0, 0.0],
-            [0.0, text_height, 0.0, 0.0],
-            [0.0, 0.0, 1.0, 0.0],
-            [x_align, y_align - 0.05, 0.0, 1.0f32],
-        ];
-        glium_text::draw(&text, &system, frame, matrix, color);
+        let menu_matrix = mat.translation(Vector4{x: x_align, y: y_align, z: 0.0, w: 0.0})
+            .scale(Vector4{x: button_width/text_width, y: text_height, z: 1.0, w: 1.0}).as_f32_array();
+        glium_text::draw(&text, &system, frame, menu_matrix, color);
     }
 
     // Render Entities
@@ -1370,7 +1629,7 @@ pub fn display_victory_screen (
     let text_1_win = "Humanity Prevailed!".to_string();
     let text_display = format!("{}", text_1_win);
     let str_slice: &str = &text_display[..];
-    let text = glium_text::TextDisplay::new(&system, font, str_slice);
+    let text = glium_text::TextDisplay::new(&system, font.highres(), str_slice);
     let color = [1.0, 1.0, 0.0, 1.0f32];
     let _font_scale_down = 1.5;
     let text_width = text.get_width() as f64;
@@ -1384,7 +1643,7 @@ pub fn display_victory_screen (
     // Score
     let text_display = format!("Score: {}", score);
     let str_slice: &str = &text_display[..];
-    let text = glium_text::TextDisplay::new(&system, font, str_slice);
+    let text = glium_text::TextDisplay::new(&system, font.medres(), str_slice);
     let color = [1.0, 1.0, 0.0, 1.0f32];
     let scale_factor = Vector4 {x: 0.5, y:0.5, z: 1.0, w: 1.0};
     let translate_offset = Vector4{x: 0.1, y: -0.2, z: 0.0, w: 0.0};
@@ -1394,7 +1653,7 @@ pub fn display_victory_screen (
     // Stats
     let text_display = format!("Cops: {}, Civilians: {}, Zombies: {}", cop_count, human_count, zombie_count);
     let str_slice: &str = &text_display[..];
-    let text = glium_text::TextDisplay::new(&system, font, str_slice);
+    let text = glium_text::TextDisplay::new(&system, font.medres(), str_slice);
     let color = [1.0, 1.0, 0.0, 1.0f32];
     let translate_offset = Vector4{x: 0.0, y: -0.2, z: 0.0, w: 0.0};
     matrix = matrix.translation(translate_offset);

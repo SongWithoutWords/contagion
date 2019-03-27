@@ -249,16 +249,28 @@ impl Control {
                     Keycode::Space => {
                         game_state.game_paused = !game_state.game_paused;
                     }
+                    // Debugging purposes
                     Keycode::F1 => {
                         for i in 0..state.entities.len() {
                             let mut entity = &mut state.entities[i];
                             match entity.behaviour {
+                                // do nothing for zombie
                                 Behaviour::Zombie { .. } => (),
+                                // kill everything else
                                 _ => entity.behaviour = Behaviour::Dead
                             }
                         }
-                        game_state.zombies_win = true;
-                    }
+                    },
+                    Keycode::F2 => {
+                        for i in 0..state.entities.len() {
+                            let mut entity = &mut state.entities[i];
+                            match entity.behaviour {
+                                Behaviour::Human { .. } => (),
+                                Behaviour::Cop { .. } => (),
+                                _ => entity.behaviour = Behaviour::Dead
+                            }
+                        }
+                    },
                     Keycode::LShift => {
                         self.shift_pressed = true;
                     }

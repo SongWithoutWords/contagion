@@ -9,6 +9,7 @@ use crate::simulation::ai::pathfinding::find_path;
 use crate::simulation::state::MoveMode;
 
 use super::state::*;
+use crate::simulation::game_state::GameState;
 
 #[derive(Copy, Clone, Hash, PartialEq, Eq)]
 pub enum Sound {
@@ -22,7 +23,7 @@ pub struct UpdateArgs {
     pub dt: Scalar
 }
 
-pub fn update(args: &UpdateArgs, state: &mut State) -> Vec<Sound> {
+pub fn update(args: &UpdateArgs, state: &mut State, game_state: &mut GameState) -> Vec<Sound> {
 
     let mut sounds = vec!();
 
@@ -85,24 +86,41 @@ pub fn update(args: &UpdateArgs, state: &mut State) -> Vec<Sound> {
         }
     }
 
+    // Variables for ending game if there are no surviving humans or no zombies
+    let mut cop_count = 0;
+    let mut human_count = 0;
+    let mut zombie_count = 0;
+
     // Apply individual behaviours
     for i in 0..state.entities.len() {
         match &state.entities[i].behaviour {
-            Behaviour::Cop { .. } =>
-                update_cop(&args, state, i, &mut sounds),
+            Behaviour::Cop { .. } => {
+                cop_count+=1;
+                update_cop(&args, state, i, &mut sounds);
+            },
             Behaviour::Dead =>
             // Do nothing
                 (),
-            Behaviour::Human =>
-            // Run from zombies!
-                simulate_human(args, &mut state.entities, &state.buildings, i),
+            Behaviour::Human => {
+                // Run from zombies!
+                human_count += 1;
+                simulate_human(args, &mut state.entities, &state.buildings, i)
+            },
             b @ Behaviour::Zombie { .. } => {
                 // Chase humans and cops!
 //                simulate_zombie(args, state, i)
+                zombie_count += 1;
                 let behaviour = update_zombie(&args, state, i, b.clone());
                 state.entities[i].behaviour = behaviour;
             }
         }
+    }
+
+    // end game if there are no entities
+    if human_count == 0 || cop_count == 0 {
+        game_state.zombies_win = true;
+    } else if zombie_count == 0 {
+        game_state.humans_win = true;
     }
 
     // Apply acceleration
@@ -237,13 +255,20 @@ fn handle_building_collision(
 
     let distance = distance_squared.sqrt();
 
+
     if inside {
         // If the entity is inside move them to the nearest edge
         entity.position += (distance + ENTITY_RADIUS) * normal;
     } else {
         // If the entity is overlapping, force them away from the edge
         let overlap = ENTITY_RADIUS - distance;
-        entity.velocity += args.dt * SPRING_CONSTANT * overlap * normal
+
+        // Check if the entity is overlapping left/right borders, force them away if yes
+        if building.get(0).x == -24.5 || building.get(0).x == 114.5 {
+            entity.velocity -= args.dt * SPRING_CONSTANT * overlap * normal
+        }
+        else {
+        entity.velocity += args.dt * SPRING_CONSTANT * overlap * normal}
     }
 }
 
