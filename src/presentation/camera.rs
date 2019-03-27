@@ -162,8 +162,10 @@ impl Camera {
                 let camera_pos = Vector2 { x: self.position.x * delta_zoom.x, y: self.position.y * delta_zoom.y };
                 let new_pos = camera_pos + mouse_vec;
 
-                self.position = new_pos;
-                self.zoom = new_zoom;
+                if is_mouse_within_bounds(*mouse_pos) {
+                    self.position = new_pos;
+                    self.zoom = new_zoom;
+                }
             }
         }
     }
