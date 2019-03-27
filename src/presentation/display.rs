@@ -32,7 +32,8 @@ pub enum SpriteType {
     CopIcon,
     ZombieWorldIcon,
     CopWorldIcon,
-    CivilianWorldIcon
+    CivilianWorldIcon,
+    BuildingOne
 }
 
 // pub type Textures = EnumMap<SpriteType, Texture2d>;
@@ -76,7 +77,9 @@ pub fn load_textures(window: &glium_sdl2::SDL2Facade) -> Textures {
             SpriteType::CopWorldIcon
                 => load_texture(window, "assets/images/ui/cop_world_icon.png"),
             SpriteType::CivilianWorldIcon
-                => load_texture(window, "assets/images/ui/civilian_world_icon.png")
+                => load_texture(window, "assets/images/ui/civilian_world_icon.png"),
+            SpriteType::BuildingOne
+                => load_texture(window, "assets/images/building/building_one.png"),
         },
         background_texture: load_texture(&window, "assets/images/background_concrete.png")
     }
@@ -593,13 +596,14 @@ pub fn display(
     // Render buildings
     {
         let uniforms = uniform! {
-            matrix: camera_frame
+            matrix: camera_frame,
+            tex: &textures.sprite_textures[SpriteType::BuildingOne],
         };
         draw_color_sprites(
             frame,
             window,
             &vertex_buffers_building,
-            &programs.shape_program,
+            &programs.sprite_program,
             params,
             &uniforms);
     }
