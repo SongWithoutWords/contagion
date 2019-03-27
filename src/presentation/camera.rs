@@ -144,7 +144,7 @@ impl Camera {
                 let camera_pos = Vector2 { x: self.position.x * delta_zoom.x, y: self.position.y * delta_zoom.y };
                 let new_pos = camera_pos + mouse_vec;
 
-                if (mouse_pos.x > left_corner_bound.x && mouse_pos.y > left_corner_bound.y) && (mouse_pos.x < right_corner_bound.x && mouse_pos.y < right_corner_bound.y) {
+                if is_mouse_within_bounds(*mouse_pos) {
                     self.position = new_pos;
                     self.zoom = new_zoom;
                 }
@@ -160,7 +160,9 @@ impl Camera {
             if old_zoom.x != new_zoom.x || old_zoom.y != new_zoom.y {
                 let delta_zoom = Vector2 { x: new_zoom.x / old_zoom.x, y: new_zoom.y / old_zoom.y };
                 let camera_pos = Vector2 { x: self.position.x * delta_zoom.x, y: self.position.y * delta_zoom.y };
-                self.position = camera_pos + mouse_vec;
+                let new_pos = camera_pos + mouse_vec;
+
+                self.position = new_pos;
                 self.zoom = new_zoom;
             }
         }
