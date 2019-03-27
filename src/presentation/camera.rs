@@ -117,12 +117,6 @@ impl Camera {
         const LOWER_BOUND: f64 = 0.015;
         const UPPER_BOUND: f64 = 0.15;
 
-        // Bounding box
-        const LEFT_BOUND: Scalar = -25.0;
-        const RIGHT_BOUND: Scalar = 115.0;
-        const TOP_BOUND: Scalar = 115.0;
-        const BOTTOM_BOUND: Scalar = -25.0;
-
 
         let mouse_scroll: f64 = scroll as f64;
         let zoom_scale: f64 = (mouse_scroll * ZOOM_SPEED).abs();
@@ -150,9 +144,6 @@ impl Camera {
                 let camera_pos = Vector2 { x: self.position.x * delta_zoom.x, y: self.position.y * delta_zoom.y };
                 let new_pos = camera_pos + mouse_vec;
 
-                let left_corner_bound = vector2(LEFT_BOUND, BOTTOM_BOUND);
-                let right_corner_bound = vector2(RIGHT_BOUND, TOP_BOUND);
-
                 if (mouse_pos.x > left_corner_bound.x && mouse_pos.y > left_corner_bound.y) && (mouse_pos.x < right_corner_bound.x && mouse_pos.y < right_corner_bound.y) {
                     self.position = new_pos;
                     self.zoom = new_zoom;
@@ -173,6 +164,23 @@ impl Camera {
                 self.zoom = new_zoom;
             }
         }
+    }
+}
+
+fn is_mouse_within_bounds(mouse_pos: Vector2) -> bool {
+    // Bounding box
+    const LEFT_BOUND: Scalar = -25.0;
+    const RIGHT_BOUND: Scalar = 115.0;
+    const TOP_BOUND: Scalar = 115.0;
+    const BOTTOM_BOUND: Scalar = -25.0;
+
+    let left_corner_bound = vector2(LEFT_BOUND, BOTTOM_BOUND);
+    let right_corner_bound = vector2(RIGHT_BOUND, TOP_BOUND);
+
+    if (mouse_pos.x > left_corner_bound.x && mouse_pos.y > left_corner_bound.y) && (mouse_pos.x < right_corner_bound.x && mouse_pos.y < right_corner_bound.y) {
+        return true;
+    } else {
+        return false;
     }
 }
 
