@@ -117,6 +117,13 @@ impl Camera {
         const LOWER_BOUND: f64 = 0.015;
         const UPPER_BOUND: f64 = 0.15;
 
+        // Bounding box
+        const LEFT_BOUND: Scalar = -25.0;
+        const RIGHT_BOUND: Scalar = 115.0;
+        const TOP_BOUND: Scalar = 115.0;
+        const BOTTOM_BOUND: Scalar = -25.0;
+
+
         let mouse_scroll: f64 = scroll as f64;
         let zoom_scale: f64 = (mouse_scroll * ZOOM_SPEED).abs();
         let mouse_pos: &mut Vector2 = &mut Vector2 { x: ms.x() as f64, y: ms.y() as f64 };
@@ -136,11 +143,20 @@ impl Camera {
 
             let mouse_vec = Vector2 { x: (mouse_pos.x - camera_center.x) * (new_zoom.x - old_zoom.x), y: (mouse_pos.y - camera_center.y) * (new_zoom.y - old_zoom.y) };
 
+
+
             if old_zoom.x != new_zoom.x || old_zoom.y != new_zoom.y {
                 let delta_zoom = Vector2 { x: new_zoom.x / old_zoom.x, y: new_zoom.y / old_zoom.y };
                 let camera_pos = Vector2 { x: self.position.x * delta_zoom.x, y: self.position.y * delta_zoom.y };
-                self.position = camera_pos + mouse_vec;
-                self.zoom = new_zoom;
+                let new_pos = camera_pos + mouse_vec;
+
+                let left_corner_bound = vector2(LEFT_BOUND, BOTTOM_BOUND);
+                let right_corner_bound = vector2(RIGHT_BOUND, TOP_BOUND);
+
+                if (mouse_pos.x > left_corner_bound.x && mouse_pos.y > left_corner_bound.y) && (mouse_pos.x < right_corner_bound.x && mouse_pos.y < right_corner_bound.y) {
+                    self.position = new_pos;
+                    self.zoom = new_zoom;
+                }
             }
 
             // Zooming out from cursor
