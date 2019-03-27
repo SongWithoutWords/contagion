@@ -65,19 +65,25 @@ impl Camera {
     fn key_pressed(&mut self, ks: &sdl2::keyboard::KeyboardState, s: keyboard::Scancode) -> Scalar {
         const LEFT_BOUND: Scalar = -25.0;
         const RIGHT_BOUND: Scalar = 115.0;
-        const TOP_BOUND: Scalar = 25.0;
+        const TOP_BOUND: Scalar = 115.0;
         const BOTTOM_BOUND: Scalar = -25.0;
 
         let left_corner_bound = vector2(LEFT_BOUND * self.zoom.x, BOTTOM_BOUND * self.zoom.y);
         let right_corner_bound = vector2(RIGHT_BOUND * self.zoom.x, TOP_BOUND * self.zoom.y);
-        println!("{:?}", right_corner_bound);
-        println!("{:?}", self.position);
+
         if ks.is_scancode_pressed(s) {
             if s == keyboard::Scancode::A && self.position.x < left_corner_bound.x {
                 return 0.0;
             } else if  s == keyboard::Scancode::D && self.position.x > right_corner_bound.x {
                 return 0.0;
-            } else {
+            }
+
+            if s == keyboard::Scancode::S && self.position.y < left_corner_bound.y {
+                return 0.0;
+            } else if  s == keyboard::Scancode::W && self.position.y > right_corner_bound.y {
+                return 0.0;
+            }
+            else {
                 return 1.0;
             }
         } else {
