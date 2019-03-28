@@ -90,7 +90,7 @@ impl Component {
 
         // main menu settings button
         let button_menu_instruction = GuiType::Button{text: "Instruction".to_string(), highlight: false};
-        let button_menu_settings = GuiType::Button{text: "Advanced (WIP)".to_string(), highlight: false};
+        let button_menu_settings = GuiType::Button{text: "Fullscreen".to_string(), highlight: false};
         let button_menu_back = GuiType::Button{text: "Back".to_string(), highlight: false};
         let button_menu_instruction_ui = Gui::new(button_menu_instruction, 0.4, 0.09, Vector2{x: 0.0, y: 0.3});
         let button_menu_settings_ui = Gui::new(button_menu_settings, 0.5, 0.09, Vector2{x: 0.0, y: 0.1});
@@ -139,7 +139,7 @@ impl Component {
     }
 
     // main game's GUI event handler
-    pub fn handle_event(&mut self, event: Event, window: &SDL2Facade, camera_frame: Mat4, state: &mut State, game_state: &mut GameState, control: &mut Control) {
+    pub fn handle_event(&mut self, event: Event, window: &mut SDL2Facade, camera_frame: Mat4, state: &mut State, game_state: &mut GameState, control: &mut Control) {
         // handle events for any menu laid on top of game
         let mut handled_event = false;
         for i in 0..self.components.len() {
@@ -281,7 +281,7 @@ impl Component {
     }
 
     // main menu's GUI event handler
-    pub fn handle_main_menu_event(&mut self, event: &Event, window: &SDL2Facade, game_state: &mut GameState) {
+    pub fn handle_main_menu_event(&mut self, event: &Event, window: &mut SDL2Facade, game_state: &mut GameState) {
         // handle events for any menu laid on top of game
         for i in 0..self.components.len() {
             let component = &mut self.components[i];
@@ -360,7 +360,10 @@ impl Component {
 
                                         if display_text == "Instruction" {
                                             self.active_window = ActiveWindow::Instruction;
-                                        } else if display_text == "Back" {
+                                        } else if display_text == "Fullscreen" {
+                                            println!("{:?}", window.window_mut().fullscreen_state());
+                                        }
+                                        else if display_text == "Back" {
                                             if self.active_window == ActiveWindow::Menu {
                                                 self.active_window = ActiveWindow::MainMenu;
                                             }
@@ -390,7 +393,6 @@ impl Component {
                                 if !check_bounding_box(top_left, bot_right, *mouse_pos) {
                                     self.active_window = ActiveWindow::MainMenu;
                                 }
-                            } else {
                             }
                         },
                         Event::MouseMotion { timestamp: _, window_id: _, which: _, x, y, .. } => {
@@ -410,7 +412,7 @@ impl Component {
                                         GuiType::Button { text, ref mut highlight } => {
                                             if check_within_bound {
                                                 let display_text = text;
-                                                if display_text == "Instruction" || display_text == "Advanced (WIP)" || display_text == "Back" {
+                                                if display_text == "Instruction" || display_text == "Fullscreen" || display_text == "Back" {
                                                     *highlight = true;
                                                 }
                                             } else {
@@ -507,7 +509,7 @@ impl Component {
     }
 
     // victory scene's GUI event handler
-    pub fn handle_victory_event(&mut self, event: &Event, window: &SDL2Facade, game_state: &mut GameState) {
+    pub fn handle_victory_event(&mut self, event: &Event, window: &mut SDL2Facade, game_state: &mut GameState) {
         // handle events for any menu laid on top of game
         for i in 0..self.components.len() {
             let component = &mut self.components[i];

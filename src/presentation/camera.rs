@@ -30,7 +30,7 @@ impl Camera {
         &mut self,
         ks: &sdl2::keyboard::KeyboardState,
         ms: &sdl2::mouse::MouseState,
-        window: &SDL2Facade,
+        window: &mut SDL2Facade,
         camera_frame: Mat4,
         delta_time: Scalar) {
 

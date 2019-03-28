@@ -50,7 +50,7 @@ impl Game {
 impl Scene for Game {
     fn update(&mut self,
               event_pump: &mut EventPump,
-              window: &SDL2Facade,
+              window: &mut SDL2Facade,
               delta_time: f64)
               -> UpdateResult {
         match self.game_state {
@@ -81,7 +81,7 @@ impl Scene for Game {
         }
         let keyboard_state = event_pump.keyboard_state();
         let mouse_state = event_pump.mouse_state();
-        self.camera.update(&keyboard_state, &mouse_state, &window, self.camera.compute_matrix(), delta_time);
+        self.camera.update(&keyboard_state, &mouse_state, window, self.camera.compute_matrix(), delta_time);
         for event in event_pump.poll_iter() {
             use sdl2::event::Event;
             match event {
@@ -104,7 +104,7 @@ impl Scene for Game {
                 },
 
                 _ => {
-                    self.gui.handle_event(event, &window, self.camera.compute_matrix(),
+                    self.gui.handle_event(event, window, self.camera.compute_matrix(),
                                                             &mut self.state, &mut self.game_state,
                                                             &mut self.control);
                 }

@@ -15,7 +15,7 @@ pub trait Scene {
 
     fn update(&mut self,
               event_pump: &mut EventPump,
-              window: &SDL2Facade,
+              window: &mut SDL2Facade,
               delta_time: f64)
               -> UpdateResult;
 

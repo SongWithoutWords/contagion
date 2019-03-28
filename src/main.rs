@@ -68,7 +68,7 @@ fn main() {
         }
     };
     let _sdl_context = window_tuple.0;
-    let window = window_tuple.1;
+    let mut window = window_tuple.1;
     let mut event_pump = window_tuple.2;
     let params = glium::DrawParameters {
         blend: Blend::alpha_blending(),
@@ -91,7 +91,7 @@ fn main() {
             let delta_time = duration.as_secs() as Scalar + 1e-9 * duration.subsec_nanos() as Scalar;
             last_frame = Instant::now();
 
-            let opt_next_scene = scene.update(&mut event_pump, &window, delta_time);
+            let opt_next_scene = scene.update(&mut event_pump, &mut window, delta_time);
 
             match opt_next_scene {
                 UpdateResult::Exit => break,

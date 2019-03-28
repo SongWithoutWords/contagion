@@ -30,7 +30,7 @@ impl LossScreen {
 }
 
 impl Scene for LossScreen  {
-    fn update(&mut self, event_pump: &mut EventPump, window: &SDL2Facade, delta_time: f64) -> UpdateResult {
+    fn update(&mut self, event_pump: &mut EventPump, window: &mut SDL2Facade, delta_time: f64) -> UpdateResult {
         match self.game_state {
             GameState{transition_game, transition_menu, terminate, ..} =>
                 {

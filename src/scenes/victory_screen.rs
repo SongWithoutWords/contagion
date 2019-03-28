@@ -32,7 +32,7 @@ impl VictoryScreen {
 impl Scene for VictoryScreen {
     fn update(&mut self,
               event_pump: &mut EventPump,
-              window: &SDL2Facade,
+              window: &mut SDL2Facade,
               delta_time: f64
     ) -> UpdateResult {
         match self.game_state {
@@ -58,7 +58,7 @@ impl Scene for VictoryScreen {
                     println!("  FPS:              {:?}", 1.0 / delta_time);
                 }
                 _ => {
-                    self.gui.handle_victory_event(&event, &window, &mut self.game_state);
+                    self.gui.handle_victory_event(&event, window, &mut self.game_state);
                 }
             }
         }
