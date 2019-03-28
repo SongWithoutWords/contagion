@@ -44,19 +44,28 @@ impl Camera {
             y: self.key_pressed(ks, keyboard::Scancode::W) - self.key_pressed(ks, keyboard::Scancode::S),
         };
 
+        // Allow mouse cursor to move camera when against screen edges in fullscreen
         if window.window().fullscreen_state() == True {
+            const LEFT_BOUND: Scalar = -25.0;
+            const RIGHT_BOUND: Scalar = 115.0;
+            const TOP_BOUND: Scalar = 115.0;
+            const BOTTOM_BOUND: Scalar = -25.0;
+
+            let left_corner_bound = vector2(LEFT_BOUND * self.zoom.x, BOTTOM_BOUND * self.zoom.y);
+            let right_corner_bound = vector2(RIGHT_BOUND * self.zoom.x, TOP_BOUND * self.zoom.y);
+
             let mouse_pos = &mut vector2(ms.x() as f64, ms.y() as f64);
             translate_to_camera_coord(mouse_pos, window.window().size());
 
-            if mouse_pos.x == LEFT_EDGE_SCREEN {
+            if mouse_pos.x == LEFT_EDGE_SCREEN && self.position.x > left_corner_bound.x {
                 acceleration.x = -1.0;
-            } else if mouse_pos.x >= RIGHT_EDGE_SCREEN {
+            } else if mouse_pos.x >= RIGHT_EDGE_SCREEN && self.position.x < right_corner_bound.x {
                 acceleration.x = 1.0;
             }
 
-            if mouse_pos.y <= BOTTOM_EDGE_SCREEN {
+            if mouse_pos.y <= BOTTOM_EDGE_SCREEN && self.position.y > left_corner_bound.y {
                 acceleration.y = -1.0;
-            } else if mouse_pos.y == TOP_EDGE_SCREEN {
+            } else if mouse_pos.y == TOP_EDGE_SCREEN && self.position.y < right_corner_bound.y {
                 acceleration.y = 1.0;
             }
         }
