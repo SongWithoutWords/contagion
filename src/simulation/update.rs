@@ -180,6 +180,12 @@ pub fn update(args: &UpdateArgs, state: &mut State) -> SimulationResults {
             p.velocity.length_squared() > BULLET_SPEED_MIN
     );
 
+    // Remove fist
+    state.projectiles.retain(
+        |p| p.kind != ProjectileKind::Fist ||
+            p.velocity.length_squared() > FIST_SPEED_MIN
+    );
+
     // Update projectiles
     for p in &mut state.projectiles {
 
@@ -276,7 +282,7 @@ pub fn update(args: &UpdateArgs, state: &mut State) -> SimulationResults {
                             },
                         };
                         p.velocity = Vector2::zero();
-                        sounds.push(Sound::ZombieDeath);
+                        sounds.push(Sound::PersonInfected);
                     }
                 }
             }

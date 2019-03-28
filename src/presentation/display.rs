@@ -37,6 +37,7 @@ pub enum SpriteType {
     CopWorldIcon,
     CivilianWorldIcon,
     BuildingOne,
+    ZombieFist
 }
 
 // pub type Textures = EnumMap<SpriteType, Texture2d>;
@@ -88,6 +89,8 @@ pub fn load_textures(window: &glium_sdl2::SDL2Facade) -> Textures {
                 => load_texture(window, "assets/images/ui/civilian_world_icon.png"),
             SpriteType::BuildingOne
                 => load_texture(window, "assets/images/building/building_one.png"),
+            SpriteType::ZombieFist
+                => load_texture(window, "assets/images/zombie/zombie_claw_right.png"),
         },
         background_texture: load_texture(&window, "assets/images/dirt.jpg"),
         wallpaper: load_texture(&window, "assets/images/contagion_wallpaper.png"),
@@ -776,7 +779,7 @@ pub fn display(
         let sprite_type = match p.kind {
             ProjectileKind::Bullet => SpriteType::BulletInAir,
             ProjectileKind::Casing => SpriteType::BulletCasing,
-            ProjectileKind::Fist => SpriteType::BulletInAir
+            ProjectileKind::Fist => SpriteType::ZombieFist
         };
         let mut rad = BULLET_RADIUS;
         if p.kind == ProjectileKind::Fist { rad = FIST_RADIUS; }
