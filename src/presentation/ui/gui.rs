@@ -364,9 +364,9 @@ impl Component {
                                             self.active_window = ActiveWindow::Instruction;
                                         } else if display_text == "Fullscreen" {
                                             if window.window().fullscreen_state() == Off {
-                                                window.window_mut().set_fullscreen(True);
+                                                window.window_mut().set_fullscreen(True).unwrap();
                                             } else if window.window().fullscreen_state() == True {
-                                                window.window_mut().set_fullscreen(Off);
+                                                window.window_mut().set_fullscreen(Off).unwrap();
                                             }
                                         }
                                         else if display_text == "Back" {
