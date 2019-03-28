@@ -3,7 +3,7 @@ use crate::core::vector::*;
 use crate::core::matrix::*;
 use glium_sdl2::SDL2Facade;
 use sdl2::keyboard;
-use sdl2::video::FullscreenType::{True, Off};
+use sdl2::video::FullscreenType::{True};
 
 #[derive(Clone)]
 pub struct Camera {
