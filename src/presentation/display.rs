@@ -33,7 +33,7 @@ pub enum SpriteType {
     ZombieWorldIcon,
     CopWorldIcon,
     CivilianWorldIcon,
-    BuildingOne
+    BuildingOne,
 }
 
 // pub type Textures = EnumMap<SpriteType, Texture2d>;
@@ -140,6 +140,7 @@ implement_vertex!(Vertex, position, tex_coords);
 struct ColorVertex {
     position: [f32; 2],
     tex_coords: [f32; 2],
+
     color: [f32; 4],
 }
 implement_vertex!(ColorVertex, position, tex_coords, color);
@@ -193,7 +194,6 @@ fn push_sprite_vertices(buffer: &mut Vec<Vertex>, sprite: &Sprite) {
     buffer.push(vertex2);
 }
 
-// TODO: fix
 fn push_gui_vertices(buffer: &mut Vec<ColorVertex>, ui: &Gui) {
     let top_left  =  ui.top_left;
     let top_right =  ui.top_right;
@@ -208,6 +208,84 @@ fn push_gui_vertices(buffer: &mut Vec<ColorVertex>, ui: &Gui) {
         GuiType::Menu {..} => {color= [0.6, 0.7, 0.8, 0.0]},
         _ => (),
     };
+
+    let vertex0 = ColorVertex {
+        position: top_left.as_f32_array(),
+        tex_coords: [0.0, 1.0],
+        color
+    };
+    let vertex1 = ColorVertex {
+        position: top_right.as_f32_array(),
+        tex_coords: [1.0, 1.0],
+        color
+    };
+    let vertex2 = ColorVertex {
+        position: bot_left.as_f32_array(),
+        tex_coords: [0.0, 0.0],
+        color
+    };
+    let vertex3 = ColorVertex {
+        position: bot_right.as_f32_array(),
+        tex_coords: [1.0, 0.0],
+        color
+    };
+    buffer.push(vertex0);
+    buffer.push(vertex1);
+    buffer.push(vertex2);
+    buffer.push(vertex1);
+    buffer.push(vertex3);
+    buffer.push(vertex2);
+}
+
+fn push_red_hp_vertices(buffer: &mut Vec<ColorVertex>, sprite: &Sprite) {
+    let position = Vector2 {x: sprite.position.x, y: sprite.position.y + 1.0};
+    let up = 0.5;
+    let down = 0.2;
+
+    let top_left  = Vector2{x:position.x - up, y: position.y + up};
+    let top_right = Vector2{x:position.x + up, y: position.y + up};
+    let bot_left  = Vector2{x:position.x - up, y: position.y + down};
+    let bot_right = Vector2{x:position.x + up, y: position.y + down};
+    let color= [1.0, 0.0, 0.0, 1.0];
+
+    let vertex0 = ColorVertex {
+        position: top_left.as_f32_array(),
+        tex_coords: [0.0, 1.0],
+        color
+    };
+    let vertex1 = ColorVertex {
+        position: top_right.as_f32_array(),
+        tex_coords: [1.0, 1.0],
+        color
+    };
+    let vertex2 = ColorVertex {
+        position: bot_left.as_f32_array(),
+        tex_coords: [0.0, 0.0],
+        color
+    };
+    let vertex3 = ColorVertex {
+        position: bot_right.as_f32_array(),
+        tex_coords: [1.0, 0.0],
+        color
+    };
+    buffer.push(vertex0);
+    buffer.push(vertex1);
+    buffer.push(vertex2);
+    buffer.push(vertex1);
+    buffer.push(vertex3);
+    buffer.push(vertex2);
+}
+
+fn push_green_hp_vertices(buffer: &mut Vec<ColorVertex>, sprite: &Sprite) {
+    let position = Vector2 {x: sprite.position.x, y: sprite.position.y + 1.0};
+    let up = 0.5;
+    let down = 0.2;
+
+    let top_left  = Vector2{x:position.x - up, y: position.y + up};
+    let top_right = Vector2{x:position.x + up, y: position.y + up};
+    let bot_left  = Vector2{x:position.x - up, y: position.y + down};
+    let bot_right = Vector2{x:position.x + up, y: position.y + down};
+    let color= [0.06, 0.240, 0.105, 1.0];
 
     let vertex0 = ColorVertex {
         position: top_left.as_f32_array(),
@@ -680,6 +758,8 @@ pub fn display(
 
 
     let mut vertex_buffers = enum_map!{_ => vec!()};
+    let mut vertex_buffers_red_hp = vec!();
+    let mut vertex_buffers_green_hp = vec!();
     let mut vertex_buffers_gui = enum_map!{_ => vec!()};
     let mut vertex_buffers_building = vec!();
     let mut vertex_buffers_path = vec!();
@@ -722,6 +802,10 @@ pub fn display(
             radius: 0.5,
         };
         push_sprite_vertices(&mut vertex_buffers[sprite_type], &sprite);
+
+        // should be able to display recently hit HP bar and hide otherwise
+        push_green_hp_vertices(&mut vertex_buffers_green_hp, &sprite);
+        push_red_hp_vertices(&mut vertex_buffers_red_hp, &sprite);
     }
 
     // Compute vertices for selection highlights
@@ -909,6 +993,30 @@ pub fn display(
             &uniforms);
     }
 
+    // Render red HP
+    let uniforms = uniform! {
+        matrix: camera_frame,
+    };
+    draw_color_sprites(
+        frame,
+        window,
+        &vertex_buffers_red_hp,
+        &programs.gui_program,
+        params,
+        &uniforms);
+
+    // Render green HP
+    let uniforms = uniform! {
+        matrix: camera_frame,
+    };
+    draw_color_sprites(
+        frame,
+        window,
+        &vertex_buffers_green_hp,
+        &programs.gui_program,
+        params,
+        &uniforms);
+
     // Render GUI
     let mat_gui = [
         [1.0, 0.0, 0.0, 0.0],
@@ -1046,23 +1154,20 @@ pub fn display(
                 &uniforms);
         }
           else if _gui_type == SpriteType::CopWorldIcon {
-            let uniforms = uniform! {
+              let uniforms = uniform! {
                     matrix: mat_gui,
                     tex: &textures.sprite_textures[_gui_type],
                 };
-            // Draw the text showing the number of cops next to the UI cop icon
-            draw_remaining_cop_num(window, cop_count, frame, &font.lowres());
-            draw_color_sprites(
-                frame,
-                window,
-                &vertex_buffer,
-                &programs.sprite_program,
-                params,
-                &uniforms);
-        }
-
-
-
+              // Draw the text showing the number of cops next to the UI cop icon
+              draw_remaining_cop_num(window, cop_count, frame, &font.lowres());
+              draw_color_sprites(
+                  frame,
+                  window,
+                  &vertex_buffer,
+                  &programs.sprite_program,
+                  params,
+                  &uniforms);
+          }
     }
 
     // Render Menu Button Text

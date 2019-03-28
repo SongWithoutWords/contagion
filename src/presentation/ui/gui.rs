@@ -26,6 +26,7 @@ pub enum GuiType {
         text: String,
         highlight: bool,
     },
+    HealthBar,
     ZombieUI,
     CopUI,
     CivilianUI
@@ -588,6 +589,19 @@ impl Gui {
             bot_right: Vector2{x: _x + pos.x, y: -_y + pos.y},
         }
     }
+
+//    pub fn display_hp(pos: Vector2) -> Gui {
+//        let _x = 0.025;
+//        let _y = 0.005;
+//        let hp_ui = Gui {
+//            id: GuiType::HealthBar,
+//            top_left: Vector2{x: -_x + pos.x, y: _y + pos.y},
+//            top_right: Vector2{x: _x + pos.x, y: _y + pos.y},
+//            bot_left: Vector2{x: -_x + pos.x, y: -_y + pos.y},
+//            bot_right: Vector2{x: _x + pos.x, y: -_y + pos.y},
+//        };
+//        (hp_ui)
+//    }
 
     // move position of the GUI
     pub fn move_pos(&mut self, vec: Vector2) {
