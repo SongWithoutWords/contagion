@@ -7,6 +7,7 @@ use crate::simulation::game_state::GameState;
 use sdl2::keyboard::Keycode;
 use glium_sdl2::SDL2Facade;
 use sdl2::event::Event;
+use sdl2::video::FullscreenType::{Off, True};
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum GuiType {
@@ -361,7 +362,11 @@ impl Component {
                                         if display_text == "Instruction" {
                                             self.active_window = ActiveWindow::Instruction;
                                         } else if display_text == "Fullscreen" {
-                                            println!("{:?}", window.window_mut().fullscreen_state());
+                                            if window.window_mut().fullscreen_state() == Off {
+                                                window.window_mut().set_fullscreen(True);
+                                            } else if window.window_mut().fullscreen_state() == True {
+                                                window.window_mut().set_fullscreen(Off);
+                                            }
                                         }
                                         else if display_text == "Back" {
                                             if self.active_window == ActiveWindow::Menu {

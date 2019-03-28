@@ -2,7 +2,6 @@ use crate::core::scalar::*;
 use crate::core::vector::*;
 use crate::core::matrix::*;
 use glium_sdl2::SDL2Facade;
-use core::fmt::Alignment::Right;
 use sdl2::keyboard;
 
 #[derive(Clone)]
