@@ -190,7 +190,7 @@ pub fn update(args: &UpdateArgs, state: &mut State) -> SimulationResults {
 
         p.position = segment.p2;
 
-        if p.kind != ProjectileKind::Bullet {
+        if p.kind == ProjectileKind::Casing {
             continue;
         }
 
@@ -236,29 +236,51 @@ pub fn update(args: &UpdateArgs, state: &mut State) -> SimulationResults {
             p.velocity = Vector2::zero();
         }
 
-        match &first_collision {
-            None => (),
-            Some(Collision{entity_id: i, ..}) => {
+        match p.kind {
+            ProjectileKind::Bullet => {
+                match &first_collision {
+                    None => (),
+                    Some(Collision{entity_id: i, ..}) => {
 
-                let distance_from_entity_center = segment
-                    .distance_from_ray_to_point_squared(state.entities[*i].position)
-                    .sqrt();
+                        let distance_from_entity_center = segment
+                            .distance_from_ray_to_point_squared(state.entities[*i].position)
+                            .sqrt();
 
-                let distance_normalized
-                    = (distance_from_entity_center - BULLET_MAX_DAMAGE_DISTANCE_FROM_ENTITY_CENTER)
-                    / (BULLET_MIN_DAMAGE_DISTANCE_FROM_ENTITY_CENTER -
-                       BULLET_MAX_DAMAGE_DISTANCE_FROM_ENTITY_CENTER);
+                        let distance_normalized
+                        = (distance_from_entity_center - BULLET_MAX_DAMAGE_DISTANCE_FROM_ENTITY_CENTER)
+                            / (BULLET_MIN_DAMAGE_DISTANCE_FROM_ENTITY_CENTER -
+                            BULLET_MAX_DAMAGE_DISTANCE_FROM_ENTITY_CENTER);
 
-                let damage = BULLET_DAMAGE_MAX.lerp_bounded(BULLET_DAMAGE_MIN, distance_normalized);
+                        let damage = BULLET_DAMAGE_MAX.lerp_bounded(BULLET_DAMAGE_MIN, distance_normalized);
 
 
-                match &mut state.entities[*i].dead_or_alive {
-                    DeadOrAlive::Alive { health, .. } => { *health -= damage; }
-                    _ => panic!("Only living entities should collide with bullets!")
+                        match &mut state.entities[*i].dead_or_alive {
+                            DeadOrAlive::Alive { health, .. } => { *health -= damage; }
+                            _ => panic!("Only living entities should collide with bullets!")
+                        }
+
+                        p.velocity = Vector2::zero();
+                    }
                 }
-
-                p.velocity = Vector2::zero();
             }
+            ProjectileKind::Fist => {
+                // todo: KAYCI
+                match first_intersect_time_and_index {
+                    None => (),
+                    Some((_, i)) => {
+                        // TODO: Deal damage to the entity rather than turning into zombie
+                        state.entities[i].dead_or_alive = DeadOrAlive::Alive {
+                            health: 100.0,
+                            zombie_or_human: ZombieOrHuman::Zombie {
+                                state: ZombieState::Roaming
+                            },
+                        };
+                        p.velocity = Vector2::zero();
+                        sounds.push(Sound::ZombieDeath);
+                    }
+                }
+            }
+            _ => panic!("Not a valid projectile")
         }
     }
 
@@ -631,6 +653,12 @@ fn update_zombie(
         ZombieState::Chasing { target_index } => {
             let target_pos = entities[target_index].position;
             let delta = target_pos - my_pos;
+            let can_see_target = can_see(buildings,my_pos,target_pos);
+
+            // If target is within fighting range, fight
+            if entities[target_index].is_human() && delta.x.abs() <= FIGHTING_RANGE && delta.y.abs() <= FIGHTING_RANGE && can_see_target {
+                return ZombieState::Fighting { target_index }
+            }
 
             entities[index].accelerate_along_vector(delta, args.dt, ZOMBIE_MOVEMENT_FORCE);
 
@@ -706,6 +734,49 @@ fn update_zombie(
                     ZombieState::Chasing { target_index: i}
                 }
             }
+        }
+        ZombieState::Fighting { target_index } => {
+            // Stop fighting if the target is already dead or zombie
+            if entities[target_index].is_dead() || entities[target_index].is_zombie() {
+                return ZombieState::Roaming
+            }
+
+            let target_pos = entities[target_index].position;
+            let my_pos = entities[index].position;
+            let delta = target_pos - my_pos;
+
+            // Stop fighting if we can no longer see the target, go to last known position
+            if !can_see(buildings,
+                        entities[index].position,
+                        entities[target_index].position) {
+                return ZombieState::Moving { waypoint: target_pos }
+            }
+
+            // Stop fighting if we're not in fight range
+            if delta.x.abs() <= FIGHTING_RANGE && delta.y.abs() <= FIGHTING_RANGE {
+                return ZombieState::Chasing { target_index }
+            }
+
+            entities[index].look_along_vector(delta, args.dt);
+
+            let angular_deviation =
+                Normal::new(0.0, ANGULAR_ACCURACY_STD_DEV).sample(&mut sim_state.rng);
+
+            let delta_normal = delta.rotate_by(angular_deviation);
+
+            // Spawn outside of the entity - don't want to punch the entity itself
+            let spawn_pos = entities[index].position +
+                FIST_SPAWN_DISTANCE_MULTIPLIER * ENTITY_RADIUS * delta_normal;
+
+            // Punch the target
+            sim_state.projectiles.push(
+                Projectile {
+                    position: spawn_pos,
+                    velocity: FIST_SPEED * delta_normal,
+                    kind: ProjectileKind::Fist
+                });
+
+            ZombieState::Roaming
         }
     }
 }

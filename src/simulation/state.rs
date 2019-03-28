@@ -121,6 +121,10 @@ pub const INFECTION_EXPONENTIAL_GROWTH_THRESHOLD: f64 = 0.1;
 pub const INFECTION_EXPONENTIAL_GROWTH_RATE: f64 = 0.1;
 pub const INFECTION_MAX: f64 = 1.0;
 
+pub const FIGHTING_RANGE: Scalar = 0.05;
+pub const ANGULAR_ACCURACY_STD_DEV: Scalar = 0.1;
+
+
 #[derive(Clone)]
 pub enum DeadOrAlive {
     Dead,
@@ -214,6 +218,16 @@ pub enum ZombieState {
     Roaming {
         jerk: Vector2,
         acceleration: Vector2
+    },
+    Fighting {
+        target_index: usize
+    }
+}
+
+#[derive(Clone, PartialEq)]
+pub enum HumanState {
+    Fighting {
+        target_index: usize
     }
 }
 
@@ -238,10 +252,17 @@ pub const BULLET_DAMAGE_MAX: Scalar = 1.0;
 pub const BULLET_MAX_DAMAGE_DISTANCE_FROM_ENTITY_CENTER: Scalar = 0.25 * ENTITY_RADIUS;
 pub const BULLET_MIN_DAMAGE_DISTANCE_FROM_ENTITY_CENTER: Scalar = 1.0 * ENTITY_RADIUS;
 
+pub const FIST_RADIUS: Scalar = 0.05;
+pub const FIST_SPEED: Scalar = 10.0;
+pub const FIST_SPEED_MIN: Scalar = 5.0;
+pub const FIST_SPAWN_DISTANCE_MULTIPLIER: Scalar = 1.25;
+
+
 #[derive(Copy, Clone, PartialEq)]
 pub enum ProjectileKind {
     Bullet,
     Casing,
+    Fist
 }
 
 #[derive(Copy, Clone, PartialEq, Debug)]

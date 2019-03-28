@@ -776,11 +776,14 @@ pub fn display(
         let sprite_type = match p.kind {
             ProjectileKind::Bullet => SpriteType::BulletInAir,
             ProjectileKind::Casing => SpriteType::BulletCasing,
+            ProjectileKind::Fist => SpriteType::BulletInAir
         };
+        let mut rad = BULLET_RADIUS;
+        if p.kind == ProjectileKind::Fist { rad = FIST_RADIUS; }
         let sprite = Sprite {
             position: p.position,
             facing: p.velocity.normalize(),
-            radius: BULLET_RADIUS,
+            radius: rad,
         };
         push_sprite_vertices(&mut vertex_buffers[sprite_type], &sprite);
     }
