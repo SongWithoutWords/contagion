@@ -362,9 +362,9 @@ impl Component {
                                         if display_text == "Instruction" {
                                             self.active_window = ActiveWindow::Instruction;
                                         } else if display_text == "Fullscreen" {
-                                            if window.window_mut().fullscreen_state() == Off {
+                                            if window.window().fullscreen_state() == Off {
                                                 window.window_mut().set_fullscreen(True);
-                                            } else if window.window_mut().fullscreen_state() == True {
+                                            } else if window.window().fullscreen_state() == True {
                                                 window.window_mut().set_fullscreen(Off);
                                             }
                                         }
