@@ -34,6 +34,11 @@ impl Camera {
         camera_frame: Mat4,
         delta_time: Scalar) {
 
+        const LEFT_EDGE_SCREEN: Scalar = -1.0;
+        const RIGHT_EDGE_SCREEN: Scalar = 0.99;
+        const TOP_EDGE_SCREEN: Scalar = 1.0;
+        const BOTTOM_EDGE_SCREEN: Scalar = -0.99;
+
         let mut acceleration = Vector2 {
             x: self.key_pressed(ks, keyboard::Scancode::D) - self.key_pressed(ks, keyboard::Scancode::A),
             y: self.key_pressed(ks, keyboard::Scancode::W) - self.key_pressed(ks, keyboard::Scancode::S),
@@ -43,15 +48,15 @@ impl Camera {
             let mouse_pos = &mut vector2(ms.x() as f64, ms.y() as f64);
             translate_to_camera_coord(mouse_pos, window.window().size());
 
-            if mouse_pos.x == -1.0 {
+            if mouse_pos.x == LEFT_EDGE_SCREEN {
                 acceleration.x = -1.0;
-            } else if mouse_pos.x == 1.0 {
-                acceleration.y = 1.0;
+            } else if mouse_pos.x >= RIGHT_EDGE_SCREEN {
+                acceleration.x = 1.0;
             }
 
-            if mouse_pos.y == -1.0 {
+            if mouse_pos.y <= BOTTOM_EDGE_SCREEN {
                 acceleration.y = -1.0;
-            } else if mouse_pos.y == 1.0 {
+            } else if mouse_pos.y == TOP_EDGE_SCREEN {
                 acceleration.y = 1.0;
             }
         }
