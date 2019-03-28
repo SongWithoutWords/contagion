@@ -3,6 +3,7 @@ use crate::core::vector::*;
 use crate::core::matrix::*;
 use glium_sdl2::SDL2Facade;
 use sdl2::keyboard;
+use sdl2::video::FullscreenType::{True, Off};
 
 #[derive(Clone)]
 pub struct Camera {
@@ -33,10 +34,27 @@ impl Camera {
         camera_frame: Mat4,
         delta_time: Scalar) {
 
-        let acceleration = Vector2 {
+        let mut acceleration = Vector2 {
             x: self.key_pressed(ks, keyboard::Scancode::D) - self.key_pressed(ks, keyboard::Scancode::A),
             y: self.key_pressed(ks, keyboard::Scancode::W) - self.key_pressed(ks, keyboard::Scancode::S),
         };
+
+        if window.window().fullscreen_state() == True {
+            let mouse_pos = &mut vector2(ms.x() as f64, ms.y() as f64);
+            translate_to_camera_coord(mouse_pos, window.window().size());
+
+            if mouse_pos.x == -1.0 {
+                acceleration.x = -1.0;
+            } else if mouse_pos.x == 1.0 {
+                acceleration.y = 1.0;
+            }
+
+            if mouse_pos.y == -1.0 {
+                acceleration.y = -1.0;
+            } else if mouse_pos.y == 1.0 {
+                acceleration.y = 1.0;
+            }
+        }
 
 
         self.velocity += delta_time * Self::ACCELERATION_FACTOR * acceleration;
