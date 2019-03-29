@@ -1,4 +1,4 @@
-use crate::simulation::state::{State};
+use crate::simulation::update::EntityCounts;
 use crate::simulation::game_state::GameState;
 use crate::presentation::ui::gui::Component;
 use crate::scenes::scene::{Scene, UpdateResult};
@@ -12,17 +12,17 @@ use sdl2::keyboard::Keycode;
 use crate::presentation::graphics::font::FontPkg;
 
 pub struct LossScreen {
-    state: State,
+    entity_counts: EntityCounts,
     game_state: GameState,
     gui: Component,
 }
 
 impl LossScreen {
-    pub fn new(state: State) -> LossScreen {
+    pub fn new(entity_counts: EntityCounts) -> LossScreen {
         let game_state = simulation::game_state::GameState::new();
         let gui = presentation::ui::gui::Component::init_loss_gui();
         LossScreen {
-            state: state,
+            entity_counts: entity_counts,
             game_state: game_state,
             gui:gui,
         }
@@ -69,7 +69,7 @@ impl Scene for LossScreen  {
                                                  &textures,
                                                  &params,
                                                  &mut self.gui,
-                                                 &self.state,
+                                                 &self.entity_counts,
                                                  &fonts);
         target.finish().unwrap();
     }

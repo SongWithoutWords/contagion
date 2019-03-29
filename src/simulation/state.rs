@@ -19,15 +19,24 @@ pub struct State {
 pub const ENTITY_RADIUS: Scalar = 0.5;
 pub const ENTITY_DRAG: Scalar = 1.0;
 
+// #[derive(Copy, Clone, Debug, Enum, PartialEq)]
+// pub enum EntityType {
+//     Civilian,
+//     Cop,
+//     Dead,
+//     Zombie
+// }
+
 #[derive(Clone)]
 pub struct Entity {
     pub position: Vector2,
     pub velocity: Vector2,
     pub facing_angle: Scalar,
-    pub behaviour: Behaviour,
+    pub dead_or_alive: DeadOrAlive,
 }
 
 impl Entity {
+    // Transformation/orientation functions
     pub fn get_facing_normal(&self) -> Vector2 {
         Vector2::from_angle(self.facing_angle)
     }
@@ -45,6 +54,43 @@ impl Entity {
     pub fn accelerate_along_vector(&mut self, vector: Vector2, delta_time: Scalar, force: Scalar) {
         self.look_along_vector(vector, delta_time);
         self.velocity += delta_time * force * vector.normalize();
+    }
+
+    // Query functions
+    pub fn is_dead(&self) -> bool {
+        match self.dead_or_alive {
+            DeadOrAlive::Dead => true,
+            _ => false
+        }
+    }
+    pub fn is_alive(&self) -> bool {
+        match self.dead_or_alive {
+            DeadOrAlive::Alive { .. } => true,
+            _ => false
+        }
+    }
+    pub fn is_zombie(&self) -> bool {
+        match self.dead_or_alive {
+            DeadOrAlive::Alive { zombie_or_human: ZombieOrHuman::Zombie { .. }, .. } => true,
+            _ => false
+        }
+    }
+    pub fn is_human(&self) -> bool {
+        match self.dead_or_alive {
+            DeadOrAlive::Alive { zombie_or_human: ZombieOrHuman::Human { .. }, .. } => true,
+            _ => false
+        }
+    }
+    pub fn is_cop(&self) -> bool {
+        match self.dead_or_alive {
+            DeadOrAlive::Alive {
+                zombie_or_human: ZombieOrHuman::Human {
+                    human: Human::Cop { .. },
+                    .. },
+                ..
+            } => true,
+            _ => false
+        }
     }
 }
 
@@ -65,29 +111,41 @@ pub const COP_MAGAZINE_CAPACITY: i64 = 6;
 pub const ZOMBIE_SIGHT_RADIUS: f64 = 30.0;
 pub const ZOMBIE_SIGHT_RADIUS_SQUARE: f64 = ZOMBIE_SIGHT_RADIUS * ZOMBIE_SIGHT_RADIUS;
 
+pub const ZOMBIE_HUMAN_COLLISION_INFECTION_RATE: f64 = 0.01;
+
 pub const HUMAN_SIGHT_RADIUS: f64 = 40.0;
 pub const HUMAN_SIGHT_RADIUS_SQUARE: f64 = HUMAN_SIGHT_RADIUS * HUMAN_SIGHT_RADIUS;
 
 pub const COP_SIGHT_RADIUS: f64 = 50.0;
 pub const COP_SIGHT_RADIUS_SQUARE: f64 = COP_SIGHT_RADIUS * COP_SIGHT_RADIUS;
 
-#[derive(Clone, PartialEq)]
-pub enum Behaviour {
-    Cop {
-        rounds_in_magazine: i64,
-        // state: CopState
-
-        // A stack of the cop's states
-        // - The current state is the state on top of the stack
-        // - When the cop finishes with a state that state is popped from the stack
-        // - If there are no states in the stack, the cop is idle
-        state_stack: Vec<CopState>
-    },
+#[derive(Clone)]
+pub enum DeadOrAlive {
     Dead,
-    Human,
+    Alive {
+        health: Scalar,
+        zombie_or_human: ZombieOrHuman
+    }
+}
+
+#[derive(Clone)]
+pub enum ZombieOrHuman {
     Zombie {
         state: ZombieState
+    },
+    Human {
+        infection: Scalar,
+        human: Human,
     }
+}
+
+#[derive(Clone)]
+pub enum Human {
+    Civilian,
+    Cop {
+        rounds_in_magazine: i64,
+        state_stack: Vec<CopState>,
+    },
 }
 
 pub const COP_MIN_DISTANCE_FROM_WAYPOINT_SQUARED: Scalar = 0.2;

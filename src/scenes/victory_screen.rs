@@ -1,4 +1,4 @@
-use crate::simulation::state::State;
+use crate::simulation::update::EntityCounts;
 use crate::simulation::game_state::GameState;
 use crate::presentation::ui::gui::Component;
 use crate::scenes::scene::{Scene, UpdateResult};
@@ -12,17 +12,17 @@ use crate::scenes::{game, main_menu};
 use sdl2::keyboard::Keycode;
 
 pub struct VictoryScreen {
-    state: State,
+    entity_counts: EntityCounts,
     game_state: GameState,
     gui: Component,
 }
 
 impl VictoryScreen {
-    pub fn new(state: State) -> VictoryScreen {
+    pub fn new(entity_counts: EntityCounts) -> VictoryScreen {
         let game_state = simulation::game_state::GameState::new();
         let gui = presentation::ui::gui::Component::init_victory_gui();
         VictoryScreen {
-            state: state,
+            entity_counts: entity_counts,
             game_state: game_state,
             gui: gui,
         }
@@ -79,7 +79,7 @@ impl Scene for VictoryScreen {
                                                    &textures,
                                                    &params,
                                                    &mut self.gui,
-                                                   &self.state,
+                                                   &self.entity_counts,
                                                    &fonts);
         target.finish().unwrap();
     }
