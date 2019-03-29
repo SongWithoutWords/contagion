@@ -238,46 +238,7 @@ fn push_gui_vertices(buffer: &mut Vec<ColorVertex>, ui: &Gui) {
     buffer.push(vertex2);
 }
 
-fn push_red_hp_vertices(buffer: &mut Vec<ColorVertex>, sprite: &Sprite) {
-    let position = Vector2 {x: sprite.position.x, y: sprite.position.y + 1.0};
-    let up = 0.5;
-    let down = 0.2;
-
-    let top_left  = Vector2{x:position.x - up, y: position.y + up};
-    let top_right = Vector2{x:position.x + up, y: position.y + up};
-    let bot_left  = Vector2{x:position.x - up, y: position.y + down};
-    let bot_right = Vector2{x:position.x + up, y: position.y + down};
-    let color= [1.0, 0.0, 0.0, 1.0];
-
-    let vertex0 = ColorVertex {
-        position: top_left.as_f32_array(),
-        tex_coords: [0.0, 1.0],
-        color
-    };
-    let vertex1 = ColorVertex {
-        position: top_right.as_f32_array(),
-        tex_coords: [1.0, 1.0],
-        color
-    };
-    let vertex2 = ColorVertex {
-        position: bot_left.as_f32_array(),
-        tex_coords: [0.0, 0.0],
-        color
-    };
-    let vertex3 = ColorVertex {
-        position: bot_right.as_f32_array(),
-        tex_coords: [1.0, 0.0],
-        color
-    };
-    buffer.push(vertex0);
-    buffer.push(vertex1);
-    buffer.push(vertex2);
-    buffer.push(vertex1);
-    buffer.push(vertex3);
-    buffer.push(vertex2);
-}
-
-fn push_green_hp_vertices(buffer: &mut Vec<ColorVertex>, sprite: &Sprite) {
+fn push_health_bar_vertices(buffer: &mut Vec<ColorVertex>, sprite: &Sprite, health: Scalar) {
     let position = Vector2 {x: sprite.position.x, y: sprite.position.y + 1.0};
     let up = 0.5;
     let down = 0.2;
@@ -761,7 +722,6 @@ pub fn display(
 
 
     let mut vertex_buffers = enum_map!{_ => vec!()};
-    let mut vertex_buffers_red_hp = vec!();
     let mut vertex_buffers_green_hp = vec!();
     let mut vertex_buffers_gui = enum_map!{_ => vec!()};
     let mut vertex_buffers_building = vec!();
@@ -787,13 +747,13 @@ pub fn display(
     // Compute the vertices in world coordinates of all entities
     for entity in &state.entities {
 
-        let sprite_type = match &entity.dead_or_alive {
-            DeadOrAlive::Dead => SpriteType::Dead,
-            DeadOrAlive::Alive { zombie_or_human, .. } => match zombie_or_human {
-                ZombieOrHuman::Zombie{ .. } => SpriteType::Zombie,
+        let (sprite_type, health) = match &entity.dead_or_alive {
+            DeadOrAlive::Dead => (SpriteType::Dead, ENTITY_HEALTH_MIN),
+            DeadOrAlive::Alive { zombie_or_human, health } => match zombie_or_human {
+                ZombieOrHuman::Zombie{ .. } => (SpriteType::Zombie, *health),
                 ZombieOrHuman::Human { human, .. } => match human {
-                    Human::Cop { .. } => SpriteType::Cop,
-                    Human::Civilian { .. } => SpriteType::Civilian
+                    Human::Cop { .. } => (SpriteType::Cop, *health),
+                    Human::Civilian { .. } => (SpriteType::Civilian, *health)
                 }
             }
         };
@@ -804,9 +764,10 @@ pub fn display(
         };
         push_sprite_vertices(&mut vertex_buffers[sprite_type], &sprite);
 
-        // should be able to display recently hit HP bar and hide otherwise
-        push_green_hp_vertices(&mut vertex_buffers_green_hp, &sprite);
-        push_red_hp_vertices(&mut vertex_buffers_red_hp, &sprite);
+        // Display a health bar only for entities that are wounded but not dead
+        if ENTITY_HEALTH_MIN < health && health < ENTITY_HEALTH_MAX {
+            push_health_bar_vertices(&mut vertex_buffers_green_hp, &sprite, health);
+        }
     }
 
     // Compute vertices for selection highlights
@@ -997,18 +958,6 @@ pub fn display(
             params,
             &uniforms);
     }
-
-    // Render red HP
-    let uniforms = uniform! {
-        matrix: camera_frame,
-    };
-    draw_color_sprites(
-        frame,
-        window,
-        &vertex_buffers_red_hp,
-        &programs.gui_program,
-        params,
-        &uniforms);
 
     // Render green HP
     let uniforms = uniform! {
