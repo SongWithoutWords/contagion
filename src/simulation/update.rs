@@ -119,7 +119,8 @@ pub fn update(args: &UpdateArgs, state: &mut State) -> SimulationResults {
             }
             DeadOrAlive::Alive { zombie_or_human, health } => {
                 if *health <= ENTITY_HEALTH_MIN {
-                    state.entities[i].dead_or_alive = DeadOrAlive::Dead
+                    state.entities[i].dead_or_alive = DeadOrAlive::Dead;
+                    sounds.push(Sound::ZombieDeath);
                 }
                 else {
                     match zombie_or_human {
