@@ -1,20 +1,23 @@
+use enum_map::EnumMap;
+use glium::Surface;
+use glium::texture::texture2d::Texture2d;
+use lerp::*;
+
 use crate::core::scalar::*;
 use crate::core::vector::*;
 use crate::core::matrix::*;
 use crate::core::geo::polygon::*;
-use crate::simulation::state::*;
-use crate::simulation::update::EntityCounts;
-use crate::simulation::control::*;
 
-use glium::Surface;
-use glium::texture::texture2d::Texture2d;
-use enum_map::EnumMap;
 use crate::presentation::ui::gui::*;
 use crate::presentation::ui::gui::GuiType;
 use crate::presentation::ui::glium_text;
 use crate::presentation::ui::glium_text::FontTexture;
 use crate::presentation::ui::gui::Component;
 use crate::presentation::graphics::font::{FontPkg};
+
+use crate::simulation::state::*;
+use crate::simulation::update::EntityCounts;
+use crate::simulation::control::*;
 
 // Enum ordered by draw order
 #[derive(Copy, Clone, Debug, Enum, PartialEq)]
@@ -244,10 +247,11 @@ fn push_health_bar_vertices(buffer: &mut Vec<ColorVertex>, sprite: &Sprite, heal
     let down = 0.2;
 
     let top_left  = Vector2{x:position.x - up, y: position.y + up};
-    let top_right = Vector2{x:position.x + up, y: position.y + up};
+    let top_right = top_left.lerp(Vector2{x:position.x + up, y: position.y + up}, health);
     let bot_left  = Vector2{x:position.x - up, y: position.y + down};
-    let bot_right = Vector2{x:position.x + up, y: position.y + down};
-    let color= [0.06, 0.240, 0.105, 1.0];
+    let bot_right = bot_left.lerp(Vector2{x:position.x + up, y: position.y + down}, health);
+
+    let color = vector4(1.0, 0.0, 0.0, 1.0).lerp(vector4(0.0, 1.0, 0.0, 1.0), health).as_f32_array();
 
     let vertex0 = ColorVertex {
         position: top_left.as_f32_array(),

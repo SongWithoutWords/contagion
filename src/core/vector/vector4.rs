@@ -11,6 +11,12 @@ pub struct Vector4 {
     pub w: Scalar,
 }
 
+impl Vector4 {
+    pub fn as_f32_array(&self) -> [f32; 4] {
+        [self.x as f32, self.y as f32, self.z as f32, self.w as f32]
+    }
+}
+
 pub fn vector4(x: Scalar, y: Scalar, z: Scalar, w: Scalar) -> Vector4 {
     Vector4{ x: x, y: y, z: z, w: w }
 }
