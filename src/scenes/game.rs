@@ -81,7 +81,7 @@ impl Scene for Game {
         }
         let keyboard_state = event_pump.keyboard_state();
         let mouse_state = event_pump.mouse_state();
-        self.camera.update(&keyboard_state, &mouse_state, window, self.camera.compute_matrix(), delta_time);
+        self.camera.update(&keyboard_state, &mouse_state, window, delta_time);
         for event in event_pump.poll_iter() {
             use sdl2::event::Event;
             match event {
@@ -100,7 +100,10 @@ impl Scene for Game {
                     self.camera.cursor_zoom(&mouse_state, y, &window, self.camera.compute_matrix());
                 },
                 Event::MouseButtonDown {timestamp: _, window_id: _, which: _, mouse_btn: MouseButton::Middle , x, y} => {
-                    self.camera.camera_pan(x, y);
+                    self.camera.set_initial_mouse_pos(x, y);
+                },
+                Event::MouseMotion {mousestate: _, timestamp: _, which: _, window_id: _, x, xrel: _, y, yrel: _} => {
+                    self.camera.camera_pan(x, y, &mouse_state, &window, self.camera.compute_matrix());
                 },
 
                 _ => {

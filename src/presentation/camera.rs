@@ -31,7 +31,6 @@ impl Camera {
         ks: &sdl2::keyboard::KeyboardState,
         ms: &sdl2::mouse::MouseState,
         window: &mut SDL2Facade,
-        camera_frame: Mat4,
         delta_time: Scalar) {
 
         const LEFT_EDGE_SCREEN: Scalar = -1.0;
@@ -74,23 +73,6 @@ impl Camera {
         self.velocity += delta_time * Self::ACCELERATION_FACTOR * acceleration;
         self.position += delta_time * self.velocity;
         self.velocity -= delta_time * Self::DRAG_FACTOR * self.velocity;
-
-        // Middle mouse button pans camera
-        if ms.middle() {
-            let initial_mouse_pos: &mut Vector2 = &mut Vector2 { x: self.initial_mouse_pos.x, y: self.initial_mouse_pos.y };
-            translate_to_camera_coord(initial_mouse_pos, window.window().size());
-            translate_camera_to_world_coord(initial_mouse_pos, camera_frame);
-
-            let mouse_pos: &mut Vector2 = &mut Vector2 { x: ms.x() as f64, y: ms.y() as f64 };
-            translate_to_camera_coord(mouse_pos, window.window().size());
-            translate_camera_to_world_coord(mouse_pos, camera_frame);
-
-            let zoom = self.zoom;
-
-            let mouse_vec = Vector2 { x: (initial_mouse_pos.x - mouse_pos.x) * zoom.x, y: (initial_mouse_pos.y - mouse_pos.y) * zoom.y };
-
-            self.velocity += delta_time * Self::ACCELERATION_FACTOR * mouse_vec;
-        }
     }
 
     fn key_pressed(&mut self, ks: &sdl2::keyboard::KeyboardState, s: keyboard::Scancode) -> Scalar {
@@ -132,9 +114,32 @@ impl Camera {
         })
     }
 
-    pub fn camera_pan(&mut self, mouse_pos_x: i32, mouse_pos_y: i32) {
+    pub fn set_initial_mouse_pos(&mut self, mouse_pos_x: i32, mouse_pos_y: i32) {
         let initial_mouse_pos = &mut Vector2 { x: mouse_pos_x as f64, y: mouse_pos_y as f64 };
         self.initial_mouse_pos = *initial_mouse_pos;
+    }
+
+    pub fn camera_pan(&mut self, mouse_pos_x: i32, mouse_pos_y: i32,
+                      ms: &sdl2::mouse::MouseState,
+                      window: &SDL2Facade,
+                      camera_frame: Mat4) {
+
+        const PAN_SPEED: Scalar = 0.3;
+
+        let mouse_pos = &mut vector2(mouse_pos_x as f64, mouse_pos_y as f64);
+        translate_to_camera_coord(mouse_pos, window.window().size());
+        translate_camera_to_world_coord(mouse_pos, camera_frame);
+
+        let initial_mouse_pos: &mut Vector2 = &mut Vector2 {x: self.initial_mouse_pos.x, y: self.initial_mouse_pos.y};
+        translate_to_camera_coord(initial_mouse_pos, window.window().size());
+        translate_camera_to_world_coord(initial_mouse_pos, camera_frame);
+
+        if ms.middle() {
+            let delta_mouse = vector2((initial_mouse_pos.x - mouse_pos.x) * self.zoom.x, (initial_mouse_pos.y - mouse_pos.y) * self.zoom.y);
+
+            self.position.x += delta_mouse.x * PAN_SPEED;
+            self.position.y += delta_mouse.y * PAN_SPEED;
+        }
     }
 
     pub fn cursor_zoom(
