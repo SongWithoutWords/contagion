@@ -117,7 +117,7 @@ pub fn update(args: &UpdateArgs, state: &mut State) -> SimulationResults {
                 entity_counts.dead += 1;
             }
             DeadOrAlive::Alive { zombie_or_human, health } => {
-                if *health <= 0.0 {
+                if *health <= ENTITY_HEALTH_MIN {
                     state.entities[i].dead_or_alive = DeadOrAlive::Dead
                 }
                 else {
@@ -129,7 +129,7 @@ pub fn update(args: &UpdateArgs, state: &mut State) -> SimulationResults {
                             *zombie_state = next_state;
                         }
                         ZombieOrHuman::Human { infection, human } => {
-                            if *infection >= 1.0 {
+                            if *infection >= ENTITY_INFECTION_MAX {
                                 *zombie_or_human = ZombieOrHuman::Zombie { state: ZombieState::Roaming };
                                 sounds.push(Sound::PersonInfected);
                             }
