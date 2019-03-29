@@ -49,16 +49,13 @@ impl Control {
         translate_camera_to_world(m_pos, camera_frame);
 
         for i in 0..state.entities.len() {
-            let entity = &mut state.entities[i];
-            match entity.behaviour {
-                Behaviour::Cop {..} => {
-                    let entity_pos = entity.position;
-                    if is_click_on_entity(entity_pos, *m_pos) {
-                        state.selection.insert(i);
-                        break;
-                    }
+            let entity = &state.entities[i];
+            if entity.is_cop() {
+                let entity_pos = entity.position;
+                if is_click_on_entity(entity_pos, *m_pos) {
+                    state.selection.insert(i);
+                    break;
                 }
-                _ => ()
             }
         }
     }
@@ -70,33 +67,26 @@ impl Control {
         translate_camera_to_world(m_pos, camera_frame);
 
         for i in 0..state.entities.len() {
-            let entity = &mut state.entities[i];
-            match entity.behaviour {
-                Behaviour::Cop {..} => {
-                    let x_pos: Scalar = entity.position.x;
-                    let y_pos: Scalar = entity.position.y;
-                    if m_pos.x <= x_pos + 0.5 && m_pos.x >= x_pos - 0.5
-                        && m_pos.y <= y_pos + 0.5 && m_pos.y >= y_pos - 0.5 {
+            let entity = &state.entities[i];
+            if entity.is_cop() {
+                let x_pos: Scalar = entity.position.x;
+                let y_pos: Scalar = entity.position.y;
+                if m_pos.x <= x_pos + 0.5 && m_pos.x >= x_pos - 0.5
+                    && m_pos.y <= y_pos + 0.5 && m_pos.y >= y_pos - 0.5 {
 
                         for j in 0..state.entities.len() {
-                            let entity1 = &mut state.entities[j];
-                            match entity1.behaviour {
-                                Behaviour::Cop {..} => {
-                                    let entity_pos = &mut Vector2{ x: entity1.position.x, y: entity1.position.y };
-                                    translate_world_to_camera(entity_pos, camera_frame);
-                                    if entity_pos.x <= 1.0 && entity_pos.x >= -1.0
-                                        && entity_pos.y <= 1.0 && entity_pos.y >= -1.0 {
+                            let entity1 = &state.entities[j];
+                            if entity1.is_cop() {
+                                let entity_pos = &mut Vector2{ x: entity1.position.x, y: entity1.position.y };
+                                translate_world_to_camera(entity_pos, camera_frame);
+                                if entity_pos.x <= 1.0 && entity_pos.x >= -1.0
+                                    && entity_pos.y <= 1.0 && entity_pos.y >= -1.0 {
                                         state.selection.insert(j);
                                     }
-                                }
-                                _ => ()
                             }
                         }
-
                         break;
                     }
-                }
-                _ => ()
             }
         }
     }
@@ -120,14 +110,11 @@ impl Control {
 
         for i in 0..state.entities.len() {
             let entity = &mut state.entities[i];
-            match entity.behaviour {
-                Behaviour::Cop {..} => {
-                    let entity_pos = entity.position;
-                    if check_bounding_box(*m_start_pos, *m_end_pos, entity_pos) {
-                        state.selection.insert(i);
-                    }
+            if entity.is_cop() {
+                let entity_pos = entity.position;
+                if check_bounding_box(*m_start_pos, *m_end_pos, entity_pos) {
+                    state.selection.insert(i);
                 }
-                _ => ()
             }
         }
     }
@@ -171,24 +158,26 @@ impl Control {
 
         // Check if any zombie is within the click
         for i in 0..simulation.entities.len() {
-            let entity = &mut simulation.entities[i];
-            match entity.behaviour {
-                Behaviour::Zombie {..} => {
-                    let entity_pos = entity.position;
-                    if is_click_on_entity(entity_pos, m_pos) {
-                        zombie_index = Some(i);
-                    }
+            if simulation.entities[i].is_zombie() {
+                let entity_pos = simulation.entities[i].position;
+                if is_click_on_entity(entity_pos, m_pos) {
+                    zombie_index = Some(i);
                 }
-                _ => ()
             }
         }
 
         for i in &simulation.selection {
 
-            let Entity {position, behaviour, ..} = &mut simulation.entities[*i];
+            let Entity {position, dead_or_alive, ..} = &mut simulation.entities[*i];
 
-            match behaviour {
-                Behaviour::Cop { ref mut state_stack, .. } => {
+            match dead_or_alive {
+                DeadOrAlive::Alive {
+                    zombie_or_human: ZombieOrHuman::Human {
+                        human: Human::Cop { state_stack, .. },
+                        ..
+                    },
+                    ..
+                } => {
 
                     // Make the cop stop what they are doing
                     state_stack.clear();
@@ -200,8 +189,6 @@ impl Control {
                         &simulation.building_outlines);
 
                     // If no zombie clicked, issue regular move order, else issue special attack order
-
-
                     state_stack.push(match zombie_index {
                         None =>
                             CopState::Moving {
@@ -251,23 +238,16 @@ impl Control {
                     }
                     // Debugging purposes
                     Keycode::F1 => {
-                        for i in 0..state.entities.len() {
-                            let mut entity = &mut state.entities[i];
-                            match entity.behaviour {
-                                // do nothing for zombie
-                                Behaviour::Zombie { .. } => (),
-                                // kill everything else
-                                _ => entity.behaviour = Behaviour::Dead
+                        for entity in &mut state.entities {
+                            if entity.is_human() {
+                                entity.dead_or_alive = DeadOrAlive::Dead
                             }
                         }
                     },
                     Keycode::F2 => {
-                        for i in 0..state.entities.len() {
-                            let mut entity = &mut state.entities[i];
-                            match entity.behaviour {
-                                Behaviour::Human { .. } => (),
-                                Behaviour::Cop { .. } => (),
-                                _ => entity.behaviour = Behaviour::Dead
+                        for entity in &mut state.entities {
+                            if entity.is_zombie() {
+                                entity.dead_or_alive = DeadOrAlive::Dead
                             }
                         }
                     },

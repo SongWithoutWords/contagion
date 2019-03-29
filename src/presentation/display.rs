@@ -3,6 +3,7 @@ use crate::core::vector::*;
 use crate::core::matrix::*;
 use crate::core::geo::polygon::*;
 use crate::simulation::state::*;
+use crate::simulation::update::EntityCounts;
 use crate::simulation::control::*;
 
 use glium::Surface;
@@ -743,7 +744,9 @@ pub fn display(
     programs: &Programs,
     textures: &Textures,
     params: &glium::DrawParameters,
-    state: &State, camera_frame: Mat4,
+    state: &State,
+    entity_counts: &EntityCounts,
+    camera_frame: Mat4,
     ui: &mut Component,
     fonts: &FontPkg,
     control: &Control
@@ -765,14 +768,7 @@ pub fn display(
     let mut vertex_buffers_path = vec!();
     let mut text_buffers = vec!();
 
-    let mut cop_count = 0;
-
-    let mut human_count = 0;
-    let mut zombie_count = 0;
-    let mut _dead_count = 0;
-    let mut _magazine_count = vec!();
     let mut _menu_buttons: Vec<(Vector2, Vector2, Vector2, Vector2)> = vec![];
-
 
     // Compute the vertices in world coordinates of all projectiles
     for p in &state.projectiles {
@@ -790,11 +786,16 @@ pub fn display(
 
     // Compute the vertices in world coordinates of all entities
     for entity in &state.entities {
-        let sprite_type = match entity.behaviour {
-            Behaviour::Cop{..} => {cop_count+=1; SpriteType::Cop},
-            Behaviour::Dead => {_dead_count+=1; SpriteType::Dead},
-            Behaviour::Human => {human_count+=1; SpriteType::Civilian},
-            Behaviour::Zombie{..} => {zombie_count+=1; SpriteType::Zombie},
+
+        let sprite_type = match &entity.dead_or_alive {
+            DeadOrAlive::Dead => SpriteType::Dead,
+            DeadOrAlive::Alive { zombie_or_human, .. } => match zombie_or_human {
+                ZombieOrHuman::Zombie{ .. } => SpriteType::Zombie,
+                ZombieOrHuman::Human { human, .. } => match human {
+                    Human::Cop { .. } => SpriteType::Cop,
+                    Human::Civilian { .. } => SpriteType::Civilian
+                }
+            }
         };
         let sprite = Sprite {
             position: entity.position,
@@ -812,10 +813,9 @@ pub fn display(
     let mut selection_count = 0;
     {
         for i in &state.selection {
-            match state.entities[*i].behaviour {
-                Behaviour::Cop { rounds_in_magazine, .. } => { _magazine_count.push(rounds_in_magazine) },
-                _ => ()
-            };
+
+            // TODO: Ian M - I think there's a bug where cops that become infected maintain their selection highlight
+
             let entity = &state.entities[*i];
             let sprite = Sprite {
                 position: entity.position,
@@ -901,8 +901,13 @@ pub fn display(
 
     // Compute vertices for cop paths
     for entity in &state.entities {
-        match &entity.behaviour {
-            Behaviour::Cop{ state_stack, .. } => {
+        match &entity.dead_or_alive {
+
+            DeadOrAlive::Alive {
+                zombie_or_human: ZombieOrHuman::Human {
+                    human: Human::Cop { state_stack, .. },
+                    .. },
+                .. } => {
                 let path = match state_stack.last() {
                     Some(CopState::Moving { path, .. }) => path,
                     Some(CopState::AttackingZombie { path, .. }) => path,
@@ -1129,7 +1134,12 @@ pub fn display(
                     tex: &textures.sprite_textures[_gui_type],
                 };
             // Draw the text showing the number of cops next to the UI cop icon
-            draw_remaining_zombie_num(window, zombie_count, frame, &font.lowres());
+              draw_remaining_zombie_num(
+                  window,
+                  entity_counts.zombies,
+                  frame,
+                  &font.lowres());
+
             draw_color_sprites(
                 frame,
                 window,
@@ -1144,7 +1154,7 @@ pub fn display(
                     tex: &textures.sprite_textures[_gui_type],
                 };
             // Draw the text showing the number of cops next to the UI cop icon
-            draw_remaining_civilian_num(window, human_count, frame, &font.lowres());
+            draw_remaining_civilian_num(window, entity_counts.civilians, frame, &font.lowres());
             draw_color_sprites(
                 frame,
                 window,
@@ -1158,16 +1168,17 @@ pub fn display(
                     matrix: mat_gui,
                     tex: &textures.sprite_textures[_gui_type],
                 };
-              // Draw the text showing the number of cops next to the UI cop icon
-              draw_remaining_cop_num(window, cop_count, frame, &font.lowres());
-              draw_color_sprites(
-                  frame,
-                  window,
-                  &vertex_buffer,
-                  &programs.sprite_program,
-                  params,
-                  &uniforms);
-          }
+
+            // Draw the text showing the number of cops next to the UI cop icon
+            draw_remaining_cop_num(window, entity_counts.cops, frame, &font.lowres());
+            draw_color_sprites(
+                frame,
+                window,
+                &vertex_buffer,
+                &programs.sprite_program,
+                params,
+                &uniforms);
+        }
     }
 
     // Render Menu Button Text
@@ -1228,7 +1239,7 @@ fn draw_cop_num(window: &glium_sdl2::SDL2Facade, cop_num: i32, frame: &mut glium
 
 
 // Draw the remaining number of zombies in the world (number)
-fn draw_remaining_zombie_num(window: &glium_sdl2::SDL2Facade, zombie_num: i32, frame: &mut glium::Frame, font: &FontTexture){
+fn draw_remaining_zombie_num(window: &glium_sdl2::SDL2Facade, zombie_num: usize, frame: &mut glium::Frame, font: &FontTexture){
     let system = glium_text::TextSystem::new(window);
     let zombie_num_str: String =  zombie_num.to_string();
     let mut zombie_num_display = format!("0{}",  zombie_num_str);
@@ -1256,7 +1267,7 @@ fn draw_remaining_zombie_num(window: &glium_sdl2::SDL2Facade, zombie_num: i32, f
 }
 
 // Draw the remaining number of civilians in the world (number)
-fn draw_remaining_civilian_num(window: &glium_sdl2::SDL2Facade, civilian_num: i32, frame: &mut glium::Frame, font: &FontTexture){
+fn draw_remaining_civilian_num(window: &glium_sdl2::SDL2Facade, civilian_num: usize, frame: &mut glium::Frame, font: &FontTexture){
     let system = glium_text::TextSystem::new(window);
     let civilian_num_str: String =  civilian_num.to_string();
     let mut civilian_num_display = format!("0{}",  civilian_num_str);
@@ -1284,7 +1295,7 @@ fn draw_remaining_civilian_num(window: &glium_sdl2::SDL2Facade, civilian_num: i3
 }
 
 // Draw the remaining number of civilians in the world (number)
-fn draw_remaining_cop_num(window: &glium_sdl2::SDL2Facade, cop_num: i32, frame: &mut glium::Frame, font: &FontTexture){
+fn draw_remaining_cop_num(window: &glium_sdl2::SDL2Facade, cop_num: usize, frame: &mut glium::Frame, font: &FontTexture){
     let system = glium_text::TextSystem::new(window);
     let cop_num_str: String =  cop_num.to_string();
     let mut cop_num_display = format!("0{}",  cop_num_str);
@@ -1477,6 +1488,11 @@ pub fn display_main_menu (
     }
 }
 
+fn compute_score(entity_counts: &EntityCounts) -> f64 {
+    (100 * (entity_counts.cops + entity_counts.civilians)) as f64
+        / entity_counts.total() as f64
+}
+
 pub fn display_loss_screen (
     frame: &mut glium::Frame,
     window: &glium_sdl2::SDL2Facade,
@@ -1484,7 +1500,7 @@ pub fn display_loss_screen (
     _textures: &Textures,
     params: &glium::DrawParameters,
     ui: &mut Component,
-    state: &State,
+    entity_counts: &EntityCounts,
     fonts: &FontPkg,
 ) {
     let font = fonts.get("Consola").unwrap();
@@ -1565,28 +1581,7 @@ pub fn display_loss_screen (
 
     // Render Entities
     let mat  = Mat4::init_id_matrix();
-    let mut cop_count = 0;
-    let mut _dead_count = 0;
-    let mut human_count = 0;
-    let mut zombie_count = 0;
-    let mut score ;
-    for entity in &state.entities {
-        match entity.behaviour {
-            Behaviour::Cop{..} => {cop_count+=1;},
-            Behaviour::Dead => {_dead_count+=1;},
-            Behaviour::Human => {human_count+=1;},
-            Behaviour::Zombie{..} => {zombie_count+=1;},
-        };
-//        // score is total of alive humans
-//        score += cop_count + human_count;
-    }
-//    // score is then multiplied by 100 then subtract zombie and dead count
-//    score = score*100 - zombie_count;
-//    if score < 0 {score = 0};
-    // score is total of alive humans
-    score = cop_count + human_count;
-    score = (score - zombie_count) * 100;
-    if score < 0 {score = 0};
+    let score = compute_score(entity_counts);
 
     let system = glium_text::TextSystem::new(window);
     let text_1_loss = "Humanity Perished...".to_string();
@@ -1614,7 +1609,9 @@ pub fn display_loss_screen (
     glium_text::draw(&text, &system, frame, matrix.as_f32_array(), color);
 
     // Stats
-    let text_display = format!("Cops: {}, Civilians: {}, Zombies: {}", cop_count, human_count, zombie_count);
+    let text_display = format!("Cops: {}, Civilians: {}, Zombies: {}",
+                               entity_counts.cops, entity_counts.civilians, entity_counts.zombies);
+
     let str_slice: &str = &text_display[..];
     let text = glium_text::TextDisplay::new(&system, font.medres(), str_slice);
     let color = [1.0, 1.0, 0.0, 1.0f32];
@@ -1630,7 +1627,8 @@ pub fn display_victory_screen (
     _textures: &Textures,
     params: &glium::DrawParameters,
     ui: &mut Component,
-    state: &State,
+    // state: &State,
+    entity_counts: &EntityCounts,
     fonts: &FontPkg,
 ) {
     let font = fonts.get("Consola").unwrap();
@@ -1682,7 +1680,6 @@ pub fn display_victory_screen (
         }
     }
 
-
     // Render Button Text
     for i in 0..text_buffers.len() {
         let system = glium_text::TextSystem::new(window);
@@ -1711,24 +1708,7 @@ pub fn display_victory_screen (
         glium_text::draw(&text, &system, frame, menu_matrix, color);
     }
 
-    // Render Entities
-    let mut cop_count = 0;
-    let mut _dead_count = 0;
-    let mut human_count = 0;
-    let mut zombie_count = 0;
-    let mut score ;
-    for entity in &state.entities {
-        match entity.behaviour {
-            Behaviour::Cop{..} => {cop_count+=1;},
-            Behaviour::Dead => {_dead_count+=1;},
-            Behaviour::Human => {human_count+=1;},
-            Behaviour::Zombie{..} => {zombie_count+=1;},
-        };
-    }
-    // score is total of alive humans
-    score = cop_count + human_count;
-    score = (score - zombie_count) * 100;
-    if score < 0 {score = 0};
+    let score = compute_score(entity_counts);
 
     let system = glium_text::TextSystem::new(window);
     let text_1_win = "Humanity Prevailed!".to_string();
@@ -1756,7 +1736,8 @@ pub fn display_victory_screen (
     glium_text::draw(&text, &system, frame, matrix.as_f32_array(), color);
 
     // Stats
-    let text_display = format!("Cops: {}, Civilians: {}, Zombies: {}", cop_count, human_count, zombie_count);
+    let text_display = format!("Cops: {}, Civilians: {}, Zombies: {}",
+                               entity_counts.cops, entity_counts.civilians, entity_counts.zombies);
     let str_slice: &str = &text_display[..];
     let text = glium_text::TextDisplay::new(&system, font.medres(), str_slice);
     let color = [1.0, 1.0, 0.0, 1.0f32];

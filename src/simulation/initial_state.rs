@@ -46,19 +46,28 @@ pub fn initial_state(entity_count: u32, random_seed: u32) -> State {
         let position = vector2(x, y);
         let velocity = Vector2::zero();
 
-        let behaviour = if i < cop_count {
-            Behaviour::Cop {
-                rounds_in_magazine: COP_MAGAZINE_CAPACITY,
-                state_stack: vec!(),
-            }
-        } else if i < cop_count + zombie_count {
-            Behaviour::Zombie {
+        let zombie_or_human = if i < zombie_count {
+            ZombieOrHuman::Zombie {
                 state: ZombieState::Roaming
             }
         } else {
-            Behaviour::Human
+            let human = if i < zombie_count + cop_count {
+                Human::Cop { rounds_in_magazine: COP_MAGAZINE_CAPACITY, state_stack: vec!() }
+            }
+            else {
+                Human::Civilian
+            };
+            ZombieOrHuman::Human {
+                infection: 0.0,
+                human
+            }
         };
-        entities.push(Entity { position, velocity, facing_angle, behaviour });
+
+        let dead_or_alive = DeadOrAlive::Alive {
+            health: 1.0,
+            zombie_or_human
+        };
+        entities.push(Entity { position, velocity, facing_angle, dead_or_alive });
     }
 
     // Generate some buildings
@@ -116,9 +125,6 @@ pub fn initial_state(entity_count: u32, random_seed: u32) -> State {
         Vector2 { x: border_top_x + 115.0, y: border_top_y + 114.5 },
         Vector2 { x: border_top_x - 25.0, y: border_top_y + 114.5 }
     ]));
-
-
-
 
     // Generate outlines around all buildings for building A* pathfinding graphs
     for i in 0..buildings.len() {

@@ -1,4 +1,5 @@
 use crate::simulation::state::State;
+use crate::simulation::update::EntityCounts;
 use crate::presentation::ui::gui::Component;
 use crate::presentation::camera::Camera;
 use crate::simulation::control::Control;
@@ -21,9 +22,9 @@ use crate::presentation::graphics::font::FontPkg;
 use crate::scenes::victory_screen::VictoryScreen;
 use crate::scenes::loss_screen::LossScreen;
 
-#[derive(Clone)]
 pub struct Game {
     pub state: State,
+    pub entity_counts: EntityCounts,
     pub gui: Component,
     pub control: Control,
     pub camera: Camera,
@@ -39,6 +40,7 @@ impl Game {
         let game_state = simulation::game_state::GameState::new();
         Game {
             state: state,
+            entity_counts: EntityCounts::default(),
             gui: gui,
             control: control,
             camera: camera,
@@ -66,7 +68,7 @@ impl Scene for Game {
                         // wait 2 seconds
                         if self.game_state.tick == 120 {
                             self.game_state.zombies_win = false;
-                            return UpdateResult::Transition(Box::new(LossScreen::new(self.clone().state)))
+                            return UpdateResult::Transition(Box::new(LossScreen::new(self.entity_counts.clone())))
                         }
                     }
                     if humans_win {
@@ -74,7 +76,7 @@ impl Scene for Game {
                         // wait 2 seconds
                         if self.game_state.tick == 120 {
                             self.game_state.humans_win = false;
-                            return UpdateResult::Transition(Box::new(VictoryScreen::new(self.clone().state)))
+                            return UpdateResult::Transition(Box::new(VictoryScreen::new(self.entity_counts.clone())))
                         }
                     }
                 }
@@ -112,11 +114,19 @@ impl Scene for Game {
         }
 
         if !self.game_state.game_paused {
-            let sounds = simulation::update::update(
+            let simulation_results = simulation::update::update(
                 &simulation::update::UpdateArgs { dt: delta_time },
-                &mut self.state,
-                &mut self.game_state);
-            presentation::audio::sound_effects::play_sounds(&sounds);
+                &mut self.state);
+            self.entity_counts = simulation_results.entity_counts;
+
+            // end game if there are no entities
+            if self.entity_counts.civilians == 0 && self.entity_counts.cops == 0 {
+                self.game_state.zombies_win = true;
+            } else if self.entity_counts.zombies == 0 {
+                self.game_state.humans_win = true;
+            }
+
+            presentation::audio::sound_effects::play_sounds(&simulation_results.sounds);
         }
         UpdateResult::Continue
     }
@@ -135,6 +145,7 @@ impl Scene for Game {
                                        &textures,
                                        &params,
                                        &self.state,
+                                       &self.entity_counts,
                                        self.camera.compute_matrix(),
                                        &mut self.gui, &fonts,
                                        &self.control);

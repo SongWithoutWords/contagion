@@ -9,7 +9,7 @@ use crate::simulation::ai::pathfinding::find_path;
 use crate::simulation::state::MoveMode;
 
 use super::state::*;
-use crate::simulation::game_state::GameState;
+
 
 #[derive(Copy, Clone, Hash, PartialEq, Eq)]
 pub enum Sound {
@@ -23,8 +23,27 @@ pub struct UpdateArgs {
     pub dt: Scalar
 }
 
-pub fn update(args: &UpdateArgs, state: &mut State, game_state: &mut GameState) -> Vec<Sound> {
+#[derive(Clone, Default)]
+pub struct EntityCounts {
+    pub civilians: usize,
+    pub cops: usize,
+    pub dead: usize,
+    pub zombies: usize,
+}
+impl EntityCounts {
+    pub fn total(&self) -> usize {
+        self.civilians + self.cops + self.dead + self.zombies
+    }
+}
 
+pub struct SimulationResults {
+    pub entity_counts: EntityCounts,
+    pub sounds: Vec<Sound>,
+}
+
+pub fn update(args: &UpdateArgs, state: &mut State) -> SimulationResults {
+
+    let mut entity_counts = EntityCounts::default();
     let mut sounds = vec!();
 
     const DOUBLE_ENTITY_RADIUS_SQUARED: f64 = 4.0 * ENTITY_RADIUS * ENTITY_RADIUS;
@@ -34,16 +53,16 @@ pub fn update(args: &UpdateArgs, state: &mut State, game_state: &mut GameState) 
         let p1 = state.entities[i].position;
         let circle = Circle { center: p1, radius: ENTITY_RADIUS };
 
-        if state.entities[i].behaviour == Behaviour::Dead {
-            continue;
+        if state.entities[i].is_dead() {
+            continue
         }
 
         // Collisions with other entities
         for j in (i + 1)..state.entities.len() {
 
             // Do not collide with dead entities
-            if state.entities[j].behaviour == Behaviour::Dead {
-                continue;
+            if state.entities[j].is_dead() {
+                continue
             }
 
             let p2 = state.entities[j].position;
@@ -53,7 +72,7 @@ pub fn update(args: &UpdateArgs, state: &mut State, game_state: &mut GameState) 
             let delta_length_squared = delta.length_squared();
 
             if delta_length_squared < DOUBLE_ENTITY_RADIUS_SQUARED {
-                handle_collision(args, &mut state.entities, i, j, &delta, delta_length_squared, &mut sounds);
+                handle_collision(args, &mut state.entities, i, j, &delta, delta_length_squared);
             }
         }
 
@@ -86,41 +105,51 @@ pub fn update(args: &UpdateArgs, state: &mut State, game_state: &mut GameState) 
         }
     }
 
-    // Variables for ending game if there are no surviving humans or no zombies
-    let mut cop_count = 0;
-    let mut human_count = 0;
-    let mut zombie_count = 0;
-
     // Apply individual behaviours
     for i in 0..state.entities.len() {
-        match &state.entities[i].behaviour {
-            Behaviour::Cop { .. } => {
-                cop_count+=1;
-                update_cop(&args, state, i, &mut sounds);
-            },
-            Behaviour::Dead =>
-            // Do nothing
-                (),
-            Behaviour::Human => {
-                // Run from zombies!
-                human_count += 1;
-                simulate_human(args, &mut state.entities, &state.buildings, i)
-            },
-            b @ Behaviour::Zombie { .. } => {
-                // Chase humans and cops!
-//                simulate_zombie(args, state, i)
-                zombie_count += 1;
-                let behaviour = update_zombie(&args, state, i, b.clone());
-                state.entities[i].behaviour = behaviour;
+
+        // TODO: Ian - see if you can consolidate with the same trick used in update_cop
+        let entity = unsafe { &mut *(&mut state.entities[i] as *mut Entity) };
+
+        match &mut entity.dead_or_alive {
+            DeadOrAlive::Dead => {
+                // Do nothing
+                entity_counts.dead += 1;
+            }
+            DeadOrAlive::Alive { zombie_or_human, health } => {
+                if *health <= 0.0 {
+                    state.entities[i].dead_or_alive = DeadOrAlive::Dead
+                }
+                else {
+                    match zombie_or_human {
+                        ZombieOrHuman::Zombie{ state: zombie_state } => {
+                            entity_counts.zombies += 1;
+                            let old_state = zombie_state.clone();
+                            let next_state = update_zombie(&args, state, i, old_state);
+                            *zombie_state = next_state;
+                        }
+                        ZombieOrHuman::Human { infection, human } => {
+                            if *infection >= 1.0 {
+                                *zombie_or_human = ZombieOrHuman::Zombie { state: ZombieState::Roaming };
+                                sounds.push(Sound::PersonInfected);
+                            }
+                            else {
+                                match human {
+                                    Human::Cop { .. } => {
+                                        entity_counts.cops += 1;
+                                        update_cop(&args, state, i, &mut sounds);
+                                    }
+                                    Human::Civilian { .. } => {
+                                        entity_counts.civilians += 1;
+                                        simulate_human(args, &mut state.entities, &state.buildings, i)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
-    }
-
-    // end game if there are no entities
-    if human_count == 0 || cop_count == 0 {
-        game_state.zombies_win = true;
-    } else if zombie_count == 0 {
-        game_state.humans_win = true;
     }
 
     // Apply acceleration
@@ -154,7 +183,7 @@ pub fn update(args: &UpdateArgs, state: &mut State, game_state: &mut GameState) 
         for i in 0..state.entities.len() {
             let entity = &state.entities[i];
 
-            if entity.behaviour == Behaviour::Dead {
+            if let DeadOrAlive::Dead = entity.dead_or_alive {
                 // Dead entities don't collide with bullets
                 continue;
             }
@@ -189,14 +218,15 @@ pub fn update(args: &UpdateArgs, state: &mut State, game_state: &mut GameState) 
         match first_intersect_time_and_index {
             None => (),
             Some((_, i)) => {
-                state.entities[i].behaviour = Behaviour::Dead;
+                // TODO: Ian M - Deal damage rather than killing outright
+                state.entities[i].dead_or_alive = DeadOrAlive::Dead;
                 p.velocity = Vector2::zero();
                 sounds.push(Sound::ZombieDeath);
             }
         }
     }
 
-    sounds
+    SimulationResults { entity_counts, sounds: sounds }
 }
 
 fn handle_collision(
@@ -205,20 +235,24 @@ fn handle_collision(
     i: usize,
     j: usize,
     delta: &Vector2,
-    delta_length_squared: f64,
-    sounds: &mut Vec<Sound>) {
+    delta_length_squared: f64) {
 
     // Spread the infection from zombies to others
-    match (&entities[i].behaviour, &entities[j].behaviour) {
-        (Behaviour::Human, Behaviour::Zombie { .. }) | (Behaviour::Cop { .. }, Behaviour::Zombie { .. }) => {
-            entities[i].behaviour = Behaviour::Zombie { state: ZombieState::Roaming };
-            sounds.push(Sound::PersonInfected);
+    if entities[i].is_zombie() {
+        match &mut entities[j].dead_or_alive {
+            DeadOrAlive::Alive {zombie_or_human: ZombieOrHuman::Human { infection, .. }, ..} => {
+                *infection += ZOMBIE_HUMAN_COLLISION_INFECTION_RATE
+            }
+            _ => ()
         }
-        (Behaviour::Zombie { .. }, Behaviour::Human) | (Behaviour::Zombie { .. }, Behaviour::Cop { .. }) => {
-            entities[j].behaviour = Behaviour::Zombie { state: ZombieState::Roaming };
-            sounds.push(Sound::PersonInfected);
+    }
+    if entities[j].is_zombie() {
+        match &mut entities[i].dead_or_alive {
+            DeadOrAlive::Alive {zombie_or_human: ZombieOrHuman::Human { infection, .. }, ..} => {
+                *infection += ZOMBIE_HUMAN_COLLISION_INFECTION_RATE
+            }
+            _ => ()
         }
-        _ => ()
     }
 
     // Force entities apart that are overlapping
@@ -307,15 +341,24 @@ fn update_cop(
         Enter(CopState),
     }
 
-    // Require unsafe block to modify the entity while reading from other entities
-    unsafe {
-    let entity = &mut entities[index] as *mut Entity;
-    match &mut (*entity).behaviour {
-        Behaviour::Cop { rounds_in_magazine, state_stack } => {
+    // Require unsafe to get second mutable reference
+    let mut entity = unsafe { &mut *(&mut entities[index] as *mut Entity) };
+    match &mut entity {
+        Entity {
+            position,
+            dead_or_alive: DeadOrAlive::Alive {
+                zombie_or_human: ZombieOrHuman::Human {
+                    human: Human::Cop { rounds_in_magazine, state_stack },
+                    ..
+                },
+                ..
+            },
+            ..
+        } => {
             let state_change = match state_stack.last() {
                 Some(CopState::AttackingZombie { target_index, path: _ }) => {
 
-                    if let Behaviour::Dead = entities[*target_index].behaviour {
+                    if let DeadOrAlive::Dead = entities[*target_index].dead_or_alive {
                         // Target is dead, stop attacking
                         StateChange::Exit
                     }
@@ -329,7 +372,7 @@ fn update_cop(
                     }
                     else if can_see(
                         &sim_state.buildings,
-                        (*entity).position,
+                        *position,
                         entities[*target_index].position) {
                         // Can see the target, take aim
                         StateChange::Enter(
@@ -352,7 +395,7 @@ fn update_cop(
                                         StateChange::Exit,
                                     Some(edge) => {
                                         let delta = edge.end.pos - entities[index].position;
-                                        (*entity).accelerate_along_vector(delta, args.dt, COP_MOVEMENT_FORCE);
+                                        entities[index].accelerate_along_vector(delta, args.dt, COP_MOVEMENT_FORCE);
                                         StateChange::Update(CopState::AttackingZombie {
                                             target_index: *target_index,
                                             path: Some(path)
@@ -366,7 +409,7 @@ fn update_cop(
                 Some(CopState::Aiming { aim_time_remaining, target_index }) => {
 
                     // Stop aiming if the target is already dead
-                    if entities[*target_index].behaviour == Behaviour::Dead {
+                    if let DeadOrAlive::Dead = entities[*target_index].dead_or_alive {
                         StateChange::Exit
                     }
 
@@ -487,31 +530,24 @@ fn update_cop(
                         let mut min_distance_sqr = INFINITY;
 
                         for i in 0..entities.len() {
-                            match entities[i].behaviour {
 
-                                // Target zombies
-                                Behaviour::Zombie { .. } => {
-                                    let delta = entities[i].position - my_pos;
-                                    let distance_sqr = delta.length_squared();
-                                    if distance_sqr < min_distance_sqr {
+                            if entities[i].is_zombie() {
+                                let delta = entities[i].position - my_pos;
+                                let distance_sqr = delta.length_squared();
+                                if distance_sqr < min_distance_sqr {
 
-                                        // make sure we can actually see the target
-                                        if !can_see(buildings,
-                                                    entities[index].position,
-                                                    entities[i].position) {
-                                            continue;
-                                        }
-
-                                        min_index = i;
-                                        min_distance_sqr = distance_sqr;
+                                    // make sure we can actually see the target
+                                    if !can_see(buildings,
+                                                entities[index].position,
+                                                entities[i].position) {
+                                        continue;
                                     }
-                                }
 
-                                // Skip everything else
-                                _ => ()
+                                    min_index = i;
+                                    min_distance_sqr = distance_sqr;
+                                }
                             }
                         }
-
                         if min_distance_sqr < INFINITY {
                             let aim_time_distribution = Exp::new(COP_AIM_TIME_MEAN);
                             StateChange::Enter(CopState::Aiming {
@@ -538,81 +574,72 @@ fn update_cop(
         }
         _ => panic!("Entity at index should be a cop!")
     }
-    }
 }
 
 fn update_zombie(
     args: &UpdateArgs,
     sim_state: &mut State,
     index: usize,
-    behaviour: Behaviour) -> Behaviour {
+    state: ZombieState) -> ZombieState {
 
     let entities = &mut sim_state.entities;
     let buildings = &sim_state.buildings;
 
     let my_pos = entities[index].position;
 
-    match behaviour {
-        Behaviour::Zombie { state } => {
-            match state {
-                ZombieState::Chasing { target_index } => {
-                    let target_pos = entities[target_index].position;
-                    let delta = target_pos - my_pos;
+    match state {
+        ZombieState::Chasing { target_index } => {
+            let target_pos = entities[target_index].position;
+            let delta = target_pos - my_pos;
 
+            entities[index].accelerate_along_vector(delta, args.dt, ZOMBIE_MOVEMENT_FORCE);
+
+            if entities[target_index].is_human() {
+                if delta.length_squared() < ZOMBIE_SIGHT_RADIUS_SQUARE && can_see(buildings,my_pos,target_pos) {
+                    // Continue chasing
+                    ZombieState::Chasing { target_index: target_index }
+                } else {
+                    // Go to last known position
+                    ZombieState::Moving { waypoint: target_pos }
+                }
+            }
+            else {
+                // Otherwise return to roaming
+                ZombieState::Roaming
+            }
+        }
+        ZombieState::Moving { waypoint } => {
+            match closest_human(my_pos, entities, buildings) {
+                // Continue moving
+                None => {
+                    let delta = waypoint - my_pos;
                     entities[index].accelerate_along_vector(delta, args.dt, ZOMBIE_MOVEMENT_FORCE);
 
-                    match entities[target_index].behaviour {
-                        // If alive, check line of sight
-                        Behaviour::Cop { .. } | Behaviour::Human => {
-                            if delta.length_squared() < ZOMBIE_SIGHT_RADIUS_SQUARE && can_see(buildings,my_pos,target_pos) {
-                                // Continue chasing
-                                Behaviour::Zombie { state: ZombieState::Chasing { target_index } }
-                            } else {
-                                // Go to last known position
-                                Behaviour::Zombie {
-                                    state: ZombieState::Moving { waypoint: target_pos }
-                                }
-                            }
-                        }
-                        // Otherwise return to roaming
-                        _ => Behaviour::Zombie { state: ZombieState::Roaming },
+                    if delta.length_squared() < COP_MIN_DISTANCE_FROM_WAYPOINT_SQUARED {
+                        ZombieState::Roaming
+                    } else {
+                        ZombieState::Moving { waypoint: waypoint }
                     }
-                }
-                ZombieState::Moving { waypoint } => {
-                    match closest_human(my_pos, entities, buildings) {
-                        // Continue moving
-                        None => {
-                            let delta = waypoint - my_pos;
-                            entities[index].accelerate_along_vector(delta, args.dt, ZOMBIE_MOVEMENT_FORCE);
-
-                            if delta.length_squared() < COP_MIN_DISTANCE_FROM_WAYPOINT_SQUARED {
-                                Behaviour::Zombie { state: ZombieState::Roaming }
-                            } else {
-                                Behaviour::Zombie { state: ZombieState::Moving { waypoint } }
-                            }
-                        },
-                        // Start chasing nearest human
-                        Some(i) => {
-                            let delta = entities[i].position - my_pos;
-                            entities[index].accelerate_along_vector(delta, args.dt, ZOMBIE_MOVEMENT_FORCE);
-                            Behaviour::Zombie { state: ZombieState::Chasing { target_index: i } }
-                        }
-                    }
-                }
-                ZombieState::Roaming => {
-                    // Attempt to acquire a target
-                    match closest_human(my_pos, entities, buildings) {
-                        None => Behaviour::Zombie { state: ZombieState::Roaming },
-                        Some(i) => {
-                            let delta = entities[i].position - my_pos;
-                            entities[index].accelerate_along_vector(delta, args.dt, ZOMBIE_MOVEMENT_FORCE);
-                            Behaviour::Zombie { state: ZombieState::Chasing { target_index: i} }
-                        }
-                    }
+                },
+                // Start chasing nearest human
+                Some(i) => {
+                    let delta = entities[i].position - my_pos;
+                    entities[index].accelerate_along_vector(delta, args.dt, ZOMBIE_MOVEMENT_FORCE);
+                    ZombieState::Chasing { target_index: i }
                 }
             }
         }
-        _ => panic!("Entity at index should be a zombie!")
+        ZombieState::Roaming => {
+            // Attempt to acquire a target
+            match closest_human(my_pos, entities, buildings) {
+                None => ZombieState::Roaming,
+                Some(i) => {
+                    let delta = entities[i].position - my_pos;
+                    entities[index].accelerate_along_vector(delta, args.dt, ZOMBIE_MOVEMENT_FORCE);
+                    ZombieState::Chasing { target_index: i}
+                }
+            }
+        }
     }
 }
 
@@ -622,18 +649,15 @@ fn closest_human(my_pos: Vector2, entities: &Vec<Entity>, buildings: &Vec<Polygo
     let mut closest_index: Option<usize> = None;
 
     for i in 0..entities.len() {
-        match entities[i].behaviour {
-            Behaviour::Cop { .. } | Behaviour::Human => {
-                let delta_squared = (my_pos - entities[i].position).length_squared();
-                if delta_squared < ZOMBIE_SIGHT_RADIUS_SQUARE &&
-                    can_see(buildings, my_pos, entities[i].position) &&
-                    delta_squared < min_distance_sqr {
+        if entities[i].is_human() {
+            let delta_squared = (my_pos - entities[i].position).length_squared();
+            if delta_squared < ZOMBIE_SIGHT_RADIUS_SQUARE &&
+                can_see(buildings, my_pos, entities[i].position) &&
+                delta_squared < min_distance_sqr {
 
                     min_distance_sqr = delta_squared;
                     closest_index = Some(i);
                 }
-            }
-            _ => ()
         }
     }
 
@@ -647,23 +671,17 @@ fn simulate_human(args: &UpdateArgs, entities: &mut Vec<Entity>, buildings: &Vec
     let mut min_distance_sqr = INFINITY;
 
     for i in 0..entities.len() {
-        match entities[i].behaviour {
-
+        if entities[i].is_zombie() {
             // Run from zombies
-            Behaviour::Zombie { .. } => {
-                let delta = entities[i].position - my_pos;
-                let distance_sqr = delta.length_squared();
-                if distance_sqr < HUMAN_SIGHT_RADIUS_SQUARE &&
-                    can_see(buildings, my_pos, entities[i].position) &&
-                    distance_sqr < min_distance_sqr {
+            let delta = entities[i].position - my_pos;
+            let distance_sqr = delta.length_squared();
+            if distance_sqr < HUMAN_SIGHT_RADIUS_SQUARE &&
+                can_see(buildings, my_pos, entities[i].position) &&
+                distance_sqr < min_distance_sqr {
 
                     min_delta = delta;
                     min_distance_sqr = distance_sqr;
                 }
-            }
-
-            // Skip everything else
-            _ => ()
         }
     }
 
