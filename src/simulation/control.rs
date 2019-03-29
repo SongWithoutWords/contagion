@@ -137,7 +137,7 @@ impl Control {
                         p1: building.get(i),
                         p2: building.get((i + 1) % building.num_sides())
                     };
-                    let dist_i = seg_i.dist_squared(m_pos);
+                    let dist_i = seg_i.distance_from_segment_to_point_squared(m_pos);
 
                     if distance_squared > dist_i {
                         distance_squared = dist_i;

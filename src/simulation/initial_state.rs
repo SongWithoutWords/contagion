@@ -58,13 +58,13 @@ pub fn initial_state(entity_count: u32, random_seed: u32) -> State {
                 Human::Civilian
             };
             ZombieOrHuman::Human {
-                infection: 0.0,
+                infection: ENTITY_INFECTION_MIN,
                 human
             }
         };
 
         let dead_or_alive = DeadOrAlive::Alive {
-            health: 1.0,
+            health: ENTITY_HEALTH_MAX,
             zombie_or_human
         };
         entities.push(Entity { position, velocity, facing_angle, dead_or_alive });

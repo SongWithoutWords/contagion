@@ -111,6 +111,12 @@ pub const HUMAN_SIGHT_RADIUS_SQUARE: f64 = HUMAN_SIGHT_RADIUS * HUMAN_SIGHT_RADI
 pub const COP_SIGHT_RADIUS: f64 = 50.0;
 pub const COP_SIGHT_RADIUS_SQUARE: f64 = COP_SIGHT_RADIUS * COP_SIGHT_RADIUS;
 
+pub const ENTITY_HEALTH_MIN: f64 = 0.0;
+pub const ENTITY_HEALTH_MAX: f64 = 1.0;
+
+pub const ENTITY_INFECTION_MIN: f64 = 0.0;
+pub const ENTITY_INFECTION_MAX: f64 = 1.0;
+
 #[derive(Clone)]
 pub enum DeadOrAlive {
     Dead,
@@ -187,6 +193,12 @@ pub const BULLET_SPEED: Scalar = 40.0;
 pub const BULLET_SPEED_MIN: Scalar = 10.0;
 pub const BULLET_SPAWN_DISTANCE_MULTIPLIER: Scalar = 1.25;
 pub const CASING_SPEED: Scalar = 1.0;
+
+pub const BULLET_DAMAGE_MIN: Scalar = 0.25;
+pub const BULLET_DAMAGE_MAX: Scalar = 1.0;
+
+pub const BULLET_MAX_DAMAGE_DISTANCE_FROM_ENTITY_CENTER: Scalar = 0.25 * ENTITY_RADIUS;
+pub const BULLET_MIN_DAMAGE_DISTANCE_FROM_ENTITY_CENTER: Scalar = 1.0 * ENTITY_RADIUS;
 
 #[derive(Copy, Clone, PartialEq)]
 pub enum ProjectileKind {

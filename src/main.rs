@@ -4,6 +4,7 @@ extern crate enum_map;
 extern crate glium;
 extern crate glium_sdl2;
 extern crate image;
+extern crate lerp;
 extern crate num;
 extern crate music;
 extern crate rand;
