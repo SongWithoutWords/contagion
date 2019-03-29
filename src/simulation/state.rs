@@ -173,7 +173,7 @@ pub enum ZombieState {
     Roaming
 }
 
-pub const PROJECTILE_DRAG: Scalar = 1.0;
+pub const PROJECTILE_DRAG: Scalar = 0.2;
 
 #[derive(Copy, Clone, PartialEq)]
 pub struct Projectile {
