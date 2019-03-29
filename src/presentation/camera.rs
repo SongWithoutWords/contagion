@@ -18,8 +18,8 @@ impl Camera {
         Camera {
             position: Vector2::zero(),
             velocity: Vector2::zero(),
-            zoom: Vector2 { x: 0.09 as f64, y: 0.09 as f64 },  // set initial zoom level
-            initial_mouse_pos: Vector2 { x: 0.0 as f64, y: 0.0 as f64 },
+            zoom: Vector2 { x: 0.09 as f64, y: 0.09 as f64 },  // initial zoom level
+            initial_mouse_pos: Vector2 { x: 0.0 as f64, y: 0.0 as f64 },    // initial mouse wheel button position
         }
     }
 
@@ -123,8 +123,8 @@ impl Camera {
 
         let mouse_scroll: f64 = scroll as f64;
         let zoom_scale: f64 = (mouse_scroll * Self::ZOOM_SPEED).abs();
-        let mouse_pos: &mut Vector2 = &mut Vector2 { x: ms.x() as f64, y: ms.y() as f64 };
-        let camera_center: &mut Vector2 = &mut Vector2 { x: window.window().size().0 as f64 / 2.0, y: window.window().size().1 as f64 / 2.0 };
+        let mouse_pos = &mut vector2(ms.x() as f64, ms.y() as f64);
+        let camera_center = &mut vector2(window.window().size().0 as f64 / 2.0, window.window().size().1 as f64 / 2.0);
 
         translate_to_camera_coord(mouse_pos, window.window().size());
         translate_camera_to_world_coord(mouse_pos, camera_frame);
@@ -138,36 +138,30 @@ impl Camera {
             let old_zoom = self.zoom;
             let new_zoom = vector2(self.interpolate_zoom(zoom_scale, old_zoom.x, Self::UPPER_BOUND), self.interpolate_zoom(zoom_scale, old_zoom.y, Self::UPPER_BOUND));
 
-            let mouse_vec = Vector2 { x: (mouse_pos.x - camera_center.x) * (new_zoom.x - old_zoom.x), y: (mouse_pos.y - camera_center.y) * (new_zoom.y - old_zoom.y) };
-
-
-            if old_zoom.x != new_zoom.x || old_zoom.y != new_zoom.y {
-                let delta_zoom = Vector2 { x: new_zoom.x / old_zoom.x, y: new_zoom.y / old_zoom.y };
-                let camera_pos = Vector2 { x: self.position.x * delta_zoom.x, y: self.position.y * delta_zoom.y };
-                let new_pos = camera_pos + mouse_vec;
-
-                if self.is_mouse_within_bounds(*mouse_pos) {
-                    self.position = new_pos;
-                    self.zoom = new_zoom;
-                }
-            }
+            self.set_zoom(old_zoom, new_zoom, mouse_pos, camera_center);
 
             // Zooming out from cursor
         } else if mouse_scroll < 0.0 && self.zoom.x > Self::LOWER_BOUND {
             let old_zoom = self.zoom;
             let new_zoom = vector2(self.interpolate_zoom(zoom_scale, old_zoom.x, Self::LOWER_BOUND), self.interpolate_zoom(zoom_scale, old_zoom.y, Self::LOWER_BOUND));
 
-            let mouse_vec = Vector2 { x: (mouse_pos.x - camera_center.x) * (new_zoom.x - old_zoom.x), y: (mouse_pos.y - camera_center.y) * (new_zoom.y - old_zoom.y) };
+            self.set_zoom(old_zoom, new_zoom, mouse_pos, camera_center);
+        }
+    }
 
-            if old_zoom.x != new_zoom.x || old_zoom.y != new_zoom.y {
-                let delta_zoom = Vector2 { x: new_zoom.x / old_zoom.x, y: new_zoom.y / old_zoom.y };
-                let camera_pos = Vector2 { x: self.position.x * delta_zoom.x, y: self.position.y * delta_zoom.y };
-                let new_pos = camera_pos + mouse_vec;
+    // Set position and zoom when zooming
+    fn set_zoom(&mut self, old_zoom: Vector2, new_zoom: Vector2, mouse_pos: &mut Vector2, camera_center: &mut Vector2) {
 
-                if self.is_mouse_within_bounds(*mouse_pos) {
-                    self.position = new_pos;
-                    self.zoom = new_zoom;
-                }
+        let mouse_vec = vector2((mouse_pos.x - camera_center.x) * (new_zoom.x - old_zoom.x), (mouse_pos.y - camera_center.y) * (new_zoom.y - old_zoom.y));
+
+        if old_zoom.x != new_zoom.x || old_zoom.y != new_zoom.y {
+            let delta_zoom = vector2(new_zoom.x / old_zoom.x, new_zoom.y / old_zoom.y);
+            let camera_pos = vector2(self.position.x * delta_zoom.x, self.position.y * delta_zoom.y);
+            let new_pos = camera_pos + mouse_vec;
+
+            if self.mouse_within_bounds(*mouse_pos) {
+                self.position = new_pos;
+                self.zoom = new_zoom;
             }
         }
     }
@@ -197,8 +191,9 @@ impl Camera {
         }
     }
 
-    fn is_mouse_within_bounds(&mut self, mouse_pos: Vector2) -> bool {
+    fn mouse_within_bounds(&mut self, mouse_pos: Vector2) -> bool {
 
+        // Don't want zoom to affect bounds
         let left_corner_bound = vector2(Self::LEFT_BOUND, Self::BOTTOM_BOUND);
         let right_corner_bound = vector2(Self::RIGHT_BOUND, Self::TOP_BOUND);
 
@@ -210,7 +205,7 @@ impl Camera {
     }
 
     // Smooth zooming
-    fn interpolate_zoom(self, value: f64, start: f64, end: f64) -> f64 {
+    fn interpolate_zoom(&mut self, value: f64, start: f64, end: f64) -> f64 {
         return start + (end - start) * value;
     }
 }
