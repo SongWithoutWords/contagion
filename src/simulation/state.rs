@@ -19,14 +19,6 @@ pub struct State {
 pub const ENTITY_RADIUS: Scalar = 0.5;
 pub const ENTITY_DRAG: Scalar = 1.0;
 
-// #[derive(Copy, Clone, Debug, Enum, PartialEq)]
-// pub enum EntityType {
-//     Civilian,
-//     Cop,
-//     Dead,
-//     Zombie
-// }
-
 #[derive(Clone)]
 pub struct Entity {
     pub position: Vector2,
