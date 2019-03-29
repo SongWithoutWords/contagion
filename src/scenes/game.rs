@@ -102,7 +102,7 @@ impl Scene for Game {
                     self.camera.cursor_zoom(&mouse_state, y, &window, self.camera.compute_matrix());
                 },
                 Event::MouseButtonDown {timestamp: _, window_id: _, which: _, mouse_btn: MouseButton::Middle , x, y} => {
-                    self.camera.camera_pan(x, y, &mouse_state, &window, self.camera.compute_matrix());
+                    self.camera.set_initial_mouse_pos(x, y, &window, self.camera.compute_matrix());
                 },
                 _ => {
                     self.gui.handle_event(event, window, self.camera.compute_matrix(),
