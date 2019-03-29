@@ -36,6 +36,36 @@ impl Polygon {
         out
     }
 
+    pub fn triangles(&self) -> Vec<Polygon> {
+        if self.num_sides() < 3 { panic!("Polygons must have at least 3 sides!") }
+        if self.num_sides() == 3 { return vec![self.clone()] }
+
+        let triangle = Polygon(vec![self.get(0), self.get(1), self.get(2)]);
+
+        let mut vertices = self.0.clone();
+        vertices.remove(1);
+
+        let mut triangles = Polygon(vertices).triangles();
+        triangles.push(triangle);
+        triangles
+    }
+
+    pub fn bounding_box(&self) -> (Vector2, Vector2) {
+        let mut max = Vector2 { x: NEG_INFINITY, y: NEG_INFINITY };
+        let mut min = Vector2 { x: INFINITY, y: INFINITY };
+
+        for point in self.0.clone() {
+            if point.x < min.x { min.x = point.x }
+            if point.y < min.y { min.y = point.y }
+            if point.x > max.x { max.x = point.x }
+            if point.y > max.y { max.y = point.y }
+        }
+
+        if max.x <= min.x || max.y <= min.y { panic!("Invalid polygon bounding box!") }
+
+        (min, max)
+    }
+
     // Find the number of intersections with the line spanned by start and end
     pub fn num_intersects(&self, start: Vector2, end: Vector2) -> usize {
         self.intersects(start, end).len()
@@ -117,4 +147,8 @@ impl Polygon {
     pub fn contains_point(&self, pos: Vector2) -> bool {
         self.num_intersects(pos, Vector2 { x: pos.x, y: MAX }) % 2 == 1
     }
+}
+
+fn angle_between(a: Vector2, b: Vector2) -> Scalar {
+    (a.dot(b) / (a.length() * b.length())).acos()
 }

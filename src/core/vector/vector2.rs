@@ -26,6 +26,7 @@ impl Vector2 {
     pub fn as_f32_array(&self) -> [f32; 2] {
         [self.x as f32, self.y as f32]
     }
+    pub fn length(&self) -> Scalar { (self.x.powf(2.0) + self.y.powf(2.0)).sqrt() }
 }
 
 pub fn vector2(x: Scalar, y: Scalar) -> Vector2 {
