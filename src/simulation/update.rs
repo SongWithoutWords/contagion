@@ -1,3 +1,4 @@
+use lerp::*;
 use rand::distributions::*;
 
 use crate::core::geo::circle::*;
@@ -179,7 +180,12 @@ pub fn update(args: &UpdateArgs, state: &mut State) -> SimulationResults {
             continue;
         }
 
-        let mut first_intersect_time_and_index = None;
+        struct Collision {
+            entity_id: usize,
+            time: Scalar,
+        }
+
+        let mut first_collision = None;
         for i in 0..state.entities.len() {
             let entity = &state.entities[i];
 
@@ -190,38 +196,54 @@ pub fn update(args: &UpdateArgs, state: &mut State) -> SimulationResults {
 
             let circle = Circle { center: entity.position, radius: ENTITY_RADIUS };
 
-            let this_min_intersection = segment_circle_min_positive_intersect_time(&segment, &circle);
+            let this_collision_time = segment_circle_min_positive_intersect_time(&segment, &circle);
 
-            match (first_intersect_time_and_index, this_min_intersection) {
-                (None, Some(this)) => {
-                    first_intersect_time_and_index = Some((this, i))
+            match (&first_collision, &this_collision_time) {
+                (None, Some(this_time)) => {
+                    first_collision = Some(Collision {entity_id: i, time: *this_time})
                 }
-                (Some((min, _)), Some(this)) if this < min => {
-                    first_intersect_time_and_index = Some((this, i))
+                (Some(Collision{time: first_time, ..}), Some(this_time))
+                    if this_time < first_time => {
+                    first_collision = Some(Collision{ entity_id: i, time: *this_time})
                 }
                 _ => ()
             }
         }
 
-        match first_intersect_time_and_index {
-            Some((time, _)) => {
+        match first_collision {
+            Some(Collision{time, ..}) => {
                 segment.p2 = segment.p1 + time * (segment.p2 - segment.p1);
             }
             None => ()
         }
 
         if !can_see(&state.buildings, segment.p1, segment.p2) {
-            first_intersect_time_and_index = None;
+            first_collision = None;
             p.velocity = Vector2::zero();
         }
 
-        match first_intersect_time_and_index {
+        match &first_collision {
             None => (),
-            Some((_, i)) => {
-                // TODO: Ian M - Deal damage rather than killing outright
-                state.entities[i].dead_or_alive = DeadOrAlive::Dead;
+            Some(Collision{entity_id: i, ..}) => {
+
+                let distance_from_entity_center = segment
+                    .distance_from_ray_to_point_squared(state.entities[*i].position)
+                    .sqrt();
+
+                let distance_normalized
+                    = (distance_from_entity_center - BULLET_MAX_DAMAGE_DISTANCE_FROM_ENTITY_CENTER)
+                    / (BULLET_MIN_DAMAGE_DISTANCE_FROM_ENTITY_CENTER -
+                       BULLET_MAX_DAMAGE_DISTANCE_FROM_ENTITY_CENTER);
+
+                let damage = BULLET_DAMAGE_MAX.lerp_bounded(BULLET_DAMAGE_MIN, distance_normalized);
+
+
+                match &mut state.entities[*i].dead_or_alive {
+                    DeadOrAlive::Alive { health, .. } => { *health -= damage; }
+                    _ => panic!("Only living entities should collide with bullets!")
+                }
+
                 p.velocity = Vector2::zero();
-                sounds.push(Sound::ZombieDeath);
             }
         }
     }
@@ -277,7 +299,7 @@ fn handle_building_collision(
             p1: building.get(i),
             p2: building.get((i + 1) % building.num_sides())
         };
-        let dist_i = seg_i.dist_squared(entity.position);
+        let dist_i = seg_i.distance_from_segment_to_point_squared(entity.position);
 
         if distance_squared > dist_i {
             distance_squared = dist_i;

@@ -194,6 +194,12 @@ pub const BULLET_SPEED_MIN: Scalar = 10.0;
 pub const BULLET_SPAWN_DISTANCE_MULTIPLIER: Scalar = 1.25;
 pub const CASING_SPEED: Scalar = 1.0;
 
+pub const BULLET_DAMAGE_MIN: Scalar = 0.25;
+pub const BULLET_DAMAGE_MAX: Scalar = 1.0;
+
+pub const BULLET_MAX_DAMAGE_DISTANCE_FROM_ENTITY_CENTER: Scalar = 0.25 * ENTITY_RADIUS;
+pub const BULLET_MIN_DAMAGE_DISTANCE_FROM_ENTITY_CENTER: Scalar = 1.0 * ENTITY_RADIUS;
+
 #[derive(Copy, Clone, PartialEq)]
 pub enum ProjectileKind {
     Bullet,
