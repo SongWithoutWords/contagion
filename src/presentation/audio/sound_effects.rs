@@ -13,7 +13,8 @@ pub fn load_sound_effects(){
         // Bind the enum variables with the actual mp3 files
     if AUDIO_ENABLED {
         music::bind_music_file(Music::Background, "assets/audio/music/dark_rage.mp3");
-        music::bind_sound_file(Sound::Gunshot, "assets/audio/sfx/gunshot.mp3");
+        music::bind_sound_file(Sound::GunshotHandgun, "assets/audio/sfx/gunshot_handgun.mp3");
+        music::bind_sound_file(Sound::GunshotRifle, "assets/audio/sfx/gunshot_rifle.wav");
         music::bind_sound_file(Sound::Reload, "assets/audio/sfx/reload.mp3");
         music::bind_sound_file(Sound::PersonInfected, "assets/audio/sfx/person_infected.mp3");
         music::bind_sound_file(Sound::ZombieDeath, "assets/audio/sfx/zombie_dead.mp3");

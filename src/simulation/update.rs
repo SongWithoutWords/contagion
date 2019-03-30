@@ -14,7 +14,8 @@ use super::state::*;
 
 #[derive(Copy, Clone, Hash, PartialEq, Eq)]
 pub enum Sound {
-    Gunshot,
+    GunshotHandgun,
+    GunshotRifle,
     Reload,
     PersonInfected,
     ZombieDeath,
@@ -383,7 +384,7 @@ fn update_cop(
             position,
             dead_or_alive: DeadOrAlive::Alive {
                 zombie_or_human: ZombieOrHuman::Human {
-                    human: Human::Cop { rounds_in_magazine, state_stack },
+                    human: Human::Cop { cop_type, rounds_in_magazine, state_stack },
                     ..
                 },
                 ..
@@ -401,7 +402,7 @@ fn update_cop(
                         // Out of ammo, need to reload before we can attack
                         StateChange::Enter(
                             CopState::Reloading {
-                                reload_time_remaining: COP_RELOAD_COOLDOWN
+                                reload_time_remaining: cop_type.reload_time()
                             }
                         )
                     }
@@ -410,7 +411,7 @@ fn update_cop(
                         *position,
                         entities[*target_index].position) {
                         // Can see the target, take aim
-                        let aim_time_distribution = Exp::new(COP_AIM_TIME_MEAN);
+                        let aim_time_distribution = Exp::new(cop_type.aim_time_mean());
                         StateChange::Enter(CopState::Aiming {
                             aim_time_remaining: aim_time_distribution.sample(&mut sim_state.rng),
                             target_index: *target_index,
@@ -467,7 +468,7 @@ fn update_cop(
                             )
                         } else {
                             let angular_deviation =
-                                Normal::new(0.0, COP_ANGULAR_ACCURACY_STD_DEV).sample(&mut sim_state.rng);
+                                Normal::new(0.0, cop_type.angular_accuracy_std_dev()).sample(&mut sim_state.rng);
 
                             // Finished aiming, take the shot
                             let delta_normal = delta.rotate_by(angular_deviation);
@@ -494,7 +495,10 @@ fn update_cop(
 
                             *rounds_in_magazine -= 1;
 
-                            sounds.push(Sound::Gunshot);
+                            sounds.push(match cop_type {
+                                CopType::Normal => Sound::GunshotHandgun,
+                                CopType::Soldier => Sound::GunshotRifle,
+                            });
                             StateChange::Exit
                         }
                     }
@@ -533,7 +537,7 @@ fn update_cop(
                     }
                 }
                 Some(CopState::Reloading { reload_time_remaining }) => {
-                    let half_reload_time = 0.5 * COP_RELOAD_COOLDOWN;
+                    let half_reload_time = 0.5 * cop_type.reload_time();
                     let new_reload_time_remaining = reload_time_remaining - args.dt;
 
                     // Play the reload sound when half-done reloading
@@ -548,14 +552,15 @@ fn update_cop(
                         })
                     } else {
                         // Finished reloading: replenish rounds and return to the previous state
-                        *rounds_in_magazine = COP_MAGAZINE_CAPACITY;
+                        *rounds_in_magazine = cop_type.magazine_capacity();
                         StateChange::Exit
                     }
                 }
                 None => {
                     // Reload if you don't have ammo
                     if *rounds_in_magazine <= 0 {
-                        StateChange::Enter(CopState::Reloading { reload_time_remaining: COP_RELOAD_COOLDOWN })
+                        StateChange::Enter(CopState::Reloading {
+                            reload_time_remaining: cop_type.reload_time() })
                     }
                     // Look for target if you do have ammo
                     else {
@@ -584,7 +589,7 @@ fn update_cop(
                             }
                         }
                         if min_distance_sqr < INFINITY {
-                            let aim_time_distribution = Exp::new(COP_AIM_TIME_MEAN);
+                            let aim_time_distribution = Exp::new(cop_type.aim_time_mean());
                             StateChange::Enter(CopState::Aiming {
                                 aim_time_remaining: aim_time_distribution.sample(&mut sim_state.rng),
                                 target_index: min_index,

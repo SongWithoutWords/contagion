@@ -90,15 +90,17 @@ pub const COP_MOVEMENT_FORCE: Scalar = 1.5;
 pub const CIVILIAN_MOVEMENT_FORCE: Scalar = 1.0;
 pub const ZOMBIE_MOVEMENT_FORCE: Scalar = 1.6;
 
-pub const COP_RELOAD_COOLDOWN: Scalar = 4.0;
-pub const COP_AIM_TIME_MEAN: Scalar = 1.0;
+// pub const COP_RELOAD_COOLDOWN: Scalar = 4.0;
+// pub const COP_AIM_TIME_MEAN: Scalar = 1.0;
 
 // Used only for log normal distribution, and we're presently using exponential distribution
 // pub const COP_AIM_TIME_STD_DEV: Scalar = 1.0;
 
-pub const COP_ANGULAR_ACCURACY_STD_DEV: Scalar = 0.1;
+pub const COP_MIN_DISTANCE_FROM_WAYPOINT_SQUARED: Scalar = 0.2;
 
-pub const COP_MAGAZINE_CAPACITY: i64 = 6;
+// pub const COP_ANGULAR_ACCURACY_STD_DEV: Scalar = 0.01;
+
+// pub const COP_MAGAZINE_CAPACITY: i64 = 6;
 
 pub const ZOMBIE_SIGHT_RADIUS: f64 = 30.0;
 pub const ZOMBIE_SIGHT_RADIUS_SQUARE: f64 = ZOMBIE_SIGHT_RADIUS * ZOMBIE_SIGHT_RADIUS;
@@ -143,12 +145,43 @@ pub enum ZombieOrHuman {
 pub enum Human {
     Civilian,
     Cop {
+        cop_type: CopType,
         rounds_in_magazine: i64,
         state_stack: Vec<CopState>,
     },
 }
 
-pub const COP_MIN_DISTANCE_FROM_WAYPOINT_SQUARED: Scalar = 0.2;
+#[derive(Copy, Clone)]
+pub enum CopType {
+    Normal,
+    Soldier,
+}
+impl CopType {
+    pub fn reload_time(self) -> Scalar {
+        match self {
+            CopType::Normal => 4.0,
+            CopType::Soldier => 4.0,
+        }
+    }
+    pub fn aim_time_mean(self) -> Scalar {
+        match self {
+            CopType::Normal => 2.0,
+            CopType::Soldier => 5.0,
+        }
+    }
+    pub fn magazine_capacity(self) -> i64 {
+        match self {
+            CopType::Normal => 6,
+            CopType::Soldier => 20,
+        }
+    }
+    pub fn angular_accuracy_std_dev(self) -> Scalar {
+        match self {
+            CopType::Normal => 0.01,
+            CopType::Soldier => 0.005
+        }
+    }
+}
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum CopState {

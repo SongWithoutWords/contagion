@@ -53,8 +53,9 @@ pub fn initial_state(entity_count: u32, random_seed: u32) -> State {
             INFECTION_MIN
         };
 
-        let human = if infected_count < i && i < infected_count + cop_count {
-            Human::Cop { rounds_in_magazine: COP_MAGAZINE_CAPACITY, state_stack: vec!() }
+        let human = if infected_count <= i && i < infected_count + cop_count {
+            let cop_type = if i == infected_count { CopType::Soldier } else { CopType::Normal };
+            Human::Cop { cop_type, rounds_in_magazine: cop_type.magazine_capacity(), state_stack: vec!() }
         }
         else {
             Human::Civilian

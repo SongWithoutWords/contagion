@@ -28,6 +28,7 @@ pub enum SpriteType {
     Civilian,
     Zombie,
     Cop,
+    Soldier,
     BulletInAir,
     Menu,
     MenuWindow,
@@ -67,6 +68,8 @@ pub fn load_textures(window: &glium_sdl2::SDL2Facade) -> Textures {
                 => load_texture(window, "assets/images/old/zombie.png"),
             SpriteType::Cop
                 => load_texture(window, "assets/images/old/police.png"),
+            SpriteType::Soldier
+                => load_texture(window, "assets/images/old/soldier.png"),
             SpriteType::BulletInAir
                 => load_texture(window, "assets/images/other/flying_bullet_long.png"),
             SpriteType::Menu
@@ -735,13 +738,16 @@ pub fn display(
     // Compute the vertices in world coordinates of all entities
     for entity in &state.entities {
 
-        let (sprite_type, health) = match &entity.dead_or_alive {
-            DeadOrAlive::Dead => (SpriteType::Dead, ENTITY_HEALTH_MIN),
-            DeadOrAlive::Alive { zombie_or_human, health } => match zombie_or_human {
-                ZombieOrHuman::Zombie{ .. } => (SpriteType::Zombie, *health),
+        let sprite_type = match &entity.dead_or_alive {
+            DeadOrAlive::Dead => SpriteType::Dead,
+            DeadOrAlive::Alive { zombie_or_human, .. } => match zombie_or_human {
+                ZombieOrHuman::Zombie{ .. } => SpriteType::Zombie,
                 ZombieOrHuman::Human { human, .. } => match human {
-                    Human::Cop { .. } => (SpriteType::Cop, *health),
-                    Human::Civilian { .. } => (SpriteType::Civilian, *health)
+                    Human::Cop { cop_type, .. } => match cop_type {
+                            CopType::Normal => SpriteType::Cop,
+                            CopType::Soldier => SpriteType::Soldier,
+                        },
+                    Human::Civilian { .. } => SpriteType::Civilian
                 }
             }
         };
@@ -751,6 +757,11 @@ pub fn display(
             radius: 0.5,
         };
         push_sprite_vertices(&mut vertex_buffers[sprite_type], &sprite);
+
+        let health = match &entity.dead_or_alive {
+            DeadOrAlive::Alive { health, .. } => *health,
+            _ => ENTITY_HEALTH_MIN
+        };
 
         // Display a health bar only for entities that are wounded but not dead
         if ENTITY_HEALTH_MIN < health && health < ENTITY_HEALTH_MAX {
