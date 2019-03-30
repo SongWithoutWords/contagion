@@ -12,29 +12,30 @@ Requirements marked [~] are requirements we think are partially satisfied
 
 For this milestone you should have a complete playable game. You should continue to support all features from prior milestones. You should support robust continuous play with no memory leaks, crashes or glitches, and be able to extensive playability testing, alignment with game development plan.
 
-(75%) Milestone requirements:
+** (75%) Milestone requirements:
 
-  - [X] Include complete playable prior-milestone implementation
+- [X] Include complete playable prior-milestone implementation
 
-  - [~] Sustain progressive, non-repetitive gameplay for 6min or more including all new features. The game should not terminate early and should allow infinite even if repetitive gameplay
-    - Our game does not terminate early, and may support 6 minutes or more of gameplay depending on the initial state, but does not support infinite gameplay because the game is designed with a finite number of entities, to be won or lost within a finite amount of time
-  - [X] Support real-time response rate (i.e. lag-free input).
+- [~] Sustain progressive, non-repetitive gameplay for 6min or more including all new features. The game should not terminate early and should allow infinite even if repetitive gameplay
+  - Our game does not terminate early, and may support 6 minutes or more of gameplay depending on the initial state, but does not support infinite gameplay because the game is designed with a finite number of entities, to be won or lost within a finite amount of time
 
-  - [X] Include proper memory management (no excessive allocation or leaks). The game should not have any undefined behavior, memory leaks or random crashes. The game should not hog memory even after extended play time.
+- [X] Support real-time response rate (i.e. lag-free input).
 
-  - [X] The game should robustly handle any user input. Unexpected inputs or environment settings should be correctly handled and reported.
+- [X] Include proper memory management (no excessive allocation or leaks). The game should not have any undefined behavior, memory leaks or random crashes. The game should not hog memory even after extended play time.
 
-  - [X] The gameplay should be real-time (no lag). This included improving your collision handling using effective detection strategies. You should support dozens simultaneously moving main or background assets.
+- [X] The game should robustly handle any user input. Unexpected inputs or environment settings should be correctly handled and reported.
 
-  - [~] The game should allow for some form of state saving for play “reload”. Users should be able to pause and restart in a graceful (if not perfect) manner.
+- [X] The gameplay should be real-time (no lag). This included improving your collision handling using effective detection strategies. You should support dozens simultaneously moving main or background assets.
+
+- [~] The game should allow for some form of state saving for play “reload”. Users should be able to pause and restart in a graceful (if not perfect) manner.
      - Can play/pause the game but we do not have save/load yet
 
-  - [X] The physical effects should be correctly integrated in time and should not be locked to the machine’s speed by correctly handling the simulation time step and integration.
+- [X] The physical effects should be correctly integrated in time and should not be locked to the machine’s speed by correctly handling the simulation time step and integration.
 
-  - [X] Stable game code supporting continuing execution and graceful termination.
+- [X] Stable game code supporting continuing execution and graceful termination.
 
-(25%) Creative: You should implement one or more additional creative elements. These can include additional assets, rendering effects, complex gameplay logic, or pre-emptive implementation of one or more features from subsequent milestones.
-
+** (25%) Creative:
+You should implement one or more additional creative elements. These can include additional assets, rendering effects, complex gameplay logic, or pre-emptive implementation of one or more features from subsequent milestones.
 
 
 * Features completed this milestone
@@ -67,9 +68,9 @@ For this milestone you should have a complete playable game. You should continue
   - Civilian
     - Torso without hands
     - Fists
-   - Zombie
-     - Torso without hands
-     - Claws
+  - Zombie
+    - Torso without hands
+    - Claws
 
 * Features begun but not completed this milestone
 - New hand-to-hand melee combat system between zombies and humans was started but not finished

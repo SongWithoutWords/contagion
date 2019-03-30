@@ -1,0 +1,158 @@
+Team 12 Playable Game Submission
+
+
+Table of Contents
+_________________
+
+1. Milestone Requirements
+.. 1. (75%) Milestone requirements:
+.. 2. (25%) Creative:
+2. Features completed this milestone
+.. 1. Camera features
+.. 2. Gameplay features
+.. 3. UI features
+.. 4. Textures created
+3. Features begun but not completed this milestone
+4. Bugs fixed
+
+
+Please checkout the `robust' tag to evaluate our submission
+- We will add this tag for our submission on Friday, March 29th.
+
+Link to project: <https://github.com/SongWithoutWords/contagion>
+
+
+1 Milestone Requirements
+========================
+
+  Requirements marked [X] are requirements we think are fully satisified
+  Requirements marked [~] are requirements we think are partially
+  satisfied
+
+  For this milestone you should have a complete playable game. You
+  should continue to support all features from prior milestones. You
+  should support robust continuous play with no memory leaks, crashes or
+  glitches, and be able to extensive playability testing, alignment with
+  game development plan.
+
+
+1.1 (75%) Milestone requirements:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  - [X] Include complete playable prior-milestone implementation
+
+  - [~] Sustain progressive, non-repetitive gameplay for 6min or more
+    including all new features. The game should not terminate early and
+    should allow infinite even if repetitive gameplay
+    - Our game does not terminate early, and may support 6 minutes or
+      more of gameplay depending on the initial state, but does not
+      support infinite gameplay because the game is designed with a
+      finite number of entities, to be won or lost within a finite
+      amount of time
+
+  - [X] Support real-time response rate (i.e. lag-free input).
+
+  - [X] Include proper memory management (no excessive allocation or
+    leaks). The game should not have any undefined behavior, memory
+    leaks or random crashes. The game should not hog memory even
+    after extended play time.
+
+  - [X] The game should robustly handle any user input. Unexpected
+    inputs or environment settings should be correctly handled and
+    reported.
+
+  - [X] The gameplay should be real-time (no lag). This included
+    improving your collision handling using effective detection
+    strategies. You should support dozens simultaneously moving main
+    or background assets.
+
+  - [~] The game should allow for some form of state saving for play
+    “reload”. Users should be able to pause and restart in a graceful
+    (if not perfect) manner.
+    - Can play/pause the game but we do not have save/load yet
+
+  - [X] The physical effects should be correctly integrated in time and
+    should not be locked to the machine’s speed by correctly
+    handling the simulation time step and integration.
+
+  - [X] Stable game code supporting continuing execution and graceful
+    termination.
+
+
+1.2 (25%) Creative:
+~~~~~~~~~~~~~~~~~~~
+
+  You should implement one or more additional creative elements. These
+  can include additional assets, rendering effects, complex gameplay
+  logic, or pre-emptive implementation of one or more features from
+  subsequent milestones.
+
+
+2 Features completed this milestone
+===================================
+
+2.1 Camera features
+~~~~~~~~~~~~~~~~~~~
+
+  - Camera zooms out of the cursor rather than out of the center of the
+    screen
+  - Finished camera panning by clicking and dragging with the middle
+    mouse button
+  - Improved camera zoom rate
+
+
+2.2 Gameplay features
+~~~~~~~~~~~~~~~~~~~~~
+
+  - Added health system (previously a single gunshot was lethal)
+  - Added gradual infection system (previously zombies infected people
+    immediately, now the infection grows over time)
+  - Added a new, more powerful police type armed with an automatic
+    weapon (as opposed to a handgun)
+  - Added new zombie random-walk/roaming behaviour
+
+
+2.3 UI features
+~~~~~~~~~~~~~~~
+
+  - Finished implementation of game-over screen, for both victory and
+    defeat
+    - Can close the program, return to the main menu, or launch a new
+      game from this screen
+  - Added HUD UI element for the number of selected cops
+  - Added HUD UI element for the number of cops, civilians and zombies
+    in the world
+
+
+2.4 Textures created
+~~~~~~~~~~~~~~~~~~~~
+
+  - 3 new UI icons for number of cops, civilians and zombies in the
+    world
+  - Textures created to support future animation and melee combat system
+    - Cop
+      - Torso without hands
+      - Baton-holding hand
+      - Gun-holding-hand
+      - Fist
+    - Civilian
+      - Torso without hands
+      - Fists
+    - Zombie
+      - Torso without hands
+      - Claws
+
+
+3 Features begun but not completed this milestone
+=================================================
+
+  - New hand-to-hand melee combat system between zombies and humans was
+    started but not finished
+
+
+4 Bugs fixed
+============
+
+  - Bug that caused the game to unpause when paused using the mouse
+  - Bug that prevented cops from running out of ammo and needing to
+    reload
