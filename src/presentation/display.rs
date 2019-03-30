@@ -37,6 +37,10 @@ pub enum SpriteType {
     CopWorldIcon,
     CivilianWorldIcon,
     BuildingOne,
+    ZombieFist,
+    ZombieTorso,
+    ZombieClawRight,
+    ZombieClawLeft
 }
 
 // pub type Textures = EnumMap<SpriteType, Texture2d>;
@@ -90,6 +94,14 @@ pub fn load_textures(window: &glium_sdl2::SDL2Facade) -> Textures {
                 => load_texture(window, "assets/images/ui/civilian_world_icon.png"),
             SpriteType::BuildingOne
                 => load_texture(window, "assets/images/building/building_one.png"),
+            SpriteType::ZombieFist
+                => load_texture(window, "assets/images/zombie/zombie_claw_right.png"),
+            SpriteType::ZombieTorso
+                => load_texture(window, "assets/images/zombie/zombie_torso.png"),
+            SpriteType::ZombieClawRight
+                => load_texture(window, "assets/images/zombie/zombie_claw_right.png"),
+            SpriteType::ZombieClawLeft
+                => load_texture(window, "assets/images/zombie/zombie_claw_left.png"),
         },
         background_texture: load_texture(&window, "assets/images/dirt.jpg"),
         wallpaper: load_texture(&window, "assets/images/contagion_wallpaper.png"),
@@ -238,6 +250,56 @@ fn push_gui_vertices(buffer: &mut Vec<ColorVertex>, ui: &Gui) {
         position: bot_right.as_f32_array(),
         tex_coords: [1.0, 0.0],
         color,
+    };
+    buffer.push(vertex0);
+    buffer.push(vertex1);
+    buffer.push(vertex2);
+    buffer.push(vertex1);
+    buffer.push(vertex3);
+    buffer.push(vertex2);
+}
+
+// right if hand is true, left if hand is false
+fn push_hand_vertices(buffer: &mut Vec<Vertex>, sprite: &Sprite, hand: bool) {
+    let position = sprite.position;
+    let up = sprite.radius * sprite.facing;
+    let right = up.right(); //vector2(up.y, -up.x);
+
+    let mut top_left  = position - right + up;
+    let mut top_right = position + up;
+    let mut bot_left  = position - right;
+    let mut bot_right = position;
+
+    if hand {
+        top_left  = position + up;
+        top_right = position + right + up;
+        bot_left  = position;
+        bot_right = position + right;
+    }
+
+    // 0      1
+    // +------+
+    // |    / |
+    // |  /   |
+    // |/     |
+    // +------+
+    // 2      3
+
+    let vertex0 = Vertex {
+        position: top_left.as_f32_array(),
+        tex_coords: [0.0, 1.0]
+    };
+    let vertex1 = Vertex {
+        position: top_right.as_f32_array(),
+        tex_coords: [1.0, 1.0]
+    };
+    let vertex2 = Vertex {
+        position: bot_left.as_f32_array(),
+        tex_coords: [0.0, 0.0]
+    };
+    let vertex3 = Vertex {
+        position: bot_right.as_f32_array(),
+        tex_coords: [1.0, 0.0]
     };
     buffer.push(vertex0);
     buffer.push(vertex1);
@@ -890,21 +952,49 @@ pub fn display(
         let sprite_type = match p.kind {
             ProjectileKind::Bullet => SpriteType::BulletInAir,
             ProjectileKind::Casing => SpriteType::BulletCasing,
+            ProjectileKind::Fist {..} => SpriteType::ZombieFist
         };
+        let mut rad = BULLET_RADIUS;
+        match p.kind {
+            ProjectileKind::Fist { .. } => {
+                rad = FIST_RADIUS;
+            }
+            _ => ()
+        }
         let sprite = Sprite {
             position: p.position,
             facing: p.velocity.normalize(),
-            radius: BULLET_RADIUS,
+            radius: rad,
         };
         push_sprite_vertices(&mut vertex_buffers[sprite_type], &sprite);
     }
 
     // Compute the vertices in world coordinates of all entities
     for entity in &state.entities {
+
+        let sprite = Sprite {
+            position: entity.position,
+            facing: entity.get_facing_normal(),
+            radius: 0.5,
+        };
         let sprite_type = match &entity.dead_or_alive {
             DeadOrAlive::Dead => SpriteType::Dead,
             DeadOrAlive::Alive { zombie_or_human, .. } => match zombie_or_human {
-                ZombieOrHuman::Zombie { .. } => SpriteType::Zombie,
+                ZombieOrHuman::Zombie { state: _, left_hand_status, right_hand_status } => {
+                    match left_hand_status {
+                        HandStatus::Normal => {
+                            push_hand_vertices(&mut vertex_buffers[SpriteType::ZombieClawLeft], &sprite, false);
+                        }
+                        _ => ()
+                    }
+                    match right_hand_status {
+                        HandStatus::Normal => {
+                            push_hand_vertices(&mut vertex_buffers[SpriteType::ZombieClawRight], &sprite, true);
+                        }
+                        _ => ()
+                    }
+                    SpriteType::ZombieTorso
+                },
                 ZombieOrHuman::Human { human, .. } => match human {
                     Human::Cop { cop_type, .. } => match cop_type {
                         CopType::Normal => SpriteType::Cop,
@@ -913,11 +1003,6 @@ pub fn display(
                     Human::Civilian { .. } => SpriteType::Civilian
                 }
             }
-        };
-        let sprite = Sprite {
-            position: entity.position,
-            facing: entity.get_facing_normal(),
-            radius: 0.5,
         };
         push_sprite_vertices(&mut vertex_buffers[sprite_type], &sprite);
 
