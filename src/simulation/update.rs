@@ -297,7 +297,7 @@ pub fn update(args: &UpdateArgs, state: &mut State) -> SimulationResults {
                     }
                 }
             }
-            ProjectileKind::Fist { _ } => {
+            ProjectileKind::Fist { owner_index: _ } => {
                 match &first_collision {
                     None => (),
                     Some(Collision{entity_id: i, ..}) => {
