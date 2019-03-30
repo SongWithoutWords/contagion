@@ -1173,7 +1173,7 @@ pub fn display(
 
     // Render shadows
     use crate::presentation::display::SpriteType::*;
-    for sprite_type in &[Cop, Civilian, Dead, Zombie] {
+    for sprite_type in &[Cop, Civilian, Dead, ZombieTorso, ZombieClawRight, ZombieClawLeft] {
         let uniforms = uniform! {
             matrix: camera_frame,
             tex: &textures.sprite_textures[*sprite_type],
