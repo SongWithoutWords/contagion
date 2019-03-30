@@ -178,7 +178,10 @@ pub enum ZombieState {
     Moving {
         waypoint: Vector2
     },
-    Roaming
+    Roaming {
+        jerk: Vector2,
+        acceleration: Vector2
+    }
 }
 
 pub const PROJECTILE_DRAG: Scalar = 0.2;

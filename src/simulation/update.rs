@@ -1,5 +1,6 @@
 use lerp::*;
 use rand::distributions::*;
+use rand::Rng;
 
 use crate::core::geo::circle::*;
 use crate::core::geo::intersect::segment_circle::*;
@@ -139,7 +140,12 @@ pub fn update(args: &UpdateArgs, state: &mut State) -> SimulationResults {
                                 *infection *= infection_growth_factor;
                             }
                             if *infection >= INFECTION_MAX {
-                                *zombie_or_human = ZombieOrHuman::Zombie { state: ZombieState::Roaming };
+                                *zombie_or_human = ZombieOrHuman::Zombie {
+                                    state: ZombieState::Roaming {
+                                        jerk: Vector2::zero(),
+                                        acceleration: Vector2::zero()
+                                    }
+                                };
                                 sounds.push(Sound::PersonInfected);
                             }
                             else {
@@ -612,6 +618,8 @@ fn update_zombie(
     index: usize,
     state: ZombieState) -> ZombieState {
 
+    let mut rng = rand::thread_rng();
+
     let entities = &mut sim_state.entities;
     let buildings = &sim_state.buildings;
 
@@ -635,7 +643,10 @@ fn update_zombie(
             }
             else {
                 // Otherwise return to roaming
-                ZombieState::Roaming
+                ZombieState::Roaming {
+                    jerk: Vector2::zero(),
+                    acceleration: Vector2::zero()
+                }
             }
         }
         ZombieState::Moving { waypoint } => {
@@ -646,9 +657,12 @@ fn update_zombie(
                     entities[index].accelerate_along_vector(delta, args.dt, ZOMBIE_MOVEMENT_FORCE);
 
                     if delta.length_squared() < COP_MIN_DISTANCE_FROM_WAYPOINT_SQUARED {
-                        ZombieState::Roaming
+                        ZombieState::Roaming {
+                            jerk: Vector2::zero(),
+                            acceleration: Vector2::zero()
+                        }
                     } else {
-                        ZombieState::Moving { waypoint: waypoint }
+                        ZombieState::Moving { waypoint }
                     }
                 },
                 // Start chasing nearest human
@@ -659,10 +673,31 @@ fn update_zombie(
                 }
             }
         }
-        ZombieState::Roaming => {
+        ZombieState::Roaming { jerk, acceleration } => {
             // Attempt to acquire a target
             match closest_human(my_pos, entities, buildings) {
-                None => ZombieState::Roaming,
+                None => {
+                    let normal = Normal::new(0.0, 5.0);
+                    let delta_jerk = Vector2 {
+                        x: normal.sample(&mut sim_state.rng),
+                        y: normal.sample(&mut sim_state.rng)
+                    } * args.dt;
+
+                    let new_jerk = Vector2 {
+                        x: (jerk.x + delta_jerk.x).max(-10.0).min(10.0),
+                        y: (jerk.y + delta_jerk.y).max(-10.0).min(10.0)
+                    };
+
+                    let new_acceleration = Vector2 {
+                        x: (acceleration.x + new_jerk.x * args.dt).max(-2.0).min(2.0),
+                        y: (acceleration.y + new_jerk.y * args.dt).max(-2.0).min(2.0)
+                    };
+
+                    entities[index].look_along_vector(new_acceleration, args.dt);
+                    entities[index].velocity += new_acceleration * args.dt / 5.0;
+                    
+                    ZombieState::Roaming { jerk: new_jerk, acceleration: new_acceleration }
+                },
                 Some(i) => {
                     let delta = entities[i].position - my_pos;
                     entities[index].accelerate_along_vector(delta, args.dt, ZOMBIE_MOVEMENT_FORCE);
