@@ -318,8 +318,8 @@ fn push_green_hp_vertices(buffer: &mut Vec<ColorVertex>, sprite: &Sprite) {
 
 fn push_building_vertices(buffer: &mut Vec<ColorVertex>, building: &Polygon, color: [f32; 4]) {
     let bounds = building.bounding_box();
-    let width = (bounds.1.x - bounds.0.x);
-    let height = (bounds.1.y - bounds.0.y);
+    let width = bounds.1.x - bounds.0.x;
+    let height = bounds.1.y - bounds.0.y;
 
     for triangle in building.triangles() {
         for point in triangle.0 {

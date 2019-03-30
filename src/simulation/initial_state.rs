@@ -71,11 +71,14 @@ pub fn initial_state(entity_count: u32, random_seed: u32) -> State {
     }
 
     // Generate some buildings
-    let mut building_x = 0.0;
-    while building_x < 2.0 * side_length_of_spawn_area {
-        let mut building_y = 0.0;
+    let mut building_x = -20.0;
+    let mut building_y = 0.0;
 
-        while building_y < 2.0 * side_length_of_spawn_area {
+    // Neighbourhood on south side
+    while building_x < (2.0 * side_length_of_spawn_area) + 20.0 {
+        building_y = -20.0;
+
+        while building_y < side_length_of_spawn_area - 20.0 {
             buildings.push(Polygon(vec![
                 Vector2 { x: building_x, y: building_y },
                 Vector2 { x: building_x + 10.0, y: building_y },
@@ -88,6 +91,70 @@ pub fn initial_state(entity_count: u32, random_seed: u32) -> State {
 
         building_x += 20.0;
     }
+
+    // Southwest building in the square
+    buildings.push(Polygon(vec![
+        Vector2 { x: 10.0, y: building_y },
+        Vector2 { x: 30.0, y: building_y },
+        Vector2 { x: 30.0, y: building_y + 10.0 },
+        Vector2 { x: 20.0, y: building_y + 20.0},
+        Vector2 { x: 10.0, y: building_y + 20.0 }
+    ]));
+
+    // Southeast building in the square
+    buildings.push(Polygon(vec![
+        Vector2 { x: 70.0, y: building_y },
+        Vector2 { x: 50.0, y: building_y },
+        Vector2 { x: 50.0, y: building_y + 10.0 },
+        Vector2 { x: 60.0, y: building_y + 20.0 },
+        Vector2 { x: 70.0, y: building_y + 20.0 }
+    ]));
+
+    // Octagonal building in the middle of the square
+    buildings.push(Polygon(vec![
+        Vector2 { x: 32.5, y: building_y + 22.5 },
+        Vector2 { x: 32.5, y: building_y + 27.5 },
+        Vector2 { x: 37.5, y: building_y + 32.5 },
+        Vector2 { x: 42.5, y: building_y + 32.5 },
+        Vector2 { x: 47.5, y: building_y + 27.5 },
+        Vector2 { x: 47.5, y: building_y + 22.5 },
+        Vector2 { x: 42.5, y: building_y + 17.5 },
+        Vector2 { x: 37.5, y: building_y + 17.5 }
+    ]));
+
+    buildings.push(Polygon(vec![
+        Vector2 { x: -20.0, y: building_y },
+        Vector2 { x: -20.0, y: building_y + 30.0 },
+        Vector2 { x: -5.0, y: building_y + 30.0 },
+        Vector2 { x: -5.0, y: building_y }
+    ]));
+
+    buildings.push(Polygon(vec![
+        Vector2 { x: 95.0, y: building_y },
+        Vector2 { x: 95.0, y: building_y + 30.0 },
+        Vector2 { x: 80.0, y: building_y + 30.0 },
+        Vector2 { x: 80.0, y: building_y }
+    ]));
+
+    building_y = building_y + 30.0;
+
+    // Northwest building in the square
+    buildings.push(Polygon(vec![
+        Vector2 { x: 10.0, y: building_y },
+        Vector2 { x: 10.0, y: building_y + 20.0 },
+        Vector2 { x: 30.0, y: building_y + 20.0 },
+        Vector2 { x: 30.0, y: building_y + 10.0 },
+        Vector2 { x: 20.0, y: building_y }
+    ]));
+
+    // Northeast building in the square
+    buildings.push(Polygon(vec![
+        Vector2 { x: 70.0, y: building_y },
+        Vector2 { x: 70.0, y: building_y + 20.0 },
+        Vector2 { x: 50.0, y: building_y + 20.0 },
+        Vector2 { x: 50.0, y: building_y + 10.0 },
+        Vector2 { x: 60.0, y: building_y }
+    ]));
 
     // Generate World Boundary
 

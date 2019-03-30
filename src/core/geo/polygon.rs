@@ -148,7 +148,3 @@ impl Polygon {
         self.num_intersects(pos, Vector2 { x: pos.x, y: MAX }) % 2 == 1
     }
 }
-
-fn angle_between(a: Vector2, b: Vector2) -> Scalar {
-    (a.dot(b) / (a.length() * b.length())).acos()
-}
