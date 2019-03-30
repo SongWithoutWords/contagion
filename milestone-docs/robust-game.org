@@ -1,4 +1,4 @@
-#+title: Team 12 Playable Game Submission
+# #+title: Team 12 Playable Game Submission
 
 Please checkout the ~robust~ tag to evaluate our submission
 - We will add this tag for our submission on Friday, March 29th.
@@ -50,6 +50,8 @@ You should implement one or more additional creative elements. These can include
 - Added gradual infection system (previously zombies infected people immediately, now the infection grows over time)
 - Added a new, more powerful police type armed with an automatic weapon (as opposed to a handgun)
 - Added new zombie random-walk/roaming behaviour
+- WIP new hand-to-hand/melee combat system
+  - Zombies claw at humans to spread infection rather than just spreading infection by bumping into them
 
 ** UI features
 - Finished implementation of game-over screen, for both victory and defeat
@@ -71,9 +73,6 @@ You should implement one or more additional creative elements. These can include
   - Zombie
     - Torso without hands
     - Claws
-
-* Features begun but not completed this milestone
-- New hand-to-hand melee combat system between zombies and humans was started but not finished
 
 * Bugs fixed
 - Bug that caused the game to unpause when paused using the mouse

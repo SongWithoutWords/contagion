@@ -4,7 +4,7 @@ Team 12 Playable Game Submission
 Table of Contents
 _________________
 
-1. Milestone Requirements
+1. MILESTONE REQUIREMENTS
 .. 1. (75%) Milestone requirements:
 .. 2. (25%) Creative:
 2. Features completed this milestone
@@ -12,8 +12,7 @@ _________________
 .. 2. Gameplay features
 .. 3. UI features
 .. 4. Textures created
-3. Features begun but not completed this milestone
-4. Bugs fixed
+3. Bugs fixed
 
 
 Please checkout the `robust' tag to evaluate our submission
@@ -22,7 +21,7 @@ Please checkout the `robust' tag to evaluate our submission
 Link to project: <https://github.com/SongWithoutWords/contagion>
 
 
-1 Milestone Requirements
+1 MILESTONE REQUIREMENTS
 ========================
 
   Requirements marked [X] are requirements we think are fully satisified
@@ -110,6 +109,9 @@ Link to project: <https://github.com/SongWithoutWords/contagion>
   - Added a new, more powerful police type armed with an automatic
     weapon (as opposed to a handgun)
   - Added new zombie random-walk/roaming behaviour
+  - WIP new hand-to-hand/melee combat system
+    - Zombies claw at humans to spread infection rather than just
+      spreading infection by bumping into them
 
 
 2.3 UI features
@@ -143,14 +145,7 @@ Link to project: <https://github.com/SongWithoutWords/contagion>
       - Claws
 
 
-3 Features begun but not completed this milestone
-=================================================
-
-  - New hand-to-hand melee combat system between zombies and humans was
-    started but not finished
-
-
-4 Bugs fixed
+3 Bugs fixed
 ============
 
   - Bug that caused the game to unpause when paused using the mouse
