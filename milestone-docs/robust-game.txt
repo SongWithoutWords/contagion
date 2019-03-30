@@ -144,6 +144,11 @@ Link to project: <https://github.com/SongWithoutWords/contagion>
       - Torso without hands
       - Claws
 
+2.5 Graphics
+~~~~~~~~~~~~~~~~~~~~
+
+    - Can now render arbitrary, convex polygons
+
 
 3 Bugs fixed
 ============
