@@ -297,22 +297,17 @@ pub fn update(args: &UpdateArgs, state: &mut State) -> SimulationResults {
                     }
                 }
             }
-            ProjectileKind::Fist { owner_index } => {
-                // TODO: KAYCI
-                match first_intersect_time_and_index {
+            ProjectileKind::Fist { _ } => {
+                match &first_collision {
                     None => (),
-                    Some((_, i)) => {
-                        // TODO: Deal damage to the entity rather than turning into zombie
-                        state.entities[i].dead_or_alive = DeadOrAlive::Alive {
-                            health: 100.0,
-                            zombie_or_human: ZombieOrHuman::Zombie {
-                                state: ZombieState::Roaming,
-                                left_hand_status: HandStatus::Normal,
-                                right_hand_status: HandStatus::Normal
-                            },
-                        };
+                    Some(Collision{entity_id: i, ..}) => {
+                        match &mut state.entities[*i].dead_or_alive {
+                            DeadOrAlive::Alive {zombie_or_human: ZombieOrHuman::Human { infection, .. }, ..} => {
+                                *infection += ZOMBIE_HUMAN_COLLISION_INFECTION_RATE
+                            }
+                            _ => ()
+                        }
                         p.velocity = Vector2::zero();
-                        sounds.push(Sound::PersonInfected);
                     }
                 }
             }
@@ -679,7 +674,7 @@ fn update_zombie(
     sim_state: &mut State,
     index: usize,
     state: ZombieState,
-    left_hand_status: &mut HandStatus,
+    _left_hand_status: &mut HandStatus,
     right_hand_status: &mut HandStatus) -> ZombieState {
 
     let entities = &mut sim_state.entities;
@@ -776,7 +771,10 @@ fn update_zombie(
         ZombieState::Fighting { punch_time_remaining, target_index } => {
             // Stop fighting if the target is already dead or zombie
             if entities[target_index].is_dead() || entities[target_index].is_zombie() {
-                return ZombieState::Roaming
+                return ZombieState::Roaming {
+                    jerk: Vector2::zero(),
+                    acceleration: Vector2::zero()
+                }
             }
 
             let target_pos = entities[target_index].position;
@@ -819,7 +817,10 @@ fn update_zombie(
 
                 *right_hand_status = HandStatus::None;
 
-                ZombieState::Roaming
+                ZombieState::Roaming {
+                    jerk: Vector2::zero(),
+                    acceleration: Vector2::zero()
+                }
             }
         }
     }
