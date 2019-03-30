@@ -46,6 +46,7 @@ You should implement one or more additional creative elements. These can include
 - Improved camera zoom rate
 
 ** Gameplay features
+- Added map boundary
 - Added health system (previously a single gunshot was lethal)
 - Added gradual infection system (previously zombies infected people immediately, now the infection grows over time)
 - Added a new, more powerful police type armed with an automatic weapon (as opposed to a handgun)
@@ -53,26 +54,20 @@ You should implement one or more additional creative elements. These can include
 - WIP new hand-to-hand/melee combat system
   - Zombies claw at humans to spread infection rather than just spreading infection by bumping into them
 
+** Graphics features
+- Can now render arbitrary, convex polygons as buildings
+
+** Textures created
+- Awesome new background texture for the main menu
+- New building texture
+- New ground texture
+  - It's darker than the old one, so it contrasts better with other sprites, especially bullets and bullet casings which are small and fast moving
+- New out-of-bounds texture
+- New map boundary texture
+
 ** UI features
 - Finished implementation of game-over screen, for both victory and defeat
   - Can close the program, return to the main menu, or launch a new game from this screen
-- Added HUD UI element for the number of selected cops
-- Added HUD UI element for the number of cops, civilians and zombies in the world
-
-** Textures created
-- 3 new UI icons for number of cops, civilians and zombies in the world
-- Textures created to support future animation and melee combat system
-  - Cop
-    - Torso without hands
-    - Baton-holding hand
-    - Gun-holding-hand
-    - Fist
-  - Civilian
-    - Torso without hands
-    - Fists
-  - Zombie
-    - Torso without hands
-    - Claws
 
 * Bugs fixed
 - Bug that caused the game to unpause when paused using the mouse

@@ -1,4 +1,4 @@
-Team 12 Playable Game Submission
+Ian McCall
 
 
 Table of Contents
@@ -10,8 +10,9 @@ _________________
 2. Features completed this milestone
 .. 1. Camera features
 .. 2. Gameplay features
-.. 3. UI features
+.. 3. Graphics features
 .. 4. Textures created
+.. 5. UI features
 3. Bugs fixed
 
 
@@ -103,6 +104,7 @@ Link to project: <https://github.com/SongWithoutWords/contagion>
 2.2 Gameplay features
 ~~~~~~~~~~~~~~~~~~~~~
 
+  - Added map boundary
   - Added health system (previously a single gunshot was lethal)
   - Added gradual infection system (previously zombies infected people
     immediately, now the infection grows over time)
@@ -114,40 +116,32 @@ Link to project: <https://github.com/SongWithoutWords/contagion>
       spreading infection by bumping into them
 
 
-2.3 UI features
+2.3 Graphics features
+~~~~~~~~~~~~~~~~~~~~~
+
+  - Can now render arbitrary, convex polygons as buildings
+
+
+2.4 Textures created
+~~~~~~~~~~~~~~~~~~~~
+
+  - Awesome new background texture for the main menu
+  - New building texture
+  - New ground texture
+    - It's darker than the old one, so it contrasts better with other
+      sprites, especially bullets and bullet casings which are small and
+      fast moving
+  - New out-of-bounds texture
+  - New map boundary texture
+
+
+2.5 UI features
 ~~~~~~~~~~~~~~~
 
   - Finished implementation of game-over screen, for both victory and
     defeat
     - Can close the program, return to the main menu, or launch a new
       game from this screen
-  - Added HUD UI element for the number of selected cops
-  - Added HUD UI element for the number of cops, civilians and zombies
-    in the world
-
-
-2.4 Textures created
-~~~~~~~~~~~~~~~~~~~~
-
-  - 3 new UI icons for number of cops, civilians and zombies in the
-    world
-  - Textures created to support future animation and melee combat system
-    - Cop
-      - Torso without hands
-      - Baton-holding hand
-      - Gun-holding-hand
-      - Fist
-    - Civilian
-      - Torso without hands
-      - Fists
-    - Zombie
-      - Torso without hands
-      - Claws
-
-2.5 Graphics
-~~~~~~~~~~~~~~~~~~~~
-
-    - Can now render arbitrary, convex polygons
 
 
 3 Bugs fixed
