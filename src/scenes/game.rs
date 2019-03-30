@@ -118,11 +118,14 @@ impl Scene for Game {
                 &mut self.state);
             self.entity_counts = simulation_results.entity_counts;
 
-            // end game if there are no entities
-            if self.entity_counts.civilians == 0 && self.entity_counts.cops == 0 {
-                self.game_state.zombies_win = true;
-            } else if self.entity_counts.infected == 0 && self.entity_counts.zombies == 0 {
+            if self.entity_counts.infected == 0 && self.entity_counts.zombies == 0 {
+                // The player wins if there are no zombies or infected
                 self.game_state.humans_win = true;
+            }
+            else if self.entity_counts.cops == 0 {
+                // The player loses if there are still zombies or infected,
+                // and no cops to defend the remaining civilians
+                self.game_state.zombies_win = true;
             }
 
             presentation::audio::sound_effects::play_sounds(&simulation_results.sounds);
