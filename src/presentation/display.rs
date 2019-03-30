@@ -3,21 +3,19 @@ use glium::Surface;
 use glium::texture::texture2d::Texture2d;
 use lerp::*;
 
+use crate::core::geo::polygon::*;
+use crate::core::matrix::*;
 use crate::core::scalar::*;
 use crate::core::vector::*;
-use crate::core::matrix::*;
-use crate::core::geo::polygon::*;
-
-use crate::presentation::ui::gui::*;
-use crate::presentation::ui::gui::GuiType;
+use crate::presentation::graphics::font::FontPkg;
 use crate::presentation::ui::glium_text;
 use crate::presentation::ui::glium_text::FontTexture;
+use crate::presentation::ui::gui::*;
 use crate::presentation::ui::gui::Component;
-use crate::presentation::graphics::font::{FontPkg};
-
+use crate::presentation::ui::gui::GuiType;
+use crate::simulation::control::*;
 use crate::simulation::state::*;
 use crate::simulation::update::EntityCounts;
-use crate::simulation::control::*;
 
 // Enum ordered by draw order
 #[derive(Copy, Clone, Debug, Enum, PartialEq)]
@@ -48,7 +46,7 @@ pub struct Textures {
     outside_border_texture: Texture2d,
     left_fence_texture: Texture2d,
     top_fence_texture: Texture2d,
-
+    wallpaper: Texture2d,
 }
 
 pub fn load_textures(window: &glium_sdl2::SDL2Facade) -> Textures {
@@ -92,6 +90,7 @@ pub fn load_textures(window: &glium_sdl2::SDL2Facade) -> Textures {
                 => load_texture(window, "assets/images/building/building_one.png"),
         },
         background_texture: load_texture(&window, "assets/images/dirt.jpg"),
+        wallpaper: load_texture(&window, "assets/images/contagion_wallpaper.png"),
         outside_border_texture: load_texture(&window, "assets/images/grass.jpg"),
         left_fence_texture: load_texture(&window, "assets/images/wall_left.jpg"),
         top_fence_texture: load_texture(&window, "assets/images/wall.jpg"),
@@ -103,8 +102,9 @@ pub struct Programs {
     sprite_program: glium::Program,
     shadow_program: glium::Program,
     gui_program: glium::Program,
-    shape_program: glium::Program
+    shape_program: glium::Program,
 }
+
 pub fn load_programs(window: &glium_sdl2::SDL2Facade) -> Programs {
     Programs {
         background_program: glium::Program::from_source(
@@ -159,14 +159,13 @@ struct Sprite {
 }
 
 fn push_sprite_vertices(buffer: &mut Vec<Vertex>, sprite: &Sprite) {
-
     let position = sprite.position;
     let up = sprite.radius * sprite.facing;
     let right = up.right(); //vector2(up.y, -up.x);
 
-    let top_left  = position - right + up;
+    let top_left = position - right + up;
     let top_right = position + right + up;
-    let bot_left  = position - right - up;
+    let bot_left = position - right - up;
     let bot_right = position + right - up;
 
     // 0      1
@@ -179,19 +178,19 @@ fn push_sprite_vertices(buffer: &mut Vec<Vertex>, sprite: &Sprite) {
 
     let vertex0 = Vertex {
         position: top_left.as_f32_array(),
-        tex_coords: [0.0, 1.0]
+        tex_coords: [0.0, 1.0],
     };
     let vertex1 = Vertex {
         position: top_right.as_f32_array(),
-        tex_coords: [1.0, 1.0]
+        tex_coords: [1.0, 1.0],
     };
     let vertex2 = Vertex {
         position: bot_left.as_f32_array(),
-        tex_coords: [0.0, 0.0]
+        tex_coords: [0.0, 0.0],
     };
     let vertex3 = Vertex {
         position: bot_right.as_f32_array(),
-        tex_coords: [1.0, 0.0]
+        tex_coords: [1.0, 0.0],
     };
     buffer.push(vertex0);
     buffer.push(vertex1);
@@ -202,39 +201,39 @@ fn push_sprite_vertices(buffer: &mut Vec<Vertex>, sprite: &Sprite) {
 }
 
 fn push_gui_vertices(buffer: &mut Vec<ColorVertex>, ui: &Gui) {
-    let top_left  =  ui.top_left;
-    let top_right =  ui.top_right;
-    let bot_left  = ui.bot_left;
-    let bot_right =  ui.bot_right;
-    let mut color= [0.0, 0.0, 0.0, 1.0];
+    let top_left = ui.top_left;
+    let top_right = ui.top_right;
+    let bot_left = ui.bot_left;
+    let bot_right = ui.bot_right;
+    let mut color = [0.0, 0.0, 0.0, 1.0];
 
     match ui.id {
-        GuiType::SelectionDrag => {color = [0.105, 0.214, 0.124, 0.3]},
-        GuiType::Button{..} => {color = [0.6, 0.7, 0.8, 0.0]},
-        GuiType::Window => {color= [0.0, 0.0, 0.0, 0.7]},
-        GuiType::Menu {..} => {color= [0.6, 0.7, 0.8, 0.0]},
+        GuiType::SelectionDrag => { color = [0.105, 0.214, 0.124, 0.3] }
+        GuiType::Button { .. } => { color = [0.6, 0.7, 0.8, 0.0] }
+        GuiType::Window => { color = [0.0, 0.0, 0.0, 0.7] }
+        GuiType::Menu { .. } => { color = [0.6, 0.7, 0.8, 0.0] }
         _ => (),
     };
 
     let vertex0 = ColorVertex {
         position: top_left.as_f32_array(),
         tex_coords: [0.0, 1.0],
-        color
+        color,
     };
     let vertex1 = ColorVertex {
         position: top_right.as_f32_array(),
         tex_coords: [1.0, 1.0],
-        color
+        color,
     };
     let vertex2 = ColorVertex {
         position: bot_left.as_f32_array(),
         tex_coords: [0.0, 0.0],
-        color
+        color,
     };
     let vertex3 = ColorVertex {
         position: bot_right.as_f32_array(),
         tex_coords: [1.0, 0.0],
-        color
+        color,
     };
     buffer.push(vertex0);
     buffer.push(vertex1);
@@ -245,36 +244,36 @@ fn push_gui_vertices(buffer: &mut Vec<ColorVertex>, ui: &Gui) {
 }
 
 fn push_health_bar_vertices(buffer: &mut Vec<ColorVertex>, sprite: &Sprite, health: Scalar) {
-    let position = Vector2 {x: sprite.position.x, y: sprite.position.y + 1.0};
+    let position = Vector2 { x: sprite.position.x, y: sprite.position.y + 1.0 };
     let up = 0.5;
     let down = 0.2;
 
-    let top_left  = Vector2{x:position.x - up, y: position.y + up};
-    let top_right = top_left.lerp(Vector2{x:position.x + up, y: position.y + up}, health);
-    let bot_left  = Vector2{x:position.x - up, y: position.y + down};
-    let bot_right = bot_left.lerp(Vector2{x:position.x + up, y: position.y + down}, health);
+    let top_left = Vector2 { x: position.x - up, y: position.y + up };
+    let top_right = top_left.lerp(Vector2 { x: position.x + up, y: position.y + up }, health);
+    let bot_left = Vector2 { x: position.x - up, y: position.y + down };
+    let bot_right = bot_left.lerp(Vector2 { x: position.x + up, y: position.y + down }, health);
 
     let color = vector4(1.0, 0.0, 0.0, 1.0).lerp(vector4(0.0, 1.0, 0.0, 1.0), health).as_f32_array();
 
     let vertex0 = ColorVertex {
         position: top_left.as_f32_array(),
         tex_coords: [0.0, 1.0],
-        color
+        color,
     };
     let vertex1 = ColorVertex {
         position: top_right.as_f32_array(),
         tex_coords: [1.0, 1.0],
-        color
+        color,
     };
     let vertex2 = ColorVertex {
         position: bot_left.as_f32_array(),
         tex_coords: [0.0, 0.0],
-        color
+        color,
     };
     let vertex3 = ColorVertex {
         position: bot_right.as_f32_array(),
         tex_coords: [1.0, 0.0],
-        color
+        color,
     };
     buffer.push(vertex0);
     buffer.push(vertex1);
@@ -297,7 +296,7 @@ fn push_building_vertices(buffer: &mut Vec<ColorVertex>, building: &Polygon, col
                     ((point.x - bounds.0.x) / width) as f32,
                     ((point.y - bounds.0.y) / height) as f32
                 ],
-                color
+                color,
             })
         }
     }
@@ -314,31 +313,31 @@ fn push_path_vertices(buffer: &mut Vec<ColorVertex>, point1: Vector2, point2: Ve
 
     // case 2, point1 is top left and point2 is bottom right or vice versa
     if (point1.x <= point2.x && point1.y >= point2.y) || (point2.x <= point1.x && point2.y >= point1.y) {
-        top_left = Vector2 {x: point1.x - lambda, y: point1.y - lambda};
-        top_right = Vector2 {x: point1.x + lambda, y: point1.y + lambda};
-        bot_right = Vector2 {x: point2.x - lambda, y: point2.y - lambda};
-        bot_left = Vector2 {x: point2.x + lambda, y: point2.y + lambda};
+        top_left = Vector2 { x: point1.x - lambda, y: point1.y - lambda };
+        top_right = Vector2 { x: point1.x + lambda, y: point1.y + lambda };
+        bot_right = Vector2 { x: point2.x - lambda, y: point2.y - lambda };
+        bot_left = Vector2 { x: point2.x + lambda, y: point2.y + lambda };
     }
 
     let vertex0 = ColorVertex {
         position: top_left.as_f32_array(),
         tex_coords: [0.0, 1.0],
-        color
+        color,
     };
     let vertex1 = ColorVertex {
         position: top_right.as_f32_array(),
         tex_coords: [1.0, 1.0],
-        color
+        color,
     };
     let vertex2 = ColorVertex {
         position: bot_left.as_f32_array(),
         tex_coords: [0.0, 0.0],
-        color
+        color,
     };
     let vertex3 = ColorVertex {
         position: bot_right.as_f32_array(),
         tex_coords: [1.0, 0.0],
-        color
+        color,
     };
 
     buffer.push(vertex0);
@@ -396,16 +395,16 @@ fn draw_outside_background(
     let extent = 1e5;
 
     let top_left = VertexPosition {
-        position: [-extent,  extent],
+        position: [-extent, extent],
     };
     let top_right = VertexPosition {
-        position: [ extent,  extent],
+        position: [extent, extent],
     };
     let bot_left = VertexPosition {
         position: [-extent, -extent],
     };
     let bot_right = VertexPosition {
-        position: [ extent, -extent],
+        position: [extent, -extent],
     };
 
     // tl    tr
@@ -444,12 +443,11 @@ fn draw_left_fence(
     camera_frame: [[f32; 4]; 4],
     params: &glium::DrawParameters)
 {
-
     let top_left = VertexPosition {
-        position: [-24.5,  116.0],
+        position: [-24.5, 116.0],
     };
     let top_right = VertexPosition {
-        position: [-26.0,  116.0],
+        position: [-26.0, 116.0],
     };
     let bot_left = VertexPosition {
         position: [-24.5, -26.0],
@@ -495,10 +493,10 @@ fn draw_right_fence(
     params: &glium::DrawParameters)
 {
     let top_left = VertexPosition {
-        position: [114.5,  116.0],
+        position: [114.5, 116.0],
     };
     let top_right = VertexPosition {
-        position: [116.0,  116.0],
+        position: [116.0, 116.0],
     };
     let bot_left = VertexPosition {
         position: [114.5, -26.0],
@@ -544,10 +542,10 @@ fn draw_top_fence(
     params: &glium::DrawParameters)
 {
     let top_left = VertexPosition {
-        position: [-26.0,  116.0],
+        position: [-26.0, 116.0],
     };
     let top_right = VertexPosition {
-        position: [116.0,  116.0],
+        position: [116.0, 116.0],
     };
     let bot_left = VertexPosition {
         position: [-26.0, 114.5],
@@ -592,12 +590,11 @@ fn draw_lower_fence(
     camera_frame: [[f32; 4]; 4],
     params: &glium::DrawParameters)
 {
-
     let top_left = VertexPosition {
-        position: [-26.0,  -24.5],
+        position: [-26.0, -24.5],
     };
     let top_right = VertexPosition {
-        position: [116.0,  -24.5],
+        position: [116.0, -24.5],
     };
     let bot_left = VertexPosition {
         position: [-26.0, -26.0],
@@ -644,19 +641,19 @@ fn draw_background(
 {
     // This is about as large as you can get without introducing artifacts
     // due to floating point imprecision
-   // let extent = 1e2;
+    // let extent = 1e2;
 
     let top_left = VertexPosition {
-        position: [-25.0,  115.0],
+        position: [-25.0, 115.0],
     };
     let top_right = VertexPosition {
-        position: [ 115.0,  115.0],
+        position: [115.0, 115.0],
     };
     let bot_left = VertexPosition {
         position: [-25.0, -25.0],
     };
     let bot_right = VertexPosition {
-        position: [ 115.0, -25.0],
+        position: [115.0, -25.0],
     };
 
     // tl    tr
@@ -688,7 +685,60 @@ fn draw_background(
 }
 
 
+fn draw_main_menu_background(
+    frame: &mut glium::Frame,
+    window: &glium_sdl2::SDL2Facade,
+    textures: &Textures,
+    programs: &Programs,
+    camera_frame: [[f32; 4]; 4],
+    params: &glium::DrawParameters)
+{
+    // This is about as large as you can get without introducing artifacts
+    // due to floating point imprecision
+    // let extent = 1e2
+    let top_left = Vertex {
+        position: [-11.3, 11.3],
+        tex_coords: [0.0, 1.0],
+    };
+    let top_right = Vertex {
+        position: [11.3, 11.3],
+        tex_coords: [1.0, 1.0],
+    };
+    let bot_left = Vertex {
+        position: [-11.3, -11.3],
+        tex_coords: [0.0, 0.0],
+    };
+    let bot_right = Vertex {
+        position: [11.3, -11.3],
+        tex_coords: [1.0, 0.0],
+    };
+    // tl    tr
+    //  +----+
+    //  |  / |
+    //  | /  |
+    //  +----+
+    // bl    br
 
+    let vertices = vec!(
+        top_left,
+        top_right,
+        bot_left,
+        top_right,
+        bot_right,
+        bot_left,
+    );
+
+    let uniforms = uniform! {
+        matrix: camera_frame,
+        tex: &textures.wallpaper,
+    };
+    frame.draw(
+        &glium::VertexBuffer::new(window, &vertices).unwrap(),
+        &glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList),
+        &programs.sprite_program,
+        &uniforms,
+        params).unwrap();
+}
 
 pub fn display(
     frame: &mut glium::Frame,
@@ -701,7 +751,7 @@ pub fn display(
     camera_frame: Mat4,
     ui: &mut Component,
     fonts: &FontPkg,
-    control: &Control
+    control: &Control,
 ) {
     let font = fonts.get("Consola").unwrap();
 
@@ -712,9 +762,9 @@ pub fn display(
     draw_background(frame, window, textures, programs, camera_frame, params);
 
 
-    let mut vertex_buffers = enum_map!{_ => vec!()};
+    let mut vertex_buffers = enum_map! {_ => vec!()};
     let mut vertex_buffers_green_hp = vec!();
-    let mut vertex_buffers_gui = enum_map!{_ => vec!()};
+    let mut vertex_buffers_gui = enum_map! {_ => vec!()};
     let mut vertex_buffers_building = vec!();
     let mut vertex_buffers_path = vec!();
     let mut text_buffers = vec!();
@@ -737,16 +787,15 @@ pub fn display(
 
     // Compute the vertices in world coordinates of all entities
     for entity in &state.entities {
-
         let sprite_type = match &entity.dead_or_alive {
             DeadOrAlive::Dead => SpriteType::Dead,
             DeadOrAlive::Alive { zombie_or_human, .. } => match zombie_or_human {
-                ZombieOrHuman::Zombie{ .. } => SpriteType::Zombie,
+                ZombieOrHuman::Zombie { .. } => SpriteType::Zombie,
                 ZombieOrHuman::Human { human, .. } => match human {
                     Human::Cop { cop_type, .. } => match cop_type {
-                            CopType::Normal => SpriteType::Cop,
-                            CopType::Soldier => SpriteType::Soldier,
-                        },
+                        CopType::Normal => SpriteType::Cop,
+                        CopType::Soldier => SpriteType::Soldier,
+                    },
                     Human::Civilian { .. } => SpriteType::Civilian
                 }
             }
@@ -796,24 +845,22 @@ pub fn display(
         match &component.id {
             GuiType::ZombieUI => {
                 push_gui_vertices(&mut vertex_buffers_gui[SpriteType::ZombieWorldIcon], component);
-            },
+            }
             GuiType::CivilianUI => {
                 push_gui_vertices(&mut vertex_buffers_gui[SpriteType::CivilianWorldIcon], component);
-            },
+            }
             GuiType::CopUI => {
                 push_gui_vertices(&mut vertex_buffers_gui[SpriteType::CopWorldIcon], component);
-            },
+            }
             GuiType::Selected => {
-                if selection_count < 1 {
-
-                } else {
+                if selection_count < 1 {} else {
                     // might be useful later...
                     // component.move_pos(Vector2 { x: offset * ((0) as f64), y: 0.0 });
 
                     // draw the cop UI icon (is used to show the selected cops)
                     push_gui_vertices(&mut vertex_buffers_gui[SpriteType::CopIcon], component);
                 }
-            },
+            }
             GuiType::SelectionDrag => {
                 if control.mouse_drag {
                     let rec_min_x = control.drag_vertex_start.x.min(control.drag_vertex_end.x);
@@ -830,7 +877,7 @@ pub fn display(
             GuiType::Score => (),
             GuiType::Timer => (),
             GuiType::Window => (),
-            GuiType::Menu{_window_gui, _buttons_gui, ..} => {
+            GuiType::Menu { _window_gui, _buttons_gui, .. } => {
                 push_gui_vertices(&mut vertex_buffers_gui[SpriteType::Menu], component);
                 if ui.active_window == ActiveWindow::Menu {
                     push_gui_vertices(&mut vertex_buffers_gui[SpriteType::MenuWindow], _window_gui);
@@ -846,7 +893,7 @@ pub fn display(
                 } else if ui.active_window == ActiveWindow::Instruction {
                     push_gui_vertices(&mut vertex_buffers_gui[SpriteType::MenuWindow], _window_gui);
                 }
-            },
+            }
             _ => (),
         };
     }
@@ -862,12 +909,13 @@ pub fn display(
     // Compute vertices for cop paths
     for entity in &state.entities {
         match &entity.dead_or_alive {
-
             DeadOrAlive::Alive {
                 zombie_or_human: ZombieOrHuman::Human {
                     human: Human::Cop { state_stack, .. },
-                    .. },
-                .. } => {
+                    ..
+                },
+                ..
+            } => {
                 let path = match state_stack.last() {
                     Some(CopState::Moving { path, .. }) => path,
                     Some(CopState::AttackingZombie { path, .. }) => path,
@@ -878,7 +926,7 @@ pub fn display(
                         let path_vec = path.to_vec();
                         let color = [0.0, 0.0, 0.0, 1.0];
                         for i in 0..(path_vec.len() - 1) {
-                            push_path_vertices(&mut vertex_buffers_path, path_vec[i], path_vec[i+1], color);
+                            push_path_vertices(&mut vertex_buffers_path, path_vec[i], path_vec[i + 1], color);
                         }
                     }
                     None => ()
@@ -927,7 +975,6 @@ pub fn display(
     // Render shadows
     use crate::presentation::display::SpriteType::*;
     for sprite_type in &[Cop, Civilian, Dead, Zombie] {
-
         let uniforms = uniform! {
             matrix: camera_frame,
             tex: &textures.sprite_textures[*sprite_type],
@@ -944,7 +991,6 @@ pub fn display(
 
     // Render sprites
     for (sprite_type, vertex_buffer) in &vertex_buffers {
-
         let uniforms = uniform! {
             matrix: camera_frame,
             tex: &textures.sprite_textures[sprite_type],
@@ -1013,8 +1059,7 @@ pub fn display(
                 &programs.sprite_program,
                 params,
                 &uniforms);
-        }
-        else if _gui_type == SpriteType::MenuWindow {
+        } else if _gui_type == SpriteType::MenuWindow {
             if ui.active_window == ActiveWindow::Menu {
                 let uniforms = uniform! {
                         matrix: mat_gui,
@@ -1060,14 +1105,13 @@ pub fn display(
                 &programs.gui_program,
                 params,
                 &uniforms);
-        }
-        else if _gui_type == SpriteType::CopIcon {
+        } else if _gui_type == SpriteType::CopIcon {
             let uniforms = uniform! {
                     matrix: mat_gui,
                     tex: &textures.sprite_textures[_gui_type],
                 };
             // Draw the text showing the number of cops next to the UI cop icon
-            draw_cop_num(window, selection_count,frame, &font.medres());
+            draw_cop_num(window, selection_count, frame, &font.medres());
             draw_color_sprites(
                 frame,
                 window,
@@ -1075,18 +1119,17 @@ pub fn display(
                 &programs.sprite_program,
                 params,
                 &uniforms);
-        }
-          else if _gui_type == SpriteType::ZombieWorldIcon {
+        } else if _gui_type == SpriteType::ZombieWorldIcon {
             let uniforms = uniform! {
                     matrix: mat_gui,
                     tex: &textures.sprite_textures[_gui_type],
                 };
             // Draw the text showing the number of cops next to the UI cop icon
-              draw_remaining_zombie_num(
-                  window,
-                  entity_counts.zombies,
-                  frame,
-                  &font.lowres());
+            draw_remaining_zombie_num(
+                window,
+                entity_counts.zombies,
+                frame,
+                &font.lowres());
 
             draw_color_sprites(
                 frame,
@@ -1095,8 +1138,7 @@ pub fn display(
                 &programs.sprite_program,
                 params,
                 &uniforms);
-        }
-          else if _gui_type == SpriteType::CivilianWorldIcon {
+        } else if _gui_type == SpriteType::CivilianWorldIcon {
             let uniforms = uniform! {
                     matrix: mat_gui,
                     tex: &textures.sprite_textures[_gui_type],
@@ -1110,9 +1152,8 @@ pub fn display(
                 &programs.sprite_program,
                 params,
                 &uniforms);
-        }
-          else if _gui_type == SpriteType::CopWorldIcon {
-              let uniforms = uniform! {
+        } else if _gui_type == SpriteType::CopWorldIcon {
+            let uniforms = uniform! {
                     matrix: mat_gui,
                     tex: &textures.sprite_textures[_gui_type],
                 };
@@ -1137,12 +1178,10 @@ pub fn display(
         let button = &mut text_buffers[i];
         let mut color = [1.0, 1.0, 1.0, 1.0f32];
         match &mut button.id {
-            GuiType::Button { ref mut text , highlight} => {
-
+            GuiType::Button { ref mut text, highlight } => {
                 text_to_display = text.clone();
-                if *highlight { color = [0.1, 0.1, 0.1, 1.0f32]}
-                if text_to_display == "Instruction" {
-                }
+                if *highlight { color = [0.1, 0.1, 0.1, 1.0f32] }
+                if text_to_display == "Instruction" {}
             }
             _ => ()
         }
@@ -1155,15 +1194,14 @@ pub fn display(
         let button_width = dimensions.1.x - dimensions.0.x;
         let x_align = dimensions.0.x;
         let y_align = (dimensions.0.y) - 0.07;
-        let menu_matrix = mat.translation(Vector4{x: x_align, y: y_align, z: 0.0, w: 0.0})
-            .scale(Vector4{x: button_width/text_width, y: text_height, z: 1.0, w: 1.0}).as_f32_array();
+        let menu_matrix = mat.translation(Vector4 { x: x_align, y: y_align, z: 0.0, w: 0.0 })
+            .scale(Vector4 { x: button_width / text_width, y: text_height, z: 1.0, w: 1.0 }).as_f32_array();
         glium_text::draw(&text, &system, frame, menu_matrix, color);
     }
-
 }
 
 // Draw the selected cop number next to the UI Cop Icon
-fn draw_cop_num(window: &glium_sdl2::SDL2Facade, cop_num: i32, frame: &mut glium::Frame, font: &FontTexture){
+fn draw_cop_num(window: &glium_sdl2::SDL2Facade, cop_num: i32, frame: &mut glium::Frame, font: &FontTexture) {
     let system = glium_text::TextSystem::new(window);
     let cop_num_str: String = cop_num.to_string();
     let cop_num_display = format!("x{}", cop_num_str);
@@ -1173,29 +1211,27 @@ fn draw_cop_num(window: &glium_sdl2::SDL2Facade, cop_num: i32, frame: &mut glium
     let font_scale_down = 40.0;
     let (w, h) = frame.get_dimensions();
     let matrix = [
-        [1.0/font_scale_down, 0.0, 0.0, 0.0],
-        [0.0, 1.0 * (w as f32) / (h as f32) / font_scale_down,0.0, 0.0],
+        [1.0 / font_scale_down, 0.0, 0.0, 0.0],
+        [0.0, 1.0 * (w as f32) / (h as f32) / font_scale_down, 0.0, 0.0],
         [0.0, 0.0, 1.0, 0.0],
         [-0.88, -0.88, 0.0, 1.0f32],
     ];
 
-    if cop_num>0 {
+    if cop_num > 0 {
         glium_text::draw(&text, &system, frame, matrix, color);
     }
-
 }
 
 
 // Draw the remaining number of zombies in the world (number)
-fn draw_remaining_zombie_num(window: &glium_sdl2::SDL2Facade, zombie_num: usize, frame: &mut glium::Frame, font: &FontTexture){
+fn draw_remaining_zombie_num(window: &glium_sdl2::SDL2Facade, zombie_num: usize, frame: &mut glium::Frame, font: &FontTexture) {
     let system = glium_text::TextSystem::new(window);
-    let zombie_num_str: String =  zombie_num.to_string();
-    let mut zombie_num_display = format!("0{}",  zombie_num_str);
-    if zombie_num > 99{
-        zombie_num_display = format!("{}",  zombie_num_str);
-    }
-    else if zombie_num < 10 {
-        zombie_num_display = format!("00{}",  zombie_num_display);
+    let zombie_num_str: String = zombie_num.to_string();
+    let mut zombie_num_display = format!("0{}", zombie_num_str);
+    if zombie_num > 99 {
+        zombie_num_display = format!("{}", zombie_num_str);
+    } else if zombie_num < 10 {
+        zombie_num_display = format!("00{}", zombie_num_display);
     }
     let str_slice: &str = &zombie_num_display[..];
     let text = glium_text::TextDisplay::new(&system, font, str_slice);
@@ -1204,26 +1240,24 @@ fn draw_remaining_zombie_num(window: &glium_sdl2::SDL2Facade, zombie_num: usize,
     let (w, h) = frame.get_dimensions();
 
     let matrix = [
-        [1.0/font_scale_down, 0.0, 0.0, 0.0],
-        [0.0, 1.0 * (w as f32) / (h as f32) / font_scale_down,0.0, 0.0],
+        [1.0 / font_scale_down, 0.0, 0.0, 0.0],
+        [0.0, 1.0 * (w as f32) / (h as f32) / font_scale_down, 0.0, 0.0],
         [0.0, 0.0, 1.0, 0.0],
         [0.8755, 0.83, 0.0, 1.0f32],
     ];
 
     glium_text::draw(&text, &system, frame, matrix, color);
-
 }
 
 // Draw the remaining number of civilians in the world (number)
-fn draw_remaining_civilian_num(window: &glium_sdl2::SDL2Facade, civilian_num: usize, frame: &mut glium::Frame, font: &FontTexture){
+fn draw_remaining_civilian_num(window: &glium_sdl2::SDL2Facade, civilian_num: usize, frame: &mut glium::Frame, font: &FontTexture) {
     let system = glium_text::TextSystem::new(window);
-    let civilian_num_str: String =  civilian_num.to_string();
-    let mut civilian_num_display = format!("0{}",  civilian_num_str);
+    let civilian_num_str: String = civilian_num.to_string();
+    let mut civilian_num_display = format!("0{}", civilian_num_str);
     if civilian_num > 99 {
-        civilian_num_display = format!("{}",  civilian_num_str);
-    }
-    else if civilian_num < 10 {
-        civilian_num_display = format!("00{}",  civilian_num_str);
+        civilian_num_display = format!("{}", civilian_num_str);
+    } else if civilian_num < 10 {
+        civilian_num_display = format!("00{}", civilian_num_str);
     }
     let str_slice: &str = &civilian_num_display[..];
     let text = glium_text::TextDisplay::new(&system, font, str_slice);
@@ -1232,26 +1266,24 @@ fn draw_remaining_civilian_num(window: &glium_sdl2::SDL2Facade, civilian_num: us
     let (w, h) = frame.get_dimensions();
 
     let matrix = [
-        [1.0/font_scale_down, 0.0, 0.0, 0.0],
-        [0.0, 1.0 * (w as f32) / (h as f32) / font_scale_down,0.0, 0.0],
+        [1.0 / font_scale_down, 0.0, 0.0, 0.0],
+        [0.0, 1.0 * (w as f32) / (h as f32) / font_scale_down, 0.0, 0.0],
         [0.0, 0.0, 1.0, 0.0],
         [0.7255, 0.83, 0.0, 1.0f32],
     ];
 
     glium_text::draw(&text, &system, frame, matrix, color);
-
 }
 
 // Draw the remaining number of civilians in the world (number)
-fn draw_remaining_cop_num(window: &glium_sdl2::SDL2Facade, cop_num: usize, frame: &mut glium::Frame, font: &FontTexture){
+fn draw_remaining_cop_num(window: &glium_sdl2::SDL2Facade, cop_num: usize, frame: &mut glium::Frame, font: &FontTexture) {
     let system = glium_text::TextSystem::new(window);
-    let cop_num_str: String =  cop_num.to_string();
-    let mut cop_num_display = format!("0{}",  cop_num_str);
+    let cop_num_str: String = cop_num.to_string();
+    let mut cop_num_display = format!("0{}", cop_num_str);
     if cop_num > 99 {
-        cop_num_display = format!("{}",  cop_num_str);
-    }
-    else if cop_num < 10 {
-        cop_num_display = format!("00{}",  cop_num_str);
+        cop_num_display = format!("{}", cop_num_str);
+    } else if cop_num < 10 {
+        cop_num_display = format!("00{}", cop_num_str);
     }
     let str_slice: &str = &cop_num_display[..];
     let text = glium_text::TextDisplay::new(&system, font, str_slice);
@@ -1260,22 +1292,22 @@ fn draw_remaining_cop_num(window: &glium_sdl2::SDL2Facade, cop_num: usize, frame
     let (w, h) = frame.get_dimensions();
 
     let matrix = [
-        [1.0/font_scale_down, 0.0, 0.0, 0.0],
-        [0.0, 1.0 * (w as f32) / (h as f32) / font_scale_down,0.0, 0.0],
+        [1.0 / font_scale_down, 0.0, 0.0, 0.0],
+        [0.0, 1.0 * (w as f32) / (h as f32) / font_scale_down, 0.0, 0.0],
         [0.0, 0.0, 1.0, 0.0],
         [0.5755, 0.83, 0.0, 1.0f32],
     ];
 
     glium_text::draw(&text, &system, frame, matrix, color);
-
 }
 
-pub fn display_main_menu (
+pub fn display_main_menu(
     frame: &mut glium::Frame,
     window: &glium_sdl2::SDL2Facade,
     programs: &Programs,
     textures: &Textures,
     params: &glium::DrawParameters,
+    camera_frame: [[f32; 4]; 4],
     ui: &mut Component,
     fonts: &FontPkg,
 ) {
@@ -1283,17 +1315,16 @@ pub fn display_main_menu (
     frame.clear_color(0.160, 0.160, 0.160, 1.0);
 
     let mat = Mat4::init_id_matrix();
+    draw_main_menu_background(frame, window, textures, programs, camera_frame, params);
 
-//    draw_background(frame, window, textures, programs, camera_frame, params);
-
-    let mut vertex_buffers_gui = enum_map!{_ => vec!()};
+    let mut vertex_buffers_gui = enum_map! {_ => vec!()};
     let mut text_buffers = vec!();
     let mut _menu_buttons: Vec<(Vector2, Vector2, Vector2, Vector2)> = vec![];
 
     // Compute vertices for GUI
     for component in &mut ui.components {
         match &component.id {
-            GuiType::Button {..} => {
+            GuiType::Button { .. } => {
                 if ui.active_window == ActiveWindow::MainMenu {
                     let button_dimensions = component.get_dimension();
                     text_buffers.push(Box::new(component.clone()));
@@ -1304,7 +1335,7 @@ pub fn display_main_menu (
             GuiType::Score => (),
             GuiType::Timer => (),
             GuiType::Window => (),
-            GuiType::Menu{_window_gui, _buttons_gui, ..} => {
+            GuiType::Menu { _window_gui, _buttons_gui, .. } => {
                 if ui.active_window == ActiveWindow::MainMenu {
                     let button_dimensions = component.get_dimension();
                     text_buffers.push(Box::new(component.clone()));
@@ -1325,7 +1356,7 @@ pub fn display_main_menu (
                 } else if ui.active_window == ActiveWindow::Instruction {
                     push_gui_vertices(&mut vertex_buffers_gui[SpriteType::MenuWindow], _window_gui);
                 }
-            },
+            }
             _ => (),
         };
     }
@@ -1392,11 +1423,11 @@ pub fn display_main_menu (
         match button.id.clone() {
             GuiType::Button { text, highlight } => {
                 text_to_display = text;
-                if highlight { color = [0.1, 0.1, 0.1, 1.0f32]}
-            },
-            GuiType::Menu {_buttons_gui, text, highlight, ..} => {
+                if highlight { color = [0.1, 0.1, 0.1, 1.0f32] }
+            }
+            GuiType::Menu { _buttons_gui, text, highlight, .. } => {
                 text_to_display = text;
-                if highlight { color = [0.1, 0.1, 0.1, 1.0f32]}
+                if highlight { color = [0.1, 0.1, 0.1, 1.0f32] }
             }
             _ => ()
         }
@@ -1410,29 +1441,9 @@ pub fn display_main_menu (
         let x_align = dimensions.0.x;
         let y_align = (dimensions.0.y) - 0.07;
 
-        let menu_matrix = mat.translation(Vector4{x: x_align, y: y_align, z: 0.0, w: 0.0})
-            .scale(Vector4{x: button_width/text_width, y: text_height, z: 1.0, w: 1.0}).as_f32_array();
+        let menu_matrix = mat.translation(Vector4 { x: x_align, y: y_align, z: 0.0, w: 0.0 })
+            .scale(Vector4 { x: button_width / text_width, y: text_height, z: 1.0, w: 1.0 }).as_f32_array();
         glium_text::draw(&text, &system, frame, menu_matrix, color);
-    }
-
-    // Render Title
-    if ui.active_window == ActiveWindow::MainMenu {
-        let system = glium_text::TextSystem::new(window);
-        let text_display = "CONTAGION".to_string();
-        let str_slice: &str = &text_display[..];
-        let text = glium_text::TextDisplay::new(&system, font.highres(), str_slice);
-        let color = [1.0, 1.0, 1.0, 0.9f32];
-        let _font_scale_down = 1.5;
-        let text_width = text.get_width();
-        let (w, h) = frame.get_dimensions();
-        let _text_offset = 1.0 / text_width;
-        let matrix = [
-            [2.0 / text_width, 0.0, 0.0, 0.0],
-            [0.0, 2.0 * (w as f32) / (h as f32) / text_width, 0.0, 0.0],
-            [0.0, 0.0, 1.0, 0.0],
-            [-1.0, 0.2, 0.0, 1.0f32],
-        ];
-        glium_text::draw(&text, &system, frame, matrix, color);
     }
 }
 
@@ -1441,7 +1452,7 @@ fn compute_score(entity_counts: &EntityCounts) -> f64 {
         / entity_counts.total() as f64
 }
 
-pub fn display_loss_screen (
+pub fn display_loss_screen(
     frame: &mut glium::Frame,
     window: &glium_sdl2::SDL2Facade,
     programs: &Programs,
@@ -1456,24 +1467,23 @@ pub fn display_loss_screen (
     let mat = Mat4::init_id_matrix();
 //    draw_background(frame, window, textures, programs, camera_frame, params);
 
-    let mut vertex_buffers_gui = enum_map!{_ => vec!()};
+    let mut vertex_buffers_gui = enum_map! {_ => vec!()};
     let mut text_buffers = vec!();
     let mut _menu_buttons: Vec<(Vector2, Vector2, Vector2, Vector2)> = vec![];
 
     // Compute vertices for GUI
     for component in &mut ui.components {
         match &component.id {
-            GuiType::Button {..} => {
+            GuiType::Button { .. } => {
                 let button_dimensions = component.get_dimension();
                 text_buffers.push(Box::new(component.clone()));
                 _menu_buttons.push(button_dimensions);
                 push_gui_vertices(&mut vertex_buffers_gui[SpriteType::Button], component);
-
             }
             GuiType::Score => (),
             GuiType::Timer => (),
             GuiType::Window => (),
-            GuiType::Menu{..} => (),
+            GuiType::Menu { .. } => (),
             _ => (),
         };
     }
@@ -1503,11 +1513,11 @@ pub fn display_loss_screen (
         let button = text_buffers[i].clone();
         let mut color = [1.0, 1.0, 1.0, 1.0f32];
         match button.id.clone() {
-            GuiType::Button { text , highlight} => {
+            GuiType::Button { text, highlight } => {
                 text_to_display = text;
                 if highlight { color = [0.1, 0.1, 0.1, 1.0f32]; }
             }
-            GuiType::Menu {text,..} => {
+            GuiType::Menu { text, .. } => {
                 text_to_display = text;
             }
             _ => ()
@@ -1515,20 +1525,20 @@ pub fn display_loss_screen (
         let text_display = format!("{}", text_to_display);
         let str_slice: &str = &text_display[..];
         let text = glium_text::TextDisplay::new(&system, font.medres(), str_slice);
-        let text_width= (text.get_width() as f64) - 0.02;
+        let text_width = (text.get_width() as f64) - 0.02;
         let text_height = 0.06;
         let dimensions = _menu_buttons[i];
         let button_width = dimensions.1.x - dimensions.0.x;
         let x_align = dimensions.0.x;
         let y_align = (dimensions.0.y) - 0.07;
 
-        let menu_matrix = mat.translation(Vector4{x: x_align, y: y_align, z: 0.0, w: 0.0})
-                                    .scale(Vector4{x: button_width/text_width, y: text_height, z: 1.0, w: 1.0}).as_f32_array();
+        let menu_matrix = mat.translation(Vector4 { x: x_align, y: y_align, z: 0.0, w: 0.0 })
+            .scale(Vector4 { x: button_width / text_width, y: text_height, z: 1.0, w: 1.0 }).as_f32_array();
         glium_text::draw(&text, &system, frame, menu_matrix, color);
     }
 
     // Render Entities
-    let mat  = Mat4::init_id_matrix();
+    let mat = Mat4::init_id_matrix();
     let score = compute_score(entity_counts);
 
     let system = glium_text::TextSystem::new(window);
@@ -1541,8 +1551,8 @@ pub fn display_loss_screen (
     let text_width = text.get_width() as f64;
     let (w, h) = frame.get_dimensions();
     let _text_offset = 1.0 / text_width;
-    let  scale_factor = Vector4 {x: 2.0/text_width, y: 2.0 * (w as f64) / (h as f64) / text_width , z: 1.0, w: 1.0};
-    let  translation_offset = Vector4{x: -1.0, y: 0.3, z: 0.0, w: 0.0};
+    let scale_factor = Vector4 { x: 2.0 / text_width, y: 2.0 * (w as f64) / (h as f64) / text_width, z: 1.0, w: 1.0 };
+    let translation_offset = Vector4 { x: -1.0, y: 0.3, z: 0.0, w: 0.0 };
     let mut matrix = mat.scale(scale_factor).translation(translation_offset);
     glium_text::draw(&text, &system, frame, matrix.as_f32_array(), color);
 
@@ -1551,8 +1561,8 @@ pub fn display_loss_screen (
     let str_slice: &str = &text_display[..];
     let text = glium_text::TextDisplay::new(&system, font.medres(), str_slice);
     let color = [1.0, 1.0, 0.0, 1.0f32];
-    let scale_factor = Vector4 {x: 0.5, y:0.5, z: 1.0, w: 1.0};
-    let translate_offset = Vector4{x: 0.1, y: -0.2, z: 0.0, w: 0.0};
+    let scale_factor = Vector4 { x: 0.5, y: 0.5, z: 1.0, w: 1.0 };
+    let translate_offset = Vector4 { x: 0.1, y: -0.2, z: 0.0, w: 0.0 };
     matrix = matrix.scale(scale_factor).translation(translate_offset);
     glium_text::draw(&text, &system, frame, matrix.as_f32_array(), color);
 
@@ -1563,12 +1573,12 @@ pub fn display_loss_screen (
     let str_slice: &str = &text_display[..];
     let text = glium_text::TextDisplay::new(&system, font.medres(), str_slice);
     let color = [1.0, 1.0, 0.0, 1.0f32];
-    let translate_offset = Vector4{x: 0.0, y: -0.2, z: 0.0, w: 0.0};
+    let translate_offset = Vector4 { x: 0.0, y: -0.2, z: 0.0, w: 0.0 };
     matrix = matrix.translation(translate_offset);
     glium_text::draw(&text, &system, frame, matrix.as_f32_array(), color);
 }
 
-pub fn display_victory_screen (
+pub fn display_victory_screen(
     frame: &mut glium::Frame,
     window: &glium_sdl2::SDL2Facade,
     programs: &Programs,
@@ -1584,29 +1594,28 @@ pub fn display_victory_screen (
     frame.clear_color(0.0, 0.0, 0.0, 1.0);
 
     // initialize identity matrix
-    let mat  = Mat4::init_id_matrix();
+    let mat = Mat4::init_id_matrix();
 
     /* Comment this line out for future addition for background texture */
     // draw_background(frame, window, textures, programs, camera_frame, params);
 
-    let mut vertex_buffers_gui = enum_map!{_ => vec!()};
+    let mut vertex_buffers_gui = enum_map! {_ => vec!()};
     let mut text_buffers = vec!();
     let mut menu_buttons: Vec<(Vector2, Vector2, Vector2, Vector2)> = vec![];
 
     // Compute vertices for GUI
     for component in &mut ui.components {
         match &component.id {
-            GuiType::Button {..} => {
+            GuiType::Button { .. } => {
                 let button_dimensions = component.get_dimension();
                 text_buffers.push(Box::new(component.clone()));
                 menu_buttons.push(button_dimensions);
                 push_gui_vertices(&mut vertex_buffers_gui[SpriteType::Button], component);
-
             }
             GuiType::Score => (),
             GuiType::Timer => (),
             GuiType::Window => (),
-            GuiType::Menu{..} => (),
+            GuiType::Menu { .. } => (),
             _ => (),
         };
     }
@@ -1635,7 +1644,7 @@ pub fn display_victory_screen (
         let button = text_buffers[i].clone();
         let mut color = [1.0, 1.0, 1.0, 1.0f32];
         match button.id.clone() {
-            GuiType::Button { text, highlight} => {
+            GuiType::Button { text, highlight } => {
                 text_to_display = text;
                 if highlight { color = [0.1, 0.1, 0.1, 1.0f32]; }
             }
@@ -1644,15 +1653,15 @@ pub fn display_victory_screen (
         let text_display = format!("{}", text_to_display);
         let str_slice: &str = &text_display[..];
         let text = glium_text::TextDisplay::new(&system, font.medres(), str_slice);
-        let text_width= (text.get_width() as f64) - 0.02;
+        let text_width = (text.get_width() as f64) - 0.02;
         let text_height = 0.06;
         let dimensions = menu_buttons[i];
         let button_width = dimensions.1.x - dimensions.0.x;
         let x_align = dimensions.0.x;
         let y_align = (dimensions.0.y) - 0.07;
 
-        let menu_matrix = mat.translation(Vector4{x: x_align, y: y_align, z: 0.0, w: 0.0})
-            .scale(Vector4{x: button_width/text_width, y: text_height, z: 1.0, w: 1.0}).as_f32_array();
+        let menu_matrix = mat.translation(Vector4 { x: x_align, y: y_align, z: 0.0, w: 0.0 })
+            .scale(Vector4 { x: button_width / text_width, y: text_height, z: 1.0, w: 1.0 }).as_f32_array();
         glium_text::draw(&text, &system, frame, menu_matrix, color);
     }
 
@@ -1668,8 +1677,8 @@ pub fn display_victory_screen (
     let text_width = text.get_width() as f64;
     let (w, h) = frame.get_dimensions();
     let _text_offset = 1.0 / text_width;
-    let  scale_factor = Vector4 {x: 2.0/text_width, y: 2.0 * (w as f64) / (h as f64) / text_width , z: 1.0, w: 1.0};
-    let  translation_offset = Vector4{x: -1.0, y: 0.3, z: 0.0, w: 0.0};
+    let scale_factor = Vector4 { x: 2.0 / text_width, y: 2.0 * (w as f64) / (h as f64) / text_width, z: 1.0, w: 1.0 };
+    let translation_offset = Vector4 { x: -1.0, y: 0.3, z: 0.0, w: 0.0 };
     let mut matrix = mat.scale(scale_factor).translation(translation_offset);
     glium_text::draw(&text, &system, frame, matrix.as_f32_array(), color);
 
@@ -1678,8 +1687,8 @@ pub fn display_victory_screen (
     let str_slice: &str = &text_display[..];
     let text = glium_text::TextDisplay::new(&system, font.medres(), str_slice);
     let color = [1.0, 1.0, 0.0, 1.0f32];
-    let scale_factor = Vector4 {x: 0.5, y:0.5, z: 1.0, w: 1.0};
-    let translate_offset = Vector4{x: 0.1, y: -0.2, z: 0.0, w: 0.0};
+    let scale_factor = Vector4 { x: 0.5, y: 0.5, z: 1.0, w: 1.0 };
+    let translate_offset = Vector4 { x: 0.1, y: -0.2, z: 0.0, w: 0.0 };
     matrix = matrix.scale(scale_factor).translation(translate_offset);
     glium_text::draw(&text, &system, frame, matrix.as_f32_array(), color);
 
@@ -1689,7 +1698,7 @@ pub fn display_victory_screen (
     let str_slice: &str = &text_display[..];
     let text = glium_text::TextDisplay::new(&system, font.medres(), str_slice);
     let color = [1.0, 1.0, 0.0, 1.0f32];
-    let translate_offset = Vector4{x: 0.0, y: -0.2, z: 0.0, w: 0.0};
+    let translate_offset = Vector4 { x: 0.0, y: -0.2, z: 0.0, w: 0.0 };
     matrix = matrix.translation(translate_offset);
     glium_text::draw(&text, &system, frame, matrix.as_f32_array(), color);
 }

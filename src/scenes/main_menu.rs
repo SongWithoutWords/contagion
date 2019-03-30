@@ -1,27 +1,32 @@
-use crate::presentation::ui::gui::Component;
-use crate::scenes::scene::{Scene, UpdateResult};
-use sdl2::EventPump;
-use glium_sdl2::SDL2Facade;
-use crate::presentation::display::{Programs, Textures};
 use glium::DrawParameters;
-use crate::{presentation, simulation};
+use glium_sdl2::SDL2Facade;
+use sdl2::EventPump;
 use sdl2::keyboard::Keycode;
-use crate::simulation::game_state::GameState;
-use crate::scenes::game;
+
+use crate::{presentation, simulation};
+use crate::presentation::display::{Programs, Textures};
 use crate::presentation::graphics::font::FontPkg;
+use crate::presentation::ui::gui::Component;
+use crate::scenes::game;
+use crate::scenes::scene::{Scene, UpdateResult};
+use crate::simulation::game_state::GameState;
+use crate::presentation::camera::*;
 
 pub struct MainMenu {
     gui: Component,
     game_state: GameState,
+    pub camera: Camera,
 }
 
 impl MainMenu {
     pub fn new() -> MainMenu {
         let gui = presentation::ui::gui::Component::init_main_menu_gui();
         let game_state = simulation::game_state::GameState::new();
+        let camera = presentation::camera::Camera::new();
         MainMenu {
             gui: gui,
-            game_state: game_state
+            game_state: game_state,
+            camera: camera,
         }
     }
 }
@@ -33,11 +38,13 @@ impl Scene for MainMenu {
               delta_time: f64)
               -> UpdateResult {
         match self.game_state {
-            GameState{transition_game, terminate, ..} =>
+            GameState { transition_game, terminate, .. } =>
                 {
-                    if transition_game {self.game_state.transition_game = false;
-                        return UpdateResult::Transition(Box::new(game::Game::new()))}
-                    if terminate {return UpdateResult::Exit}
+                    if transition_game {
+                        self.game_state.transition_game = false;
+                        return UpdateResult::Transition(Box::new(game::Game::new()));
+                    }
+                    if terminate { return UpdateResult::Exit; }
                 }
         }
         for event in event_pump.poll_iter() {
@@ -45,8 +52,8 @@ impl Scene for MainMenu {
             match event {
                 // Exit window if escape key pressed or quit event triggered
                 Event::Quit { .. } => {
-                    return UpdateResult::Exit
-                },
+                    return UpdateResult::Exit;
+                }
                 Event::KeyDown { keycode: Some(Keycode::L), .. } => {
                     println!("Debug info:");
                     println!("  DT:               {:?}", delta_time);
@@ -61,19 +68,19 @@ impl Scene for MainMenu {
     }
 
     fn render(&mut self,
-              window:&SDL2Facade,
-              programs:&Programs,
-              textures:&Textures,
-              params:&DrawParameters,
-              fonts:&FontPkg) {
-
+              window: &SDL2Facade,
+              programs: &Programs,
+              textures: &Textures,
+              params: &DrawParameters,
+              fonts: &FontPkg) {
         let mut target = window.draw();
         presentation::display::display_main_menu(&mut target,
-                                       &window,
-                                       &programs,
-                                       &textures,
-                                       &params,
-                                       &mut self.gui, &fonts);
+                                                 &window,
+                                                 &programs,
+                                                 &textures,
+                                                 &params,
+                                                 self.camera.compute_matrix().as_f32_array(),
+                                                 &mut self.gui, &fonts);
         target.finish().unwrap();
     }
 }
