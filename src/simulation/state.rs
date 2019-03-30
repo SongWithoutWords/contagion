@@ -138,7 +138,9 @@ pub enum DeadOrAlive {
 #[derive(Clone)]
 pub enum ZombieOrHuman {
     Zombie {
-        state: ZombieState
+        state: ZombieState,
+        left_hand_status: HandStatus,
+        right_hand_status: HandStatus
     },
     Human {
         infection: Scalar,
@@ -254,9 +256,9 @@ pub const BULLET_DAMAGE_MAX: Scalar = 1.0;
 pub const BULLET_MAX_DAMAGE_DISTANCE_FROM_ENTITY_CENTER: Scalar = 0.25 * ENTITY_RADIUS;
 pub const BULLET_MIN_DAMAGE_DISTANCE_FROM_ENTITY_CENTER: Scalar = 1.0 * ENTITY_RADIUS;
 
-pub const FIST_RADIUS: Scalar = 0.2;
-pub const FIST_SPEED: Scalar = 1.0;
-pub const FIST_SPEED_MIN: Scalar = 0.5;
+pub const FIST_RADIUS: Scalar = 0.3;
+pub const FIST_SPEED: Scalar = 0.6;
+pub const FIST_SPEED_MIN: Scalar = 0.3;
 pub const FIST_SPAWN_DISTANCE_MULTIPLIER: Scalar = 1.25;
 
 
@@ -264,11 +266,19 @@ pub const FIST_SPAWN_DISTANCE_MULTIPLIER: Scalar = 1.25;
 pub enum ProjectileKind {
     Bullet,
     Casing,
-    Fist
+    Fist {
+        owner_index: usize
+    }
 }
 
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub enum MoveMode {
     Moving,
     Sprinting
+}
+
+#[derive(Clone, PartialEq)]
+pub enum HandStatus {
+    None,
+    Normal
 }

@@ -128,10 +128,11 @@ pub fn update(args: &UpdateArgs, state: &mut State) -> SimulationResults {
                 }
                 else {
                     match zombie_or_human {
-                        ZombieOrHuman::Zombie{ state: zombie_state } => {
+                        ZombieOrHuman::Zombie{ state: zombie_state, left_hand_status, right_hand_status } => {
                             entity_counts.zombies += 1;
                             let old_state = zombie_state.clone();
-                            let next_state = update_zombie(&args, state, i, old_state);
+                            let next_state =
+                                update_zombie(&args, state, i, old_state, left_hand_status, right_hand_status);
                             *zombie_state = next_state;
                         }
                         ZombieOrHuman::Human { infection, human } => {
@@ -144,7 +145,9 @@ pub fn update(args: &UpdateArgs, state: &mut State) -> SimulationResults {
                                     state: ZombieState::Roaming {
                                         jerk: Vector2::zero(),
                                         acceleration: Vector2::zero()
-                                    }
+                                    },
+                                    left_hand_status: HandStatus::Normal,
+                                    right_hand_status: HandStatus::Normal
                                 };
                                 sounds.push(Sound::PersonInfected);
                             }
@@ -180,11 +183,36 @@ pub fn update(args: &UpdateArgs, state: &mut State) -> SimulationResults {
             p.velocity.length_squared() > BULLET_SPEED_MIN
     );
 
-    // Remove fist
-    state.projectiles.retain(
-        |p| p.kind != ProjectileKind::Fist ||
-            p.velocity.length_squared() > FIST_SPEED_MIN
-    );
+    // Remove fist and return to its owner
+    let mut i = 0;
+    while i < state.projectiles.len() {
+        let p = state.projectiles[i];
+        match p.kind {
+            ProjectileKind::Fist { owner_index } => {
+                if p.velocity.length_squared() <= FIST_SPEED_MIN {
+                    let owner = &mut state.entities[owner_index];
+                    match owner.dead_or_alive {
+                        DeadOrAlive::Alive { health: _, ref mut zombie_or_human } => {
+                            match zombie_or_human {
+                                ZombieOrHuman::Zombie { state: _, left_hand_status: _, ref mut right_hand_status } => {
+                                    *right_hand_status = HandStatus::Normal;
+                                }
+                                _ => ()
+                            }
+                        }
+                        _ => ()
+                    }
+
+                    state.projectiles.remove(i);
+                } else {
+                    i = i + 1;
+                }
+            }
+            _ => {
+                i = i + 1;
+            }
+        }
+    }
 
     // Update projectiles
     for p in &mut state.projectiles {
@@ -269,8 +297,8 @@ pub fn update(args: &UpdateArgs, state: &mut State) -> SimulationResults {
                     }
                 }
             }
-            ProjectileKind::Fist => {
-                // todo: KAYCI
+            ProjectileKind::Fist { owner_index } => {
+                // TODO: KAYCI
                 match first_intersect_time_and_index {
                     None => (),
                     Some((_, i)) => {
@@ -278,7 +306,9 @@ pub fn update(args: &UpdateArgs, state: &mut State) -> SimulationResults {
                         state.entities[i].dead_or_alive = DeadOrAlive::Alive {
                             health: 100.0,
                             zombie_or_human: ZombieOrHuman::Zombie {
-                                state: ZombieState::Roaming
+                                state: ZombieState::Roaming,
+                                left_hand_status: HandStatus::Normal,
+                                right_hand_status: HandStatus::Normal
                             },
                         };
                         p.velocity = Vector2::zero();
@@ -648,7 +678,9 @@ fn update_zombie(
     args: &UpdateArgs,
     sim_state: &mut State,
     index: usize,
-    state: ZombieState) -> ZombieState {
+    state: ZombieState,
+    left_hand_status: &mut HandStatus,
+    right_hand_status: &mut HandStatus) -> ZombieState {
 
     let entities = &mut sim_state.entities;
     let buildings = &sim_state.buildings;
@@ -663,7 +695,7 @@ fn update_zombie(
 
             // If target is within fighting range, fight
             if entities[target_index].is_human() && delta.x.abs() <= FIGHTING_RANGE && delta.y.abs() <= FIGHTING_RANGE && can_see_target {
-                return ZombieState::Fighting { target_index }
+                return ZombieState::Fighting { punch_time_remaining: PUNCH_TIME_COOLDOWN, target_index }
             }
 
             entities[index].accelerate_along_vector(delta, args.dt, ZOMBIE_MOVEMENT_FORCE);
@@ -741,7 +773,7 @@ fn update_zombie(
                 }
             }
         }
-        ZombieState::Fighting { target_index } => {
+        ZombieState::Fighting { punch_time_remaining, target_index } => {
             // Stop fighting if the target is already dead or zombie
             if entities[target_index].is_dead() || entities[target_index].is_zombie() {
                 return ZombieState::Roaming
@@ -765,24 +797,30 @@ fn update_zombie(
 
             entities[index].look_along_vector(delta, args.dt);
 
-            let angular_deviation =
-                Normal::new(0.0, ANGULAR_ACCURACY_STD_DEV).sample(&mut sim_state.rng);
+            if punch_time_remaining > 0.0 {
+                return ZombieState::Fighting { punch_time_remaining: punch_time_remaining - args.dt, target_index }
+            } else {
+                let angular_deviation =
+                    Normal::new(0.0, ANGULAR_ACCURACY_STD_DEV).sample(&mut sim_state.rng);
 
-            let delta_normal = delta.rotate_by(angular_deviation);
+                let delta_normal = delta.rotate_by(angular_deviation);
 
-            // Spawn outside of the entity - don't want to punch the entity itself
-            let spawn_pos = entities[index].position +
-                FIST_SPAWN_DISTANCE_MULTIPLIER * ENTITY_RADIUS * delta_normal;
+                // Spawn outside of the entity - don't want to punch the entity itself
+                let spawn_pos = entities[index].position +
+                    FIST_SPAWN_DISTANCE_MULTIPLIER * ENTITY_RADIUS * delta_normal;
 
-            // Punch the target
-            sim_state.projectiles.push(
-                Projectile {
-                    position: spawn_pos,
-                    velocity: FIST_SPEED * delta_normal,
-                    kind: ProjectileKind::Fist
-                });
+                // Punch the target
+                sim_state.projectiles.push(
+                    Projectile {
+                        position: spawn_pos,
+                        velocity: FIST_SPEED * delta_normal,
+                        kind: ProjectileKind::Fist { owner_index: index }
+                    });
 
-            ZombieState::Roaming
+                *right_hand_status = HandStatus::None;
+
+                ZombieState::Roaming
+            }
         }
     }
 }
