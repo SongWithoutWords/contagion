@@ -455,7 +455,6 @@ fn update_cop(
                         let delta = target_pos - my_pos;
                         entities[index].look_along_vector(delta, args.dt);
 
-                        // aim_time_remaining -= args.dt;
                         if *aim_time_remaining > args.dt {
                             // Taking aim, update the aim time
                             StateChange::Update(
@@ -487,6 +486,8 @@ fn update_cop(
                                     velocity: CASING_SPEED * delta_normal.right(),
                                     kind: ProjectileKind::Casing
                                 });
+
+                            *rounds_in_magazine -= 1;
 
                             sounds.push(Sound::Gunshot);
                             StateChange::Exit
