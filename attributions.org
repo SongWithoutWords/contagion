@@ -1,0 +1,23 @@
+
+* Attribution of assets
+
+Below is a list of attributions of assets that were not created directly for this project.
+
+** Audio
+
+*** assets/audio/sfx/gunshot_rifle.mp3
+Recorded by user Kibblesbob
+Retrieved from http://soundbible.com/1804-M4A1-Single.html
+
+This sound effect is used under the Creative Commonts Attribution 3.0 license:
+https://creativecommons.org/licenses/by/3.0/us/
+
+** Sprites
+
+*** assets/images/old/soldier.png
+By Riley Gombart
+Retrieved from https://opengameart.org/content/animated-top-down-survivor-player
+
+*** assets/images/old/dead_zombie.png
+By user TheSim
+Retrieved from http://www.dundjinni.com/forums/forum_posts.asp?TID=11394&KW=token&PN=0&TPN=3
