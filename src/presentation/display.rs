@@ -281,39 +281,23 @@ fn push_health_bar_vertices(buffer: &mut Vec<ColorVertex>, sprite: &Sprite, heal
     buffer.push(vertex2);
 }
 
-// TODO: Assumes building is a rectangle and not an arbitrary polygon, consider generalizing
 fn push_building_vertices(buffer: &mut Vec<ColorVertex>, building: &Polygon, color: [f32; 4]) {
-    let top_left = building.get(0);
-    let top_right = building.get(1);
-    let bot_right = building.get(2);
-    let bot_left = building.get(3);
+    let bounds = building.bounding_box();
+    let width = bounds.1.x - bounds.0.x;
+    let height = bounds.1.y - bounds.0.y;
 
-    let vertex0 = ColorVertex {
-        position: top_left.as_f32_array(),
-        tex_coords: [0.0, 1.0],
-        color
-    };
-    let vertex1 = ColorVertex {
-        position: top_right.as_f32_array(),
-        tex_coords: [1.0, 1.0],
-        color
-    };
-    let vertex2 = ColorVertex {
-        position: bot_left.as_f32_array(),
-        tex_coords: [0.0, 0.0],
-        color
-    };
-    let vertex3 = ColorVertex {
-        position: bot_right.as_f32_array(),
-        tex_coords: [1.0, 0.0],
-        color
-    };
-    buffer.push(vertex0);
-    buffer.push(vertex1);
-    buffer.push(vertex2);
-    buffer.push(vertex1);
-    buffer.push(vertex3);
-    buffer.push(vertex2);
+    for triangle in building.triangles() {
+        for point in triangle.0 {
+            buffer.push(ColorVertex {
+                position: point.as_f32_array(),
+                tex_coords: [
+                    ((point.x - bounds.0.x) / width) as f32,
+                    ((point.y - bounds.0.y) / height) as f32
+                ],
+                color
+            })
+        }
+    }
 }
 
 fn push_path_vertices(buffer: &mut Vec<ColorVertex>, point1: Vector2, point2: Vector2, color: [f32; 4]) {
