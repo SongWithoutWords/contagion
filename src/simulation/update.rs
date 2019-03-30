@@ -617,8 +617,6 @@ fn update_zombie(
     index: usize,
     state: ZombieState) -> ZombieState {
 
-    let mut rng = rand::thread_rng();
-
     let entities = &mut sim_state.entities;
     let buildings = &sim_state.buildings;
 
@@ -694,7 +692,7 @@ fn update_zombie(
 
                     entities[index].look_along_vector(new_acceleration, args.dt);
                     entities[index].velocity += new_acceleration * args.dt / 5.0;
-                    
+
                     ZombieState::Roaming { jerk: new_jerk, acceleration: new_acceleration }
                 },
                 Some(i) => {
