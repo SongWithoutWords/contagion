@@ -10,21 +10,25 @@ use crate::{simulation, presentation};
 use crate::scenes::{game, main_menu};
 use sdl2::keyboard::Keycode;
 use crate::presentation::graphics::font::FontPkg;
+use crate::presentation::camera::*;
 
 pub struct LossScreen {
     entity_counts: EntityCounts,
     game_state: GameState,
     gui: Component,
+    pub camera: Camera,
 }
 
 impl LossScreen {
     pub fn new(entity_counts: EntityCounts) -> LossScreen {
         let game_state = simulation::game_state::GameState::new();
         let gui = presentation::ui::gui::Component::init_loss_gui();
+        let camera = presentation::camera::Camera::new();
         LossScreen {
             entity_counts: entity_counts,
             game_state: game_state,
             gui:gui,
+            camera: camera,
         }
     }
 }
@@ -68,6 +72,7 @@ impl Scene for LossScreen  {
                                                  &programs,
                                                  &textures,
                                                  &params,
+                                                   self.camera.compute_matrix().as_f32_array(),
                                                  &mut self.gui,
                                                  &self.entity_counts,
                                                  &fonts);

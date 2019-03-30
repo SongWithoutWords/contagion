@@ -48,6 +48,7 @@ pub struct Textures {
     top_fence_texture: Texture2d,
     wallpaper: Texture2d,
     victory: Texture2d,
+    loss: Texture2d,
 }
 
 pub fn load_textures(window: &glium_sdl2::SDL2Facade) -> Textures {
@@ -93,6 +94,7 @@ pub fn load_textures(window: &glium_sdl2::SDL2Facade) -> Textures {
         background_texture: load_texture(&window, "assets/images/dirt.jpg"),
         wallpaper: load_texture(&window, "assets/images/contagion_wallpaper.png"),
         victory: load_texture(&window, "assets/images/homer.png"),
+        loss: load_texture(&window, "assets/images/lisa.png"),
         outside_border_texture: load_texture(&window, "assets/images/grass.jpg"),
         left_fence_texture: load_texture(&window, "assets/images/wall_left.jpg"),
         top_fence_texture: load_texture(&window, "assets/images/wall.jpg"),
@@ -733,6 +735,61 @@ fn draw_main_menu_background(
     let uniforms = uniform! {
         matrix: camera_frame,
         tex: &textures.wallpaper,
+    };
+    frame.draw(
+        &glium::VertexBuffer::new(window, &vertices).unwrap(),
+        &glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList),
+        &programs.sprite_program,
+        &uniforms,
+        params).unwrap();
+}
+
+fn draw_loss_menu_background(
+    frame: &mut glium::Frame,
+    window: &glium_sdl2::SDL2Facade,
+    textures: &Textures,
+    programs: &Programs,
+    camera_frame: [[f32; 4]; 4],
+    params: &glium::DrawParameters)
+{
+    // This is about as large as you can get without introducing artifacts
+    // due to floating point imprecision
+    // let extent = 1e2
+    let top_left = Vertex {
+        position: [-11.3, 11.3],
+        tex_coords: [0.0, 1.0],
+    };
+    let top_right = Vertex {
+        position: [11.3, 11.3],
+        tex_coords: [1.0, 1.0],
+    };
+    let bot_left = Vertex {
+        position: [-11.3, -11.3],
+        tex_coords: [0.0, 0.0],
+    };
+    let bot_right = Vertex {
+        position: [11.3, -11.3],
+        tex_coords: [1.0, 0.0],
+    };
+    // tl    tr
+    //  +----+
+    //  |  / |
+    //  | /  |
+    //  +----+
+    // bl    br
+
+    let vertices = vec!(
+        top_left,
+        top_right,
+        bot_left,
+        top_right,
+        bot_right,
+        bot_left,
+    );
+
+    let uniforms = uniform! {
+        matrix: camera_frame,
+        tex: &textures.loss,
     };
     frame.draw(
         &glium::VertexBuffer::new(window, &vertices).unwrap(),
@@ -1515,14 +1572,18 @@ pub fn display_loss_screen(
     programs: &Programs,
     _textures: &Textures,
     params: &glium::DrawParameters,
+    camera_frame: [[f32; 4]; 4],
     ui: &mut Component,
     entity_counts: &EntityCounts,
     fonts: &FontPkg,
 ) {
     let font = fonts.get("Consola").unwrap();
-    frame.clear_color(0.0, 0.0, 0.0, 1.0);
+  //  frame.clear_color(0.0, 0.0, 0.0, 1.0);
+
+
     let mat = Mat4::init_id_matrix();
-   // draw_victory_menu(frame, window, textures, programs, camera_frame, params);
+    draw_loss_menu_background(frame, window, _textures, programs, camera_frame, params);
+
 
     let mut vertex_buffers_gui = enum_map! {_ => vec!()};
     let mut text_buffers = vec!();
