@@ -405,12 +405,11 @@ fn update_cop(
                         *position,
                         entities[*target_index].position) {
                         // Can see the target, take aim
-                        StateChange::Enter(
-                            CopState::Aiming {
-                                aim_time_remaining: COP_RELOAD_COOLDOWN,
-                                target_index: *target_index
-                            }
-                        )
+                        let aim_time_distribution = Exp::new(COP_AIM_TIME_MEAN);
+                        StateChange::Enter(CopState::Aiming {
+                            aim_time_remaining: aim_time_distribution.sample(&mut sim_state.rng),
+                            target_index: *target_index,
+                        })
                     }
                     else {
                         match find_path(entities[index].position, entities[*target_index].position, buildings, building_outlines) {
