@@ -114,8 +114,10 @@ pub const COP_SIGHT_RADIUS_SQUARE: f64 = COP_SIGHT_RADIUS * COP_SIGHT_RADIUS;
 pub const ENTITY_HEALTH_MIN: f64 = 0.0;
 pub const ENTITY_HEALTH_MAX: f64 = 1.0;
 
-pub const ENTITY_INFECTION_MIN: f64 = 0.0;
-pub const ENTITY_INFECTION_MAX: f64 = 1.0;
+pub const INFECTION_MIN: f64 = 0.0;
+pub const INFECTION_EXPONENTIAL_GROWTH_THRESHOLD: f64 = 0.1;
+pub const INFECTION_EXPONENTIAL_GROWTH_RATE: f64 = 0.1;
+pub const INFECTION_MAX: f64 = 1.0;
 
 #[derive(Clone)]
 pub enum DeadOrAlive {

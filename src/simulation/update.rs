@@ -29,6 +29,7 @@ pub struct EntityCounts {
     pub civilians: usize,
     pub cops: usize,
     pub dead: usize,
+    pub infected: usize,
     pub zombies: usize,
 }
 impl EntityCounts {
@@ -112,6 +113,8 @@ pub fn update(args: &UpdateArgs, state: &mut State) -> SimulationResults {
         // TODO: Ian - see if you can consolidate with the same trick used in update_cop
         let entity = unsafe { &mut *(&mut state.entities[i] as *mut Entity) };
 
+        let infection_growth_factor = (args.dt * INFECTION_EXPONENTIAL_GROWTH_RATE).exp();
+
         match &mut entity.dead_or_alive {
             DeadOrAlive::Dead => {
                 // Do nothing
@@ -131,7 +134,11 @@ pub fn update(args: &UpdateArgs, state: &mut State) -> SimulationResults {
                             *zombie_state = next_state;
                         }
                         ZombieOrHuman::Human { infection, human } => {
-                            if *infection >= ENTITY_INFECTION_MAX {
+                            if *infection >= INFECTION_EXPONENTIAL_GROWTH_THRESHOLD {
+                                entity_counts.infected += 1;
+                                *infection *= infection_growth_factor;
+                            }
+                            if *infection >= INFECTION_MAX {
                                 *zombie_or_human = ZombieOrHuman::Zombie { state: ZombieState::Roaming };
                                 sounds.push(Sound::PersonInfected);
                             }

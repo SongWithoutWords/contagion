@@ -121,7 +121,7 @@ impl Scene for Game {
             // end game if there are no entities
             if self.entity_counts.civilians == 0 && self.entity_counts.cops == 0 {
                 self.game_state.zombies_win = true;
-            } else if self.entity_counts.zombies == 0 {
+            } else if self.entity_counts.infected == 0 && self.entity_counts.zombies == 0 {
                 self.game_state.humans_win = true;
             }
 

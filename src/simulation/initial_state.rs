@@ -1,7 +1,7 @@
-use std::collections::HashSet;
-
+use lerp::*;
 use rand::*;
 use rand_xorshift::XorShiftRng;
+use std::collections::HashSet;
 
 use crate::core::geo::polygon::*;
 use crate::core::scalar::*;
@@ -10,16 +10,16 @@ use crate::core::vector::*;
 use super::state::*;
 
 const PORTION_OF_ENTITIES_COP: Scalar = 0.05;
-const PORTION_OF_ENTITIES_ZOMBIE: Scalar = 0.2;
+const PORTION_OF_ENTITIES_INFECTED: Scalar = 0.2;
 
 pub fn initial_state(entity_count: u32, random_seed: u32) -> State {
     let entity_count_fp = entity_count as Scalar;
     let cop_count: u32 = ((entity_count_fp * PORTION_OF_ENTITIES_COP) as u32).max(1);
-    let zombie_count: u32 = ((entity_count_fp * PORTION_OF_ENTITIES_ZOMBIE) as u32).max(1);
-    let human_count: u32 = entity_count - (cop_count + zombie_count);
+    let infected_count: u32 = ((entity_count_fp * PORTION_OF_ENTITIES_INFECTED) as u32).max(1);
+    let civilian_count: u32 = entity_count - (cop_count + infected_count);
 
-    println!("Spawning {} entities: {} cops, {} zombies, and {} civilians",
-             entity_count, cop_count, zombie_count, human_count);
+    println!("Spawning {} entities: {} cops, {} infected, and {} civilians",
+             entity_count, cop_count, infected_count, civilian_count);
 
     let mut state = State {
         entities: vec!(),
@@ -46,26 +46,26 @@ pub fn initial_state(entity_count: u32, random_seed: u32) -> State {
         let position = vector2(x, y);
         let velocity = Vector2::zero();
 
-        let zombie_or_human = if i < zombie_count {
-            ZombieOrHuman::Zombie {
-                state: ZombieState::Roaming
-            }
-        } else {
-            let human = if i < zombie_count + cop_count {
-                Human::Cop { rounds_in_magazine: COP_MAGAZINE_CAPACITY, state_stack: vec!() }
-            }
-            else {
-                Human::Civilian
-            };
-            ZombieOrHuman::Human {
-                infection: ENTITY_INFECTION_MIN,
-                human
-            }
+        let infection = if i < infected_count {
+            INFECTION_MIN.lerp(INFECTION_MAX, state.rng.gen_range(0.0, 1.0))
+        }
+        else {
+            INFECTION_MIN
+        };
+
+        let human = if infected_count < i && i < infected_count + cop_count {
+            Human::Cop { rounds_in_magazine: COP_MAGAZINE_CAPACITY, state_stack: vec!() }
+        }
+        else {
+            Human::Civilian
         };
 
         let dead_or_alive = DeadOrAlive::Alive {
             health: ENTITY_HEALTH_MAX,
-            zombie_or_human
+            zombie_or_human: ZombieOrHuman::Human {
+                infection,
+                human
+            }
         };
         entities.push(Entity { position, velocity, facing_angle, dead_or_alive });
     }
