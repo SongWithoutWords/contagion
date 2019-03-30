@@ -27,7 +27,7 @@ impl Camera {
     const ACCELERATION_FACTOR: Scalar = 12.0;
 
     // Zoom parameters
-    const ZOOM_SPEED: f64 = 0.01;
+    const ZOOM_SPEED: f64 = 0.025;
     const LOWER_BOUND: f64 = 0.015;
     const UPPER_BOUND: f64 = 0.15;
 
