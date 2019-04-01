@@ -94,11 +94,13 @@ Link to project: <https://github.com/SongWithoutWords/contagion>
 2.1 Camera features
 ~~~~~~~~~~~~~~~~~~~
 
-  - Camera zooms out of the cursor rather than out of the center of the
-    screen
-  - Finished camera panning by clicking and dragging with the middle
+  - Finished and improved camera panning by clicking and dragging with the middle
     mouse button
   - Improved camera zoom rate
+  - Added world border bounds to wasd movement
+  - Made zooming allowable within world borders only
+  - Added fullscreen option in main menu and toggable fullscreen mode
+  - Added camera movement when mouse touches edge of screen in fullscreen mode and bounded it within world borders
 
 
 2.2 Gameplay features
