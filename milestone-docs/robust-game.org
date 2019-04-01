@@ -41,7 +41,7 @@ You should implement one or more additional creative elements. These can include
 * Features completed this milestone
 
 ** Camera features
-- Finished camera panning by clicking and dragging with the middle mouse button
+- Finished and improved camera panning by clicking and dragging with the middle mouse button
 - Improved camera zoom rate
 - Added world border bounds to wasd movement
 - Made zooming allowable within world borders only
