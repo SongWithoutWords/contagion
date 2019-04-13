@@ -1430,7 +1430,7 @@ fn draw_remaining_zombie_num(window: &glium_sdl2::SDL2Facade, zombie_num: usize,
     if zombie_num > 99 {
         zombie_num_display = format!("{}", zombie_num_str);
     } else if zombie_num < 10 {
-        zombie_num_display = format!("00{}", zombie_num_display);
+        zombie_num_display = format!("0{}", zombie_num_display);
     }
     let str_slice: &str = &zombie_num_display[..];
     let text = glium_text::TextDisplay::new(&system, font, str_slice);
