@@ -1,20 +1,25 @@
-use crate::core::vector::*;
-use crate::simulation::state::State;
-use crate::core::matrix::Mat4;
-use crate::simulation::control::*;
-use crate::core::geo::intersect::rectangle_point::*;
-use crate::simulation::game_state::GameState;
-use sdl2::keyboard::Keycode;
 use glium_sdl2::SDL2Facade;
 use sdl2::event::Event;
+use sdl2::keyboard::Keycode;
 use sdl2::video::FullscreenType::{Off, True};
+
+use crate::core::geo::intersect::rectangle_point::*;
+use crate::core::matrix::Mat4;
+use crate::core::vector::*;
+use crate::simulation::control::*;
+use crate::simulation::game_state::GameState;
+use crate::simulation::state::State;
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum GuiType {
-    Selected, // Bottom Middle
-    SelectionDrag, // Bottom Right
-    Score,    // Top Left
-    Timer,    // Top Middle
+    Selected,
+    // Bottom Middle
+    SelectionDrag,
+    // Bottom Right
+    Score,
+    // Top Left
+    Timer,
+    // Top Middle
     Window,
     Menu {
         _window_gui: Box<Gui>,
@@ -29,114 +34,127 @@ pub enum GuiType {
     HealthBar,
     ZombieUI,
     CopUI,
-    CivilianUI
+    CivilianUI,
+    ZombieHighlight,
+    CopHighlight,
+    CivilianHighlight,
 }
 
-#[derive(Clone,PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum ActiveWindow {
     Game,
     Menu,
     Instruction,
-    MainMenu
+    MainMenu,
 }
+
 pub static mut CURRENT: ActiveWindow = ActiveWindow::Game;
 
 #[derive(Clone)]
 pub struct Component {
     pub components: Vec<Gui>,
-    pub active_window: ActiveWindow
+    pub active_window: ActiveWindow,
 }
 
 impl Component {
     // initializer for game's GUI
     pub fn init_game_gui() -> Component {
-        let selected_ui = Gui::new(GuiType::Selected, 0.1, 0.1, Vector2{x: -0.9, y: -0.9});
-        let zombie_ui = Gui::new(GuiType::ZombieUI, 0.1, 0.1, Vector2{x: 0.91, y: 0.92});
-        let cop_ui = Gui::new(GuiType::CopUI, 0.1, 0.1, Vector2{x: 0.61, y: 0.92});
-        let civilian_ui = Gui::new(GuiType::CivilianUI, 0.1, 0.1, Vector2{x: 0.76, y: 0.92});
-        let drag_ui = Gui::new(GuiType::SelectionDrag, 0.0, 0.0, Vector2{x: 0.0, y: 0.0});
-        let box_ui = Gui::new(GuiType::Window, 1.8, 1.8, Vector2{x: 0.0, y: 0.0});
-        let button1 = GuiType::Button{text: "Exit".to_string(), highlight: false};
-        let button2 = GuiType::Button{text: "Retry".to_string(), highlight: false};
-        let button3 = GuiType::Button{text: "Main Menu".to_string(), highlight: false};
-        let button4 = GuiType::Button{text: "Instruction".to_string(), highlight: false};
-        let button_ui_1 = Gui::new(button1, 0.17, 0.09, Vector2{x: 0.0, y: -0.225});
-        let button_ui_2 = Gui::new(button2, 0.2, 0.09, Vector2{x: 0.0, y: -0.075});
-        let button_ui_3 = Gui::new(button3, 0.37, 0.09, Vector2{x: 0.0, y: 0.075});
-        let button_ui_4 = Gui::new(button4, 0.4, 0.09, Vector2{x: 0.0, y: 0.225});
-        let menu_ui = Gui::new(GuiType::Menu{ _window_gui: Box::new(box_ui),
-                                                       _buttons_gui: vec![Box::new(button_ui_4),
-                                                                          Box::new(button_ui_3),
-                                                                          Box::new(button_ui_2),
-                                                                          Box::new(button_ui_1)],
-                                                       text: "Setting".to_string(), highlight: false},
+        let selected_ui = Gui::new(GuiType::Selected, 0.1, 0.1, Vector2 { x: -0.9, y: -0.9 });
+        let zombie_ui = Gui::new(GuiType::ZombieUI, 0.1, 0.1, Vector2 { x: 0.91, y: 0.92 });
+        let zombie_highlight = Gui::new(GuiType::ZombieHighlight, 0.15, 0.197, Vector2 { x: 0.91, y: 0.895 });
+        let cop_ui = Gui::new(GuiType::CopUI, 0.1, 0.1, Vector2 { x: 0.61, y: 0.92 });
+        let cop_highlight = Gui::new(GuiType::CopHighlight, 0.15, 0.197, Vector2 { x: 0.61, y: 0.895 });
+        let civilian_ui = Gui::new(GuiType::CivilianUI, 0.1, 0.1, Vector2 { x: 0.76, y: 0.92 });
+        let civilian_highlight = Gui::new(GuiType::CivilianHighlight, 0.15, 0.197, Vector2 { x: 0.76, y: 0.895 });
+        let drag_ui = Gui::new(GuiType::SelectionDrag, 0.0, 0.0, Vector2 { x: 0.0, y: 0.0 });
+        let box_ui = Gui::new(GuiType::Window, 1.8, 1.8, Vector2 { x: 0.0, y: 0.0 });
+        let button1 = GuiType::Button { text: "Exit".to_string(), highlight: false };
+        let button2 = GuiType::Button { text: "Retry".to_string(), highlight: false };
+        let button3 = GuiType::Button { text: "Main Menu".to_string(), highlight: false };
+        let button4 = GuiType::Button { text: "Instruction".to_string(), highlight: false };
+        let button_ui_1 = Gui::new(button1, 0.17, 0.09, Vector2 { x: 0.0, y: -0.225 });
+        let button_ui_2 = Gui::new(button2, 0.2, 0.09, Vector2 { x: 0.0, y: -0.075 });
+        let button_ui_3 = Gui::new(button3, 0.37, 0.09, Vector2 { x: 0.0, y: 0.075 });
+        let button_ui_4 = Gui::new(button4, 0.4, 0.09, Vector2 { x: 0.0, y: 0.225 });
+        let menu_ui = Gui::new(GuiType::Menu {
+            _window_gui: Box::new(box_ui),
+            _buttons_gui: vec![Box::new(button_ui_4),
+                               Box::new(button_ui_3),
+                               Box::new(button_ui_2),
+                               Box::new(button_ui_1)],
+            text: "Setting".to_string(),
+            highlight: false,
+        },
                                0.1, 0.125,
-                               Vector2{x: -0.9, y: 0.9});
+                               Vector2 { x: -0.9, y: 0.9 });
 
         Component {
-            components: vec![selected_ui, drag_ui, menu_ui, cop_ui, civilian_ui, zombie_ui],
-            active_window: ActiveWindow::Game
+            components: vec![selected_ui, drag_ui, menu_ui, cop_highlight, civilian_highlight, zombie_highlight, cop_ui, civilian_ui, zombie_ui, ],
+            active_window: ActiveWindow::Game,
         }
     }
 
     // initializer for main menu's GUI
     pub fn init_main_menu_gui() -> Component {
         // main menu buttons
-        let button_start = GuiType::Button{text: "Start".to_string(), highlight: false};
-        let button_exit = GuiType::Button {text: "Exit".to_string(), highlight: false};
-        let button_start_ui = Gui::new(button_start, 0.20, 0.12, Vector2{x:0.0, y: -0.2});
-        let button_exit_ui = Gui::new(button_exit, 0.15, 0.12, Vector2{x: 0.0, y: -0.5});
+        let button_start = GuiType::Button { text: "Start".to_string(), highlight: false };
+        let button_exit = GuiType::Button { text: "Exit".to_string(), highlight: false };
+        let button_start_ui = Gui::new(button_start, 0.20, 0.12, Vector2 { x: 0.0, y: -0.2 });
+        let button_exit_ui = Gui::new(button_exit, 0.15, 0.12, Vector2 { x: 0.0, y: -0.5 });
 
         // box containment for main menu settings
-        let box_ui = Gui::new(GuiType::Window, 1.8, 1.8, Vector2{x: 0.0, y: 0.0});
+        let box_ui = Gui::new(GuiType::Window, 1.8, 1.8, Vector2 { x: 0.0, y: 0.0 });
 
         // main menu settings button
-        let button_menu_instruction = GuiType::Button{text: "Instruction".to_string(), highlight: false};
-        let button_menu_settings = GuiType::Button{text: "Fullscreen".to_string(), highlight: false};
-        let button_menu_back = GuiType::Button{text: "Back".to_string(), highlight: false};
-        let button_menu_instruction_ui = Gui::new(button_menu_instruction, 0.4, 0.09, Vector2{x: 0.0, y: 0.3});
-        let button_menu_settings_ui = Gui::new(button_menu_settings, 0.5, 0.09, Vector2{x: 0.0, y: 0.1});
-        let button_menu_back_ui = Gui::new(button_menu_back, 0.15, 0.09, Vector2{x: 0.0, y: -0.1});
-        let setting_ui = Gui::new(GuiType::Menu{ _window_gui: Box::new(box_ui),
-                                                          _buttons_gui: vec![Box::new(button_menu_instruction_ui),
-                                                                          Box::new(button_menu_settings_ui),
-                                                                          Box::new(button_menu_back_ui)],
-                                                           text: "Setting".to_string(), highlight: false},
-                                    0.30, 0.12,
-                                    Vector2{x: 0.0, y: -0.35});
+        let button_menu_instruction = GuiType::Button { text: "Instruction".to_string(), highlight: false };
+        let button_menu_settings = GuiType::Button { text: "Fullscreen".to_string(), highlight: false };
+        let button_menu_back = GuiType::Button { text: "Back".to_string(), highlight: false };
+        let button_menu_instruction_ui = Gui::new(button_menu_instruction, 0.4, 0.09, Vector2 { x: 0.0, y: 0.3 });
+        let button_menu_settings_ui = Gui::new(button_menu_settings, 0.5, 0.09, Vector2 { x: 0.0, y: 0.1 });
+        let button_menu_back_ui = Gui::new(button_menu_back, 0.15, 0.09, Vector2 { x: 0.0, y: -0.1 });
+        let setting_ui = Gui::new(GuiType::Menu {
+            _window_gui: Box::new(box_ui),
+            _buttons_gui: vec![Box::new(button_menu_instruction_ui),
+                               Box::new(button_menu_settings_ui),
+                               Box::new(button_menu_back_ui)],
+            text: "Setting".to_string(),
+            highlight: false,
+        },
+                                  0.30, 0.12,
+                                  Vector2 { x: 0.0, y: -0.35 });
 
         // component initialization
         Component {
             components: vec![button_start_ui, button_exit_ui, setting_ui],
-            active_window: ActiveWindow::MainMenu
+            active_window: ActiveWindow::MainMenu,
         }
     }
 
     // initializer for game loss scene's GUI
     pub fn init_loss_gui() -> Component {
-        let button_retry = GuiType::Button{text: "Retry".to_string(), highlight: false};
-        let button_main_menu = GuiType::Button{text: "Main Menu".to_string(), highlight: false};
-        let button_exit = GuiType::Button {text: "Exit".to_string(), highlight: false};
-        let button_retry_ui = Gui::new(button_retry, 0.2, 0.09, Vector2{x:-0.5, y: -0.5});
-        let button_main_menu_ui = Gui::new(button_main_menu, 0.4, 0.09, Vector2{x:0.0, y: -0.5});
-        let button_exit_ui = Gui::new(button_exit, 0.15, 0.09, Vector2{x: 0.5, y: -0.5});
+        let button_retry = GuiType::Button { text: "Retry".to_string(), highlight: false };
+        let button_main_menu = GuiType::Button { text: "Main Menu".to_string(), highlight: false };
+        let button_exit = GuiType::Button { text: "Exit".to_string(), highlight: false };
+        let button_retry_ui = Gui::new(button_retry, 0.2, 0.09, Vector2 { x: -0.5, y: -0.5 });
+        let button_main_menu_ui = Gui::new(button_main_menu, 0.4, 0.09, Vector2 { x: 0.0, y: -0.5 });
+        let button_exit_ui = Gui::new(button_exit, 0.15, 0.09, Vector2 { x: 0.5, y: -0.5 });
         Component {
-            components: vec![button_retry_ui,button_main_menu_ui,button_exit_ui],
-            active_window: ActiveWindow::Game
+            components: vec![button_retry_ui, button_main_menu_ui, button_exit_ui],
+            active_window: ActiveWindow::Game,
         }
     }
 
     // initializer for game victory scene's GUI
     pub fn init_victory_gui() -> Component {
-        let button_retry = GuiType::Button{text: "Retry".to_string(), highlight: false};
-        let button_main_menu = GuiType::Button{text: "Main Menu".to_string(), highlight: false};
-        let button_exit = GuiType::Button {text: "Exit".to_string(), highlight: false};
-        let button_retry_ui = Gui::new(button_retry, 0.2, 0.09, Vector2{x:-0.5, y: -0.5});
-        let button_main_menu_ui = Gui::new(button_main_menu, 0.4, 0.09, Vector2{x:0.0, y: -0.5});
-        let button_exit_ui = Gui::new(button_exit, 0.15, 0.09, Vector2{x: 0.5, y: -0.5});
+        let button_retry = GuiType::Button { text: "Retry".to_string(), highlight: false };
+        let button_main_menu = GuiType::Button { text: "Main Menu".to_string(), highlight: false };
+        let button_exit = GuiType::Button { text: "Exit".to_string(), highlight: false };
+        let button_retry_ui = Gui::new(button_retry, 0.2, 0.09, Vector2 { x: -0.5, y: -0.5 });
+        let button_main_menu_ui = Gui::new(button_main_menu, 0.4, 0.09, Vector2 { x: 0.0, y: -0.5 });
+        let button_exit_ui = Gui::new(button_exit, 0.15, 0.09, Vector2 { x: 0.5, y: -0.5 });
         Component {
-            components: vec![button_retry_ui,button_main_menu_ui,button_exit_ui],
-            active_window: ActiveWindow::Game
+            components: vec![button_retry_ui, button_main_menu_ui, button_exit_ui],
+            active_window: ActiveWindow::Game,
         }
     }
 
@@ -147,7 +165,7 @@ impl Component {
         for i in 0..self.components.len() {
             let component = &mut self.components[i];
             match &mut component.id {
-                GuiType::Menu {ref mut _window_gui, ref mut _buttons_gui, ..} => {
+                GuiType::Menu { ref mut _window_gui, ref mut _buttons_gui, .. } => {
                     match event {
                         Event::MouseButtonDown { timestamp: _, window_id: _, which: _, mouse_btn: _, x, y } => {
                             if self.active_window == ActiveWindow::Game {
@@ -223,7 +241,7 @@ impl Component {
                             } else {
                                 handled_event = false;
                             }
-                        },
+                        }
                         Event::MouseMotion { timestamp: _, window_id: _, which: _, x, y, .. } => {
                             if self.active_window == ActiveWindow::Menu {
                                 let buttons = _buttons_gui;
@@ -240,7 +258,7 @@ impl Component {
                                         GuiType::Button { text, ref mut highlight } => {
                                             if check_within_bound {
                                                 let display_text = text;
-                                                if display_text == "Instruction" || display_text == "Main Menu"|| display_text == "Retry"|| display_text == "Exit" {
+                                                if display_text == "Instruction" || display_text == "Main Menu" || display_text == "Retry" || display_text == "Exit" {
                                                     *highlight = true;
                                                 }
                                             } else {
@@ -251,28 +269,26 @@ impl Component {
                                     }
                                 }
                             }
-                        },
+                        }
                         Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
                             if self.active_window == ActiveWindow::Menu {
                                 self.active_window = ActiveWindow::Game;
                                 game_state.game_paused = false;
                                 handled_event = true;
-                            }
-                            else if self.active_window == ActiveWindow::Instruction {
+                            } else if self.active_window == ActiveWindow::Instruction {
                                 self.active_window = ActiveWindow::Menu;
                                 handled_event = true;
-                            }
-                            else if self.active_window == ActiveWindow::Game {
+                            } else if self.active_window == ActiveWindow::Game {
                                 self.active_window = ActiveWindow::Menu;
                                 game_state.game_paused = true;
                                 handled_event = true;
                             }
-                        },
+                        }
                         _ => {
                             handled_event = false;
                         }
                     }
-                },
+                }
                 _ => ()
             }
         }
@@ -288,7 +304,7 @@ impl Component {
         for i in 0..self.components.len() {
             let component = &mut self.components[i];
             match &mut component.id {
-                GuiType::Button {text, ref mut highlight} => {
+                GuiType::Button { text, ref mut highlight } => {
                     if self.active_window == ActiveWindow::MainMenu {
                         match event {
                             Event::MouseButtonDown { timestamp: _, window_id: _, which: _, mouse_btn: _, x, y } => {
@@ -306,7 +322,7 @@ impl Component {
                                         game_state.terminate = true;
                                     }
                                 }
-                            },
+                            }
                             Event::MouseMotion { timestamp: _, window_id: _, which: _, x, y, .. } => {
                                 let mouse_pos = &mut Vector2 { x: *x as f64, y: *y as f64 };
                                 translate_mouse_to_camera(mouse_pos, window.window().size());
@@ -322,13 +338,13 @@ impl Component {
                                 } else {
                                     *highlight = false;
                                 }
-                            },
+                            }
                             __ => ()
                         }
                     }
-                },
+                }
                 // Settings
-                GuiType::Menu {_window_gui, _buttons_gui, text, ref mut highlight} => {
+                GuiType::Menu { _window_gui, _buttons_gui, text, ref mut highlight } => {
                     match event.clone() {
                         Event::MouseButtonDown { timestamp: _, window_id: _, which: _, mouse_btn: _, x, y } => {
                             if self.active_window == ActiveWindow::MainMenu {
@@ -368,12 +384,10 @@ impl Component {
                                             } else if window.window().fullscreen_state() == True {
                                                 window.window_mut().set_fullscreen(Off).unwrap();
                                             }
-                                        }
-                                        else if display_text == "Back" {
+                                        } else if display_text == "Back" {
                                             if self.active_window == ActiveWindow::Menu {
                                                 self.active_window = ActiveWindow::MainMenu;
                                             }
-
                                         }
                                     }
                                 }
@@ -400,13 +414,12 @@ impl Component {
                                     self.active_window = ActiveWindow::MainMenu;
                                 }
                             }
-                        },
+                        }
                         Event::MouseMotion { timestamp: _, window_id: _, which: _, x, y, .. } => {
                             if self.active_window == ActiveWindow::Menu {
                                 let buttons = _buttons_gui;
                                 let size = buttons.clone().len();
                                 for j in 0..size {
-
                                     let button = &mut buttons[j];
                                     let mouse_pos = &mut Vector2 { x: x as f64, y: y as f64 };
                                     translate_mouse_to_camera(mouse_pos, window.window().size());
@@ -444,18 +457,16 @@ impl Component {
                                     *highlight = false;
                                 }
                             }
-                        },
+                        }
                         Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
                             if self.active_window == ActiveWindow::Menu {
                                 self.active_window = ActiveWindow::MainMenu;
-                            }
-                            else if self.active_window == ActiveWindow::Instruction {
+                            } else if self.active_window == ActiveWindow::Instruction {
+                                self.active_window = ActiveWindow::Menu;
+                            } else if self.active_window == ActiveWindow::MainMenu {
                                 self.active_window = ActiveWindow::Menu;
                             }
-                            else if self.active_window == ActiveWindow::MainMenu {
-                                self.active_window = ActiveWindow::Menu;
-                            }
-                        },
+                        }
                         _ => ()
                     }
                 }
@@ -470,7 +481,7 @@ impl Component {
         for i in 0..self.components.len() {
             let component = &mut self.components[i];
             match &mut component.id {
-                GuiType::Button {text, ref mut highlight} => {
+                GuiType::Button { text, ref mut highlight } => {
                     match event {
                         Event::MouseButtonDown { timestamp: _, window_id: _, which: _, mouse_btn: _, x, y } => {
                             let mouse_pos = &mut Vector2 { x: *x as f64, y: *y as f64 };
@@ -489,7 +500,7 @@ impl Component {
                                     game_state.terminate = true;
                                 }
                             }
-                        },
+                        }
                         Event::MouseMotion { timestamp: _, window_id: _, which: _, x, y, .. } => {
                             let mouse_pos = &mut Vector2 { x: *x as f64, y: *y as f64 };
                             translate_mouse_to_camera(mouse_pos, window.window().size());
@@ -505,10 +516,10 @@ impl Component {
                             } else {
                                 *highlight = false;
                             }
-                        },
+                        }
                         __ => ()
                     }
-                },
+                }
                 _ => ()
             }
         }
@@ -520,7 +531,7 @@ impl Component {
         for i in 0..self.components.len() {
             let component = &mut self.components[i];
             match &mut component.id {
-                GuiType::Button {text, ref mut highlight} => {
+                GuiType::Button { text, ref mut highlight } => {
                     match event {
                         Event::MouseButtonDown { timestamp: _, window_id: _, which: _, mouse_btn: _, x, y } => {
                             let mouse_pos = &mut Vector2 { x: *x as f64, y: *y as f64 };
@@ -539,7 +550,7 @@ impl Component {
                                     game_state.terminate = true;
                                 }
                             }
-                        },
+                        }
                         Event::MouseMotion { timestamp: _, window_id: _, which: _, x, y, .. } => {
                             let mouse_pos = &mut Vector2 { x: *x as f64, y: *y as f64 };
                             translate_mouse_to_camera(mouse_pos, window.window().size());
@@ -555,10 +566,10 @@ impl Component {
                             } else {
                                 *highlight = false;
                             }
-                        },
+                        }
                         __ => ()
                     }
-                },
+                }
                 _ => ()
             }
         }
@@ -566,7 +577,7 @@ impl Component {
 }
 
 // GUI structure
-#[derive(Clone,PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct Gui {
     pub id: GuiType,
     pub top_left: Vector2,
@@ -579,14 +590,14 @@ pub struct Gui {
 impl Gui {
     // instantiates GUI
     pub fn new(_id: GuiType, w: f64, h: f64, pos: Vector2) -> Gui {
-        let _x = w/2.0;
-        let _y = h/2.0;
+        let _x = w / 2.0;
+        let _y = h / 2.0;
         Gui {
             id: _id,
-            top_left: Vector2{x: -_x + pos.x, y: _y + pos.y},
-            top_right: Vector2{x: _x + pos.x, y: _y + pos.y},
-            bot_left: Vector2{x: -_x + pos.x, y: -_y + pos.y},
-            bot_right: Vector2{x: _x + pos.x, y: -_y + pos.y},
+            top_left: Vector2 { x: -_x + pos.x, y: _y + pos.y },
+            top_right: Vector2 { x: _x + pos.x, y: _y + pos.y },
+            bot_left: Vector2 { x: -_x + pos.x, y: -_y + pos.y },
+            bot_right: Vector2 { x: _x + pos.x, y: -_y + pos.y },
         }
     }
 

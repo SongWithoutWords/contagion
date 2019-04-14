@@ -40,7 +40,10 @@ pub enum SpriteType {
     ZombieFist,
     ZombieTorso,
     ZombieClawRight,
-    ZombieClawLeft
+    ZombieClawLeft,
+    ZombieIconHighlight,
+    CopIconHighlight,
+    CivilianIconHighlight,
 }
 
 // pub type Textures = EnumMap<SpriteType, Texture2d>;
@@ -87,11 +90,11 @@ pub fn load_textures(window: &glium_sdl2::SDL2Facade) -> Textures {
             SpriteType::CopIcon
                 => load_texture(window, "assets/images/old/badge_icon.png"),
             SpriteType::ZombieWorldIcon
-                => load_texture(window, "assets/images/ui/zombie_world_icon.png"),
+                => load_texture(window, "assets/images/ui/zombie_world_icon_new.png"),
             SpriteType::CopWorldIcon
-                => load_texture(window, "assets/images/ui/cop_world_icon.png"),
+                => load_texture(window, "assets/images/ui/cop_world_icon_new.png"),
             SpriteType::CivilianWorldIcon
-                => load_texture(window, "assets/images/ui/civilian_world_icon.png"),
+                => load_texture(window, "assets/images/ui/civilian_world_icon_new.png"),
             SpriteType::BuildingOne
                 => load_texture(window, "assets/images/building/building_one.png"),
             SpriteType::ZombieFist
@@ -102,6 +105,12 @@ pub fn load_textures(window: &glium_sdl2::SDL2Facade) -> Textures {
                 => load_texture(window, "assets/images/zombie/zombie_claw_right.png"),
             SpriteType::ZombieClawLeft
                 => load_texture(window, "assets/images/zombie/zombie_claw_left.png"),
+            SpriteType::ZombieIconHighlight
+                => load_texture(window, "assets/images/ui/zombie_highlight.png"),
+            SpriteType::CopIconHighlight
+                => load_texture(window, "assets/images/ui/cop_highlight.png"),
+            SpriteType::CivilianIconHighlight
+                => load_texture(window, "assets/images/ui/civilian_highlight.png"),
         },
         background_texture: load_texture(&window, "assets/images/dirt.jpg"),
         wallpaper: load_texture(&window, "assets/images/contagion_wallpaper.png"),
@@ -265,15 +274,15 @@ fn push_hand_vertices(buffer: &mut Vec<Vertex>, sprite: &Sprite, hand: bool) {
     let up = sprite.radius * sprite.facing;
     let right = up.right(); //vector2(up.y, -up.x);
 
-    let mut top_left  = position - right + up;
+    let mut top_left = position - right + up;
     let mut top_right = position + up;
-    let mut bot_left  = position - right;
+    let mut bot_left = position - right;
     let mut bot_right = position;
 
     if hand {
-        top_left  = position + up;
+        top_left = position + up;
         top_right = position + right + up;
-        bot_left  = position;
+        bot_left = position;
         bot_right = position + right;
     }
 
@@ -287,19 +296,19 @@ fn push_hand_vertices(buffer: &mut Vec<Vertex>, sprite: &Sprite, hand: bool) {
 
     let vertex0 = Vertex {
         position: top_left.as_f32_array(),
-        tex_coords: [0.0, 1.0]
+        tex_coords: [0.0, 1.0],
     };
     let vertex1 = Vertex {
         position: top_right.as_f32_array(),
-        tex_coords: [1.0, 1.0]
+        tex_coords: [1.0, 1.0],
     };
     let vertex2 = Vertex {
         position: bot_left.as_f32_array(),
-        tex_coords: [0.0, 0.0]
+        tex_coords: [0.0, 0.0],
     };
     let vertex3 = Vertex {
         position: bot_right.as_f32_array(),
-        tex_coords: [1.0, 0.0]
+        tex_coords: [1.0, 0.0],
     };
     buffer.push(vertex0);
     buffer.push(vertex1);
@@ -952,7 +961,7 @@ pub fn display(
         let sprite_type = match p.kind {
             ProjectileKind::Bullet => SpriteType::BulletInAir,
             ProjectileKind::Casing => SpriteType::BulletCasing,
-            ProjectileKind::Fist {..} => SpriteType::ZombieFist
+            ProjectileKind::Fist { .. } => SpriteType::ZombieFist
         };
         let mut rad = BULLET_RADIUS;
         match p.kind {
@@ -971,7 +980,6 @@ pub fn display(
 
     // Compute the vertices in world coordinates of all entities
     for entity in &state.entities {
-
         let sprite = Sprite {
             position: entity.position,
             facing: entity.get_facing_normal(),
@@ -994,7 +1002,7 @@ pub fn display(
                         _ => ()
                     }
                     SpriteType::ZombieTorso
-                },
+                }
                 ZombieOrHuman::Human { human, .. } => match human {
                     Human::Cop { cop_type, .. } => match cop_type {
                         CopType::Normal => SpriteType::Cop,
@@ -1042,6 +1050,16 @@ pub fn display(
     //let offset = 0.1;
     for component in &mut ui.components {
         match &component.id {
+
+            GuiType::ZombieHighlight => {
+                push_gui_vertices(&mut vertex_buffers_gui[SpriteType::ZombieIconHighlight], component);
+            }
+            GuiType::CopHighlight => {
+                push_gui_vertices(&mut vertex_buffers_gui[SpriteType::CopIconHighlight], component);
+            }
+            GuiType::CivilianHighlight => {
+                push_gui_vertices(&mut vertex_buffers_gui[SpriteType::CivilianIconHighlight], component);
+            }
             GuiType::ZombieUI => {
                 push_gui_vertices(&mut vertex_buffers_gui[SpriteType::ZombieWorldIcon], component);
             }
@@ -1318,7 +1336,48 @@ pub fn display(
                 &programs.sprite_program,
                 params,
                 &uniforms);
-        } else if _gui_type == SpriteType::ZombieWorldIcon {
+        }
+        else if _gui_type == SpriteType::CopIconHighlight {
+            let uniforms = uniform! {
+                    matrix: mat_gui,
+                    tex: &textures.sprite_textures[_gui_type],
+                };
+            draw_color_sprites(
+                frame,
+                window,
+                &vertex_buffer,
+                &programs.sprite_program,
+                params,
+                &uniforms);
+        }
+        else if _gui_type == SpriteType::ZombieIconHighlight {
+            let uniforms = uniform! {
+                    matrix: mat_gui,
+                    tex: &textures.sprite_textures[_gui_type],
+                };
+            draw_color_sprites(
+                frame,
+                window,
+                &vertex_buffer,
+                &programs.sprite_program,
+                params,
+                &uniforms);
+        }
+       else if _gui_type == SpriteType::CivilianIconHighlight {
+            let uniforms = uniform! {
+                    matrix: mat_gui,
+                    tex: &textures.sprite_textures[_gui_type],
+                };
+            draw_color_sprites(
+                frame,
+                window,
+                &vertex_buffer,
+                &programs.sprite_program,
+                params,
+                &uniforms);
+        }
+
+        else if _gui_type == SpriteType::ZombieWorldIcon {
             let uniforms = uniform! {
                     matrix: mat_gui,
                     tex: &textures.sprite_textures[_gui_type],
@@ -1663,7 +1722,7 @@ pub fn display_loss_screen(
     fonts: &FontPkg,
 ) {
     let font = fonts.get("Consola").unwrap();
-  //  frame.clear_color(0.0, 0.0, 0.0, 1.0);
+    //  frame.clear_color(0.0, 0.0, 0.0, 1.0);
 
 
     let mat = Mat4::init_id_matrix();
@@ -1795,7 +1854,7 @@ pub fn display_victory_screen(
 ) {
     let font = fonts.get("Consola").unwrap();
     // background color
- //   frame.clear_color(0.0, 0.0, 0.0, 1.0);
+    //   frame.clear_color(0.0, 0.0, 0.0, 1.0);
 
     // initialize identity matrix
     let mat = Mat4::init_id_matrix();
