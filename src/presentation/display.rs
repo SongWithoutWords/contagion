@@ -378,6 +378,52 @@ fn push_building_vertices(buffer: &mut Vec<ColorVertex>, building: &Polygon, col
     }
 }
 
+fn draw_barricades(buffer: &mut Vec<ColorVertex>, barricade: &Polygon, color: [f32; 4]) {
+    push_building_vertices(buffer, barricade, color);
+
+    // ASSUMPTION: barricade vertices are in the order dictated in control.rs with the new_barricade function
+    // Average the short sides to get the middle of the start and end
+    let start = (barricade.get(0) + barricade.get(1)) / 2.0;
+    let end = (barricade.get(2) + barricade.get(3)) / 2.0;
+
+    // Get the length of the barricade and the unit vector along its length
+    let length = (end - start).length();
+    let normal = (end - start).right() / (length * 2.0);
+    let unit = (end - start) / length;
+    let width = unit / 3.0;
+
+    // TODO: move this number somewhere else
+    let segments = (length / 3.0).round();
+    let segment_length = length / segments;
+
+    for i in 0..(segments as usize) {
+        let center = start + (unit * segment_length * (i as f64));
+        let oct = Polygon(vec![
+            center + normal - (width * 0.5),
+            center + normal + (width * 0.5),
+            center + (normal * 0.5) + width,
+            center - (normal * 0.5) + width,
+            center - normal + (width * 0.5),
+            center - normal - (width * 0.5),
+            center - (normal * 0.5) - width,
+            center + (normal * 0.5) - width
+        ]);
+        push_building_vertices(buffer, &oct, color);
+    }
+
+    let oct = Polygon(vec![
+        end + normal - (width * 0.5),
+        end + normal + (width * 0.5),
+        end + (normal * 0.5) + width,
+        end - (normal * 0.5) + width,
+        end - normal + (width * 0.5),
+        end - normal - (width * 0.5),
+        end - (normal * 0.5) - width,
+        end + (normal * 0.5) - width
+    ]);
+    push_building_vertices(buffer, &oct, color);
+}
+
 fn push_path_vertices(buffer: &mut Vec<ColorVertex>, point1: Vector2, point2: Vector2, color: [f32; 4]) {
     let lambda = 0.03;
 
@@ -953,6 +999,7 @@ pub fn display(
     let mut vertex_buffers_green_hp = vec!();
     let mut vertex_buffers_gui = enum_map! {_ => vec!()};
     let mut vertex_buffers_building = vec!();
+    let mut vertex_buffers_barricade = vec!();
     let mut vertex_buffers_path = vec!();
     let mut text_buffers = vec!();
 
@@ -1082,14 +1129,28 @@ pub fn display(
             }
             GuiType::SelectionDrag => {
                 if control.mouse_drag {
-                    let rec_min_x = control.drag_vertex_start.x.min(control.drag_vertex_end.x);
-                    let rec_min_y = control.drag_vertex_start.y.min(control.drag_vertex_end.y);
-                    let rec_max_x = control.drag_vertex_start.x.max(control.drag_vertex_end.x);
-                    let rec_max_y = control.drag_vertex_start.y.max(control.drag_vertex_end.y);
-                    component.set_dimension(Vector2 { x: rec_min_x, y: rec_min_y },
-                                            Vector2 { x: rec_min_x, y: rec_max_y },
-                                            Vector2 { x: rec_max_x, y: rec_min_y },
-                                            Vector2 { x: rec_max_x, y: rec_max_y });
+                    if !control.building_mode {
+                        let rec_min_x = control.drag_vertex_start.x.min(control.drag_vertex_end.x);
+                        let rec_min_y = control.drag_vertex_start.y.min(control.drag_vertex_end.y);
+                        let rec_max_x = control.drag_vertex_start.x.max(control.drag_vertex_end.x);
+                        let rec_max_y = control.drag_vertex_start.y.max(control.drag_vertex_end.y);
+                        component.set_dimension(Vector2 { x: rec_min_x, y: rec_min_y },
+                                                Vector2 { x: rec_min_x, y: rec_max_y },
+                                                Vector2 { x: rec_max_x, y: rec_min_y },
+                                                Vector2 { x: rec_max_x, y: rec_max_y });
+                    } else {
+                        let barricade_rect = new_barricade(control.drag_vertex_start, control.drag_vertex_end);
+//                        println!("{:?}", control.drag_vertex_start);
+//                        println!("{:?}", control.drag_vertex_end);
+//                        println!("{:?}", barricade_rect);
+//                        println!("{:?}", (barricade_rect.get(0) - barricade_rect.get(1)).length());
+//                        println!("{:?}", (barricade_rect.get(1) - barricade_rect.get(2)).length());
+                        component.set_dimension(barricade_rect.get(0),
+                                                barricade_rect.get(1),
+                                                barricade_rect.get(3),
+                                                barricade_rect.get(2));
+                    }
+
                     push_gui_vertices(&mut vertex_buffers_gui[SpriteType::SelectionHighlight], component);
                 }
             }
@@ -1123,6 +1184,11 @@ pub fn display(
     for building in &state.buildings {
         let color = [0.1, 0.1, 0.1, 1.0];
         push_building_vertices(&mut vertex_buffers_building, building, color);
+    }
+
+    for barricade in &state.barricades {
+        let color = [0.1, 0.1, 0.1, 1.0];
+        draw_barricades(&mut vertex_buffers_barricade, barricade, color);
     }
 
     // Compute vertices for cop paths
@@ -1190,6 +1256,20 @@ pub fn display(
     draw_top_fence(frame, window, textures, programs, camera_frame, params);
     draw_lower_fence(frame, window, textures, programs, camera_frame, params);
 
+    // Render barricades
+    {
+        let uniforms = uniform! {
+            matrix: camera_frame
+        };
+        draw_color_sprites(
+            frame,
+            window,
+            &vertex_buffers_barricade,
+            &programs.shape_program,
+            params,
+            &uniforms
+        )
+    }
 
     // Render shadows
     use crate::presentation::display::SpriteType::*;

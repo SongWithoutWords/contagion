@@ -3,6 +3,7 @@ use crate::core::scalar::*;
 use crate::core::matrix::*;
 use crate::core::geo::intersect::rectangle_point::*;
 use crate::core::geo::segment2::*;
+use crate::core::geo::polygon::Polygon;
 use crate::simulation::game_state::GameState;
 use crate::simulation::state::MoveMode;
 use crate::simulation::ai::pathfinding::*;
@@ -23,7 +24,8 @@ pub struct Control {
     pub drag_vertex_start: Vector2,
     pub drag_vertex_end: Vector2,
     pub last_click_time: Instant,
-    pub last_right_click_time: Instant
+    pub last_right_click_time: Instant,
+    pub building_mode: bool
 }
 
 impl Control {
@@ -36,7 +38,8 @@ impl Control {
             drag_vertex_start: Vector2::zero(),
             drag_vertex_end: Vector2::zero(),
             last_click_time: Instant::now(),
-            last_right_click_time: Instant::now()
+            last_right_click_time: Instant::now(),
+            building_mode: false
         }
     }
 
@@ -253,6 +256,12 @@ impl Control {
                     },
                     Keycode::LShift => {
                         self.shift_pressed = true;
+                    },
+                    Keycode::B => {
+                        self.building_mode = !self.building_mode;
+                    },
+                    Keycode::N => {
+                        println!("{:?}", state.barricades);
                     }
                     _ => ()
                 }
@@ -297,33 +306,46 @@ impl Control {
 
                 match mouse_btn {
                     MouseButton::Left { .. } => {
-                        // Select one police if delta of drag is too small, else select all police in drag
-                        let delta = 1.0;
+                        if self.building_mode {
+                            let mut start = self.drag_vertex_start.clone();
+                            translate_camera_to_world(&mut start, camera_frame);
 
-                        if (mouse_pos.x - self.drag_start_mouse_coord.x).abs() <= delta && (mouse_pos.y - self.drag_start_mouse_coord.y).abs() <= delta {
-                            let current_time = Instant::now();
-                            let duration = current_time.duration_since(self.last_click_time);
-                            if duration.as_secs() == 0 && duration.subsec_millis() < delta_millisecond {
-                                self.double_click_select(state, camera_frame, mouse_pos, &window);
-                            } else {
-                                self.click_select(state, &window, camera_frame, mouse_pos);
-                            }
-                            self.last_click_time = current_time;
+                            let mut end = self.drag_vertex_end.clone();
+                            translate_camera_to_world(&mut end, camera_frame);
+
+                            state.barricades.push(new_barricade(start, end));
+                            println!("{:?}", state.barricades.last());
                         } else {
-                            self.drag_select(state, &window, camera_frame, mouse_pos);
+                            // Select one police if delta of drag is too small, else select all police in drag
+                            let delta = 1.0;
+
+                            if (mouse_pos.x - self.drag_start_mouse_coord.x).abs() <= delta && (mouse_pos.y - self.drag_start_mouse_coord.y).abs() <= delta {
+                                let current_time = Instant::now();
+                                let duration = current_time.duration_since(self.last_click_time);
+                                if duration.as_secs() == 0 && duration.subsec_millis() < delta_millisecond {
+                                    self.double_click_select(state, camera_frame, mouse_pos, &window);
+                                } else {
+                                    self.click_select(state, &window, camera_frame, mouse_pos);
+                                }
+                                self.last_click_time = current_time;
+                            } else {
+                                self.drag_select(state, &window, camera_frame, mouse_pos);
+                            }
                         }
                     }
                     MouseButton::Right { .. } => {
-                        let current_time = Instant::now();
-                        let duration = current_time.duration_since(self.last_right_click_time);
-                        if duration.as_secs() == 0 && duration.subsec_millis() < delta_millisecond {
-                            // double right click to sprint
-                            self.issue_police_order(PoliceOrder::Sprint, state, &window, camera_frame, mouse_pos);
-                        } else {
-                            // single right click for attack or attack move
-                            self.issue_police_order(PoliceOrder::Move, state, &window, camera_frame, mouse_pos);
+                        if !self.building_mode {
+                            let current_time = Instant::now();
+                            let duration = current_time.duration_since(self.last_right_click_time);
+                            if duration.as_secs() == 0 && duration.subsec_millis() < delta_millisecond {
+                                // double right click to sprint
+                                self.issue_police_order(PoliceOrder::Sprint, state, &window, camera_frame, mouse_pos);
+                            } else {
+                                // single right click for attack or attack move
+                                self.issue_police_order(PoliceOrder::Move, state, &window, camera_frame, mouse_pos);
+                            }
+                            self.last_right_click_time = current_time;
                         }
-                        self.last_right_click_time = current_time;
                     }
                     _ => ()
                 }
@@ -359,6 +381,11 @@ fn is_click_on_entity(entity_pos: Vector2, m_pos: Vector2) -> bool {
     let y_pos = entity_pos.y;
     return m_pos.x <= x_pos + entity_delta && m_pos.x >= x_pos - entity_delta
         && m_pos.y <= y_pos + entity_delta && m_pos.y >= y_pos - entity_delta;
+}
+
+pub fn new_barricade(start: Vector2, end: Vector2) -> Polygon {
+    let normal = (end - start).right() / ((end - start).length() * 4.0);
+    Polygon(vec![start + normal, start - normal, end - normal, end + normal])
 }
 
 pub enum PoliceOrder {
