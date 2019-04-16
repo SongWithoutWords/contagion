@@ -16,6 +16,7 @@ use crate::presentation::ui::gui::GuiType;
 use crate::simulation::control::*;
 use crate::simulation::state::*;
 use crate::simulation::update::EntityCounts;
+use crate::simulation::game_state::GameState;
 
 // Enum ordered by draw order
 #[derive(Copy, Clone, Debug, Enum, PartialEq)]
@@ -937,6 +938,7 @@ pub fn display(
     ui: &mut Component,
     fonts: &FontPkg,
     control: &Control,
+    gamestate: &mut GameState,
 ) {
     let font = fonts.get("Consola").unwrap();
 
@@ -1426,6 +1428,37 @@ pub fn display(
                 params,
                 &uniforms);
         }
+    }
+
+    // Render Summary Text
+    if gamestate.summary_text {
+        let mat = Mat4::init_id_matrix();
+        let system = glium_text::TextSystem::new(window);
+        let text_to_display = "People are turning into zombies!";
+        let text_display = format!("{}", text_to_display);
+        let mut color = [1.0, 1.0, 1.0, 1.0 as f32];
+        if gamestate.fade_wait > 120 {
+            gamestate.fade_alpha = gamestate.fade_alpha - (1.0 / (gamestate.fade_max as f32));
+            color = [1.0, 1.0, 1.0, gamestate.fade_alpha as f32];
+        }
+        let str_slice: &str = &text_display[..];
+        let text = glium_text::TextDisplay::new(&system, font.medres(), str_slice);
+
+        let text_width = text.get_width() as f64;
+        let (w, h) = frame.get_dimensions();
+        let _text_offset = 1.0 / text_width;
+        let scale_factor = Vector4 { x: 1.0 / text_width, y: 1.0 * (w as f64) / (h as f64) / text_width, z: 1.0, w: 1.0 };
+        let translation_offset = Vector4 { x: -0.8 , y: 0.7, z: 0.0, w: 0.0 };
+        let mut matrix = mat.scale(scale_factor).translation(translation_offset);
+        glium_text::draw(&text, &system, frame, matrix.as_f32_array(), color);
+
+        let text_to_display = "Eradicate all the zombies.";
+        let text_display = format!("{}", text_to_display);
+        let str_slice: &str = &text_display[..];
+        let text = glium_text::TextDisplay::new(&system, font.medres(), str_slice);
+        let translation_offset = Vector4 {x: 0.0, y: -0.1, z: 0.0, w: 0.0};
+        matrix = matrix.translation(translation_offset);
+        glium_text::draw(&text, &system, frame, matrix.as_f32_array(), color);
     }
 
     // Render Menu Button Text

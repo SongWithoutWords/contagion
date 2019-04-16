@@ -56,25 +56,33 @@ impl Scene for Game {
               delta_time: f64)
               -> UpdateResult {
         match self.game_state {
-            GameState{terminate, transition_menu, transition_game, zombies_win, humans_win, ..} =>
+            GameState{terminate, transition_menu, transition_game, zombies_win, humans_win, summary_text, ..} =>
                 {
                     if terminate {return UpdateResult::Exit}
                     if transition_game {self.game_state.transition_game = false;
                         return UpdateResult::Transition(Box::new(Game::new()))}
                     if transition_menu {self.game_state.transition_menu = false;
                         return UpdateResult::Transition(Box::new(main_menu::MainMenu::new()))}
+                    if summary_text {
+                        self.game_state.fade_wait += 1;
+                        // wait 5 seconds
+                        if self.game_state.fade_wait == (60 * 5) {
+                            self.game_state.summary_text = false;
+                            self.game_state.fade_alpha = 1.0;
+                        }
+                    }
                     if zombies_win {
-                        self.game_state.tick += 1;
+                        self.game_state.trans_wait += 1;
                         // wait 2 seconds
-                        if self.game_state.tick == 120 {
+                        if self.game_state.trans_wait == 120 {
                             self.game_state.zombies_win = false;
                             return UpdateResult::Transition(Box::new(LossScreen::new(self.entity_counts.clone())))
                         }
                     }
                     if humans_win {
-                        self.game_state.tick += 1;
+                        self.game_state.trans_wait += 1;
                         // wait 2 seconds
-                        if self.game_state.tick == 120 {
+                        if self.game_state.trans_wait == 120 {
                             self.game_state.humans_win = false;
                             return UpdateResult::Transition(Box::new(VictoryScreen::new(self.entity_counts.clone())))
                         }
@@ -150,7 +158,8 @@ impl Scene for Game {
                                        &self.entity_counts,
                                        self.camera.compute_matrix(),
                                        &mut self.gui, &fonts,
-                                       &self.control);
+                                       &self.control,
+                                       &mut self.game_state);
         target.finish().unwrap();
     }
 }
