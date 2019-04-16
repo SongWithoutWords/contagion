@@ -42,7 +42,7 @@ impl Scene for MainMenu {
                 {
                     if transition_game {
                         self.game_state.transition_game = false;
-                        return UpdateResult::Transition(Box::new(game::Game::new()));
+                        return UpdateResult::Transition(Box::new(game::Game::new(self.game_state.tutorial)));
                     }
                     if terminate { return UpdateResult::Exit; }
                 }

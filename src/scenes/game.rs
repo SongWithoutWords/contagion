@@ -32,12 +32,17 @@ pub struct Game {
 }
 
 impl Game {
-    pub fn new() -> Game {
+    pub fn new(tutorial: bool) -> Game {
         let state = simulation::initial_state::initial_state(100, rand::random::<u32>());
         let gui = presentation::ui::gui::Component::init_game_gui();
         let camera = presentation::camera::Camera::new();
         let control = simulation::control::Control::new();
-        let game_state = simulation::game_state::GameState::new();
+        let game_state: GameState;
+        if tutorial {
+            game_state = simulation::game_state::GameState::new_tutorial();
+        } else {
+            game_state = simulation::game_state::GameState::new();
+        }
         Game {
             state: state,
             entity_counts: EntityCounts::default(),
@@ -60,7 +65,7 @@ impl Scene for Game {
                 {
                     if terminate {return UpdateResult::Exit}
                     if transition_game {self.game_state.transition_game = false;
-                        return UpdateResult::Transition(Box::new(Game::new()))}
+                        return UpdateResult::Transition(Box::new(Game::new(self.game_state.tutorial)))}
                     if transition_menu {self.game_state.transition_menu = false;
                         return UpdateResult::Transition(Box::new(main_menu::MainMenu::new()))}
                     if summary_text {

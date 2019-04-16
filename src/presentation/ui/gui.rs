@@ -98,9 +98,11 @@ impl Component {
     pub fn init_main_menu_gui() -> Component {
         // main menu buttons
         let button_start = GuiType::Button { text: "Start".to_string(), highlight: false };
+        let button_tutorial = GuiType::Button { text: "Tutorial".to_string(), highlight: false};
         let button_exit = GuiType::Button { text: "Exit".to_string(), highlight: false };
         let button_start_ui = Gui::new(button_start, 0.20, 0.12, Vector2 { x: 0.0, y: -0.2 });
-        let button_exit_ui = Gui::new(button_exit, 0.15, 0.12, Vector2 { x: 0.0, y: -0.5 });
+        let button_tutorial_ui = Gui::new(button_tutorial, 0.30, 0.12, Vector2 {x: 0.0, y: -0.35});
+        let button_exit_ui = Gui::new(button_exit, 0.15, 0.12, Vector2 { x: 0.0, y: -0.65 });
 
         // box containment for main menu settings
         let box_ui = Gui::new(GuiType::Window, 1.8, 1.8, Vector2 { x: 0.0, y: 0.0 });
@@ -121,11 +123,11 @@ impl Component {
             highlight: false,
         },
                                   0.30, 0.12,
-                                  Vector2 { x: 0.0, y: -0.35 });
+                                  Vector2 { x: 0.0, y: -0.50 });
 
         // component initialization
         Component {
-            components: vec![button_start_ui, button_exit_ui, setting_ui],
+            components: vec![button_start_ui, button_tutorial_ui, button_exit_ui, setting_ui],
             active_window: ActiveWindow::MainMenu,
         }
     }
@@ -320,6 +322,9 @@ impl Component {
                                         game_state.transition_game = true;
                                     } else if display_text == "Exit" {
                                         game_state.terminate = true;
+                                    } else if display_text == "Tutorial" {
+                                        game_state.transition_game = true;
+                                        game_state.tutorial = true;
                                     }
                                 }
                             }
@@ -332,7 +337,7 @@ impl Component {
                                 let check_within_bound = check_bounding_box(top_left, bot_right, *mouse_pos);
                                 if check_within_bound {
                                     let display_text = text;
-                                    if display_text == "Start" || display_text == "Exit" {
+                                    if display_text == "Start" || display_text == "Exit" || display_text == "Tutorial" {
                                         *highlight = true;
                                     }
                                 } else {
