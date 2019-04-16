@@ -35,6 +35,7 @@ pub enum GuiType {
     ZombieUI,
     CopUI,
     CivilianUI,
+    MoneyUI,
     ZombieHighlight,
     CopHighlight,
     CivilianHighlight,

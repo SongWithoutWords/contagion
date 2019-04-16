@@ -123,6 +123,8 @@ pub fn update(args: &UpdateArgs, state: &mut State) -> SimulationResults {
             }
             DeadOrAlive::Alive { zombie_or_human, health } => {
                 if *health <= ENTITY_HEALTH_MIN {
+                    // Pay out bounty if zombie is killed
+                    if entity.is_zombie() { state.money += 1 }
                     state.entities[i].dead_or_alive = DeadOrAlive::Dead;
                     sounds.push(Sound::ZombieDeath);
                 }

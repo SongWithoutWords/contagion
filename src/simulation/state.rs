@@ -15,6 +15,7 @@ pub struct State {
     pub selection: HashSet<usize>,
     pub projectiles: Vec<Projectile>,
     pub rng: rand_xorshift::XorShiftRng,
+    pub money: u32
 }
 
 pub const ENTITY_RADIUS: Scalar = 0.5;

@@ -37,6 +37,7 @@ pub enum SpriteType {
     ZombieWorldIcon,
     CopWorldIcon,
     CivilianWorldIcon,
+    MoneyWorldIcon,
     BuildingOne,
     ZombieFist,
     ZombieTorso,
@@ -96,6 +97,8 @@ pub fn load_textures(window: &glium_sdl2::SDL2Facade) -> Textures {
                 => load_texture(window, "assets/images/ui/cop_world_icon_new.png"),
             SpriteType::CivilianWorldIcon
                 => load_texture(window, "assets/images/ui/civilian_world_icon_new.png"),
+            SpriteType::MoneyWorldIcon
+                => load_texture(window, "assets/images/ui/money_world_icon_new.png"),
             SpriteType::BuildingOne
                 => load_texture(window, "assets/images/building/building_one.png"),
             SpriteType::ZombieFist
@@ -1118,6 +1121,9 @@ pub fn display(
             GuiType::CopUI => {
                 push_gui_vertices(&mut vertex_buffers_gui[SpriteType::CopWorldIcon], component);
             }
+            GuiType::MoneyUI => {
+                push_gui_vertices(&mut vertex_buffers_gui[SpriteType::MoneyWorldIcon], component);
+            }
             GuiType::Selected => {
                 if selection_count < 1 {} else {
                     // might be useful later...
@@ -1507,6 +1513,20 @@ pub fn display(
                 &programs.sprite_program,
                 params,
                 &uniforms);
+        } else if _gui_type == SpriteType::MoneyWorldIcon {
+            let uniforms = uniform! {
+                matrix: mat_gui,
+                tex: &textures.sprite_textures[_gui_type],
+            };
+
+            draw_money_num(window, state.money as usize, frame, &font.lowres());
+            draw_color_sprites(
+                frame,
+                window,
+                &vertex_buffer,
+                &programs.sprite_program,
+                params,
+                &uniforms);
         }
     }
 
@@ -1667,6 +1687,27 @@ fn draw_remaining_cop_num(window: &glium_sdl2::SDL2Facade, cop_num: usize, frame
         [0.0, 1.0 * (w as f32) / (h as f32) / font_scale_down, 0.0, 0.0],
         [0.0, 0.0, 1.0, 0.0],
         [0.5755, 0.83, 0.0, 1.0f32],
+    ];
+
+    glium_text::draw(&text, &system, frame, matrix, color);
+}
+
+fn draw_money_num(window: &glium_sdl2::SDL2Facade, money: usize, frame: &mut glium::Frame, font: &FontTexture) {
+    let system = glium_text::TextSystem::new(window);
+    let money_str: String = money.to_string();
+    let money_num_display = format!("${}", money_str);
+
+    let str_slice: &str = &money_num_display[..];
+    let text = glium_text::TextDisplay::new(&system, font, str_slice);
+    let color = [0.0, 0.0, 0.0, 1.0f32];
+    let font_scale_down = 40.0;
+    let (w, h) = frame.get_dimensions();
+
+    let matrix = [
+        [1.0 / font_scale_down, 0.0, 0.0, 0.0],
+        [0.0, 1.0 * (w as f32) / (h as f32) / font_scale_down, 0.0, 0.0],
+        [0.0, 0.0, 1.0, 0.0],
+        [0.4255, 0.83, 0.0, 1.0f32],
     ];
 
     glium_text::draw(&text, &system, frame, matrix, color);

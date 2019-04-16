@@ -313,7 +313,13 @@ impl Control {
                             let mut end = self.drag_vertex_end.clone();
                             translate_camera_to_world(&mut end, camera_frame);
 
-                            state.barricades.push(new_barricade(start, end));
+                            let cost = ((end - start).length().round() as u32).max(1);
+                            if cost <= state.money {
+                                state.money = state.money - cost;
+                                state.barricades.push(new_barricade(start, end));
+                            }
+
+                            println!("{:?}", state.money);
                             println!("{:?}", state.barricades.last());
                         } else {
                             // Select one police if delta of drag is too small, else select all police in drag
