@@ -14,9 +14,9 @@ use crate::presentation::ui::gui::*;
 use crate::presentation::ui::gui::Component;
 use crate::presentation::ui::gui::GuiType;
 use crate::simulation::control::*;
+use crate::simulation::game_state::GameState;
 use crate::simulation::state::*;
 use crate::simulation::update::EntityCounts;
-use crate::simulation::game_state::GameState;
 
 // Enum ordered by draw order
 #[derive(Copy, Clone, Debug, Enum, PartialEq)]
@@ -37,7 +37,6 @@ pub enum SpriteType {
     ZombieWorldIcon,
     CopWorldIcon,
     CivilianWorldIcon,
-    MoneyWorldIcon,
     BuildingOne,
     ZombieFist,
     ZombieTorso,
@@ -46,6 +45,8 @@ pub enum SpriteType {
     ZombieIconHighlight,
     CopIconHighlight,
     CivilianIconHighlight,
+    MoneyHighlight,
+    MoneyWorldIcon,
 }
 
 // pub type Textures = EnumMap<SpriteType, Texture2d>;
@@ -97,8 +98,6 @@ pub fn load_textures(window: &glium_sdl2::SDL2Facade) -> Textures {
                 => load_texture(window, "assets/images/ui/cop_world_icon_new.png"),
             SpriteType::CivilianWorldIcon
                 => load_texture(window, "assets/images/ui/civilian_world_icon_new.png"),
-            SpriteType::MoneyWorldIcon
-                => load_texture(window, "assets/images/ui/money_world_icon_new.png"),
             SpriteType::BuildingOne
                 => load_texture(window, "assets/images/building/building_one.png"),
             SpriteType::ZombieFist
@@ -115,6 +114,10 @@ pub fn load_textures(window: &glium_sdl2::SDL2Facade) -> Textures {
                 => load_texture(window, "assets/images/ui/cop_highlight.png"),
             SpriteType::CivilianIconHighlight
                 => load_texture(window, "assets/images/ui/civilian_highlight.png"),
+            SpriteType::MoneyWorldIcon
+                => load_texture(window, "assets/images/ui/money.png"),
+            SpriteType::MoneyHighlight
+                => load_texture(window, "assets/images/ui/money_highlight.png"),
         },
         background_texture: load_texture(&window, "assets/images/dirt.jpg"),
         wallpaper: load_texture(&window, "assets/images/contagion_wallpaper.png"),
@@ -1102,7 +1105,6 @@ pub fn display(
     //let offset = 0.1;
     for component in &mut ui.components {
         match &component.id {
-
             GuiType::ZombieHighlight => {
                 push_gui_vertices(&mut vertex_buffers_gui[SpriteType::ZombieIconHighlight], component);
             }
@@ -1111,6 +1113,9 @@ pub fn display(
             }
             GuiType::CivilianHighlight => {
                 push_gui_vertices(&mut vertex_buffers_gui[SpriteType::CivilianIconHighlight], component);
+            }
+            GuiType::MoneyHighlight => {
+                push_gui_vertices(&mut vertex_buffers_gui[SpriteType::MoneyHighlight], component);
             }
             GuiType::ZombieUI => {
                 push_gui_vertices(&mut vertex_buffers_gui[SpriteType::ZombieWorldIcon], component);
@@ -1273,7 +1278,7 @@ pub fn display(
             &vertex_buffers_barricade,
             &programs.shape_program,
             params,
-            &uniforms
+            &uniforms,
         )
     }
 
@@ -1424,8 +1429,7 @@ pub fn display(
                 &programs.sprite_program,
                 params,
                 &uniforms);
-        }
-        else if _gui_type == SpriteType::CopIconHighlight {
+        } else if _gui_type == SpriteType::CopIconHighlight {
             let uniforms = uniform! {
                     matrix: mat_gui,
                     tex: &textures.sprite_textures[_gui_type],
@@ -1438,7 +1442,7 @@ pub fn display(
                 params,
                 &uniforms);
         }
-        else if _gui_type == SpriteType::ZombieIconHighlight {
+        else if _gui_type == SpriteType::MoneyHighlight {
             let uniforms = uniform! {
                     matrix: mat_gui,
                     tex: &textures.sprite_textures[_gui_type],
@@ -1450,8 +1454,7 @@ pub fn display(
                 &programs.sprite_program,
                 params,
                 &uniforms);
-        }
-       else if _gui_type == SpriteType::CivilianIconHighlight {
+        } else if _gui_type == SpriteType::ZombieIconHighlight {
             let uniforms = uniform! {
                     matrix: mat_gui,
                     tex: &textures.sprite_textures[_gui_type],
@@ -1463,9 +1466,19 @@ pub fn display(
                 &programs.sprite_program,
                 params,
                 &uniforms);
-        }
-
-        else if _gui_type == SpriteType::ZombieWorldIcon {
+        } else if _gui_type == SpriteType::CivilianIconHighlight {
+            let uniforms = uniform! {
+                    matrix: mat_gui,
+                    tex: &textures.sprite_textures[_gui_type],
+                };
+            draw_color_sprites(
+                frame,
+                window,
+                &vertex_buffer,
+                &programs.sprite_program,
+                params,
+                &uniforms);
+        } else if _gui_type == SpriteType::ZombieWorldIcon {
             let uniforms = uniform! {
                     matrix: mat_gui,
                     tex: &textures.sprite_textures[_gui_type],
@@ -1548,7 +1561,7 @@ pub fn display(
         let (w, h) = frame.get_dimensions();
         let _text_offset = 1.0 / text_width;
         let scale_factor = Vector4 { x: 1.0 / text_width, y: 1.0 * (w as f64) / (h as f64) / text_width, z: 1.0, w: 1.0 };
-        let translation_offset = Vector4 { x: -0.8 , y: 0.7, z: 0.0, w: 0.0 };
+        let translation_offset = Vector4 { x: -0.8, y: 0.7, z: 0.0, w: 0.0 };
         let mut matrix = mat.scale(scale_factor).translation(translation_offset);
         glium_text::draw(&text, &system, frame, matrix.as_f32_array(), color);
 
@@ -1556,7 +1569,7 @@ pub fn display(
         let text_display = format!("{}", text_to_display);
         let str_slice: &str = &text_display[..];
         let text = glium_text::TextDisplay::new(&system, font.medres(), str_slice);
-        let translation_offset = Vector4 {x: 0.0, y: -0.1, z: 0.0, w: 0.0};
+        let translation_offset = Vector4 { x: 0.0, y: -0.1, z: 0.0, w: 0.0 };
         matrix = matrix.translation(translation_offset);
         glium_text::draw(&text, &system, frame, matrix.as_f32_array(), color);
     }
