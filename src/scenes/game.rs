@@ -61,7 +61,7 @@ impl Scene for Game {
               delta_time: f64)
               -> UpdateResult {
         match self.game_state {
-            GameState{terminate, transition_menu, transition_game, zombies_win, humans_win, summary_text, ..} =>
+            GameState{terminate, transition_menu, transition_game, zombies_win, humans_win, tutorial, summary_text, ..} =>
                 {
                     if terminate {return UpdateResult::Exit}
                     if transition_game {self.game_state.transition_game = false;
@@ -74,6 +74,27 @@ impl Scene for Game {
                         if self.game_state.fade_wait == (60 * 5) {
                             self.game_state.summary_text = false;
                             self.game_state.fade_alpha = 1.0;
+                        }
+                    }
+                    // display tutorial using game_state.rs flags
+                    if tutorial {
+                        // Let game display entities outside of buildings properly before
+                        // displaying tutorial, then pause the game
+                        self.game_state.tut_time += 1;
+                        if self.game_state.tut_time == 2 {
+                            self.game_state.game_paused = true;
+                        }
+                        // display tutorial 1: display text to teach about selecting
+                        if self.game_state.tut_01 == true {
+                            // stub
+                        }
+                        // display tutorial 2: display text to teach about targetting and moving
+                        if self.game_state.tut_02 == true {
+                            // stub
+                        }
+                        // display tutorial 3: display text to teach about unpausing and pausing
+                        if self.game_state.tut_03 == true {
+                            // stub
                         }
                     }
                     if zombies_win {
