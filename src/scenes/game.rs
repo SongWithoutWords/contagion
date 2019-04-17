@@ -80,8 +80,8 @@ impl Scene for Game {
                     if tutorial {
                         // Let game display entities outside of buildings properly before
                         // displaying tutorial, then pause the game
-                        self.game_state.tut_time += 1;
-                        if self.game_state.tut_time == 2 {
+                        self.game_state.tut_time_curr += 1;
+                        if self.game_state.tut_time_curr == 2 {
                             self.game_state.game_paused = true;
                         }
                         // display tutorial 1: display text to teach about selecting

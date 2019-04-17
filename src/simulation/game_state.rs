@@ -15,6 +15,8 @@ pub struct GameState {
     /*TUTORIAL CHECK*/
     pub tutorial: bool,
     pub tut_time: usize,
+    pub tut_time_curr: usize,
+    pub tut_passed: bool,
     pub tut_01: bool, // spacebar to unpause
     pub tut_02: bool, // select police
     pub tut_03: bool, // Right click to issue attack or move
@@ -41,6 +43,8 @@ impl GameState {
             summary_text: true,
             tutorial: false,
             tut_time: 0,
+            tut_time_curr: 0,
+            tut_passed: false,
             tut_01: false,
             tut_02: false,
             tut_03: false,
@@ -62,6 +66,8 @@ impl GameState {
             summary_text: true,
             tutorial: true,
             tut_time: 0,
+            tut_time_curr: 0,
+            tut_passed: false,
             tut_01: true,
             tut_02: true,
             tut_03: true,

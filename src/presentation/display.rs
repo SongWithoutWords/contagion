@@ -1040,6 +1040,10 @@ pub fn display(
                 facing: entity.get_facing_normal(),
                 radius: 0.5,
             };
+            // If tutorial mode is on and tutorial for selecting flag is true
+            if gamestate.tutorial && gamestate.tut_01 {
+                gamestate.tut_passed = true;
+            }
             push_sprite_vertices(&mut vertex_buffers[SpriteType::SelectionHighlight], &sprite);
 
             // add more selection GUI to right
@@ -1459,6 +1463,56 @@ pub fn display(
         let translation_offset = Vector4 {x: 0.0, y: -0.1, z: 0.0, w: 0.0};
         matrix = matrix.translation(translation_offset);
         glium_text::draw(&text, &system, frame, matrix.as_f32_array(), color);
+    }
+
+    // Render Tutorial Text
+    if gamestate.tutorial {
+        let mat = Mat4::init_id_matrix();
+        let system = glium_text::TextSystem::new(window);
+        let mut scale_width = 1.0;
+        let mut x_offset = -0.5;
+        let (w, h) = frame.get_dimensions();
+        // if tutorial 1 is not over
+        if gamestate.tut_01 {
+            let mut text_to_display = "Find and select a cop or drag to select multiple";
+            if gamestate.tut_passed == true {
+                text_to_display = "good!";
+                scale_width = 0.2;
+                x_offset = -0.1;
+                if gamestate.tut_time == 0 {
+                    gamestate.tut_time = gamestate.tut_time_curr;
+                }
+                if (gamestate.tut_time_curr - gamestate.tut_time) > 60 {
+                    gamestate.tut_01 = false;
+                    gamestate.tut_time = 0;
+                }
+            }
+            let text_display = format!("{}", text_to_display);
+            let mut color = [1.0, 1.0, 1.0, 1.0 as f32];
+            let str_slice: &str = &text_display[..];
+            let text = glium_text::TextDisplay::new(&system, font.medres(), str_slice);
+            let text_width = text.get_width() as f64;
+            let text_offset = scale_width / text_width;
+            let scale_factor = Vector4 { x: text_offset, y: scale_width * (w as f64) / (h as f64) / text_width, z: 1.0, w: 1.0 };
+            let translation_offset = Vector4 { x: x_offset , y: -0.5, z: 0.0, w: 0.0 };
+            let mut matrix = mat.scale(scale_factor).translation(translation_offset);
+            glium_text::draw(&text, &system, frame, matrix.as_f32_array(), color);
+        }
+        // if tutorial 1 is over and tutorial 2 is not over
+        if !gamestate.tut_01 && gamestate.tut_02 {
+
+        }
+        if !gamestate.tut_02 && gamestate.tut_03 {
+
+        }
+
+//        let text_to_display = "Eradicate all the zombies.";
+//        let text_display = format!("{}", text_to_display);
+//        let str_slice: &str = &text_display[..];
+//        let text = glium_text::TextDisplay::new(&system, font.medres(), str_slice);
+//        let translation_offset = Vector4 {x: 0.0, y: -0.1, z: 0.0, w: 0.0};
+//        matrix = matrix.translation(translation_offset);
+//        glium_text::draw(&text, &system, frame, matrix.as_f32_array(), color);
     }
 
     // Render Menu Button Text
