@@ -47,6 +47,8 @@ pub enum SpriteType {
     CivilianIconHighlight,
     MoneyHighlight,
     MoneyWorldIcon,
+    BuildingModeIcon,
+    SelectingModeIcon,
 }
 
 // pub type Textures = EnumMap<SpriteType, Texture2d>;
@@ -118,6 +120,10 @@ pub fn load_textures(window: &glium_sdl2::SDL2Facade) -> Textures {
                 => load_texture(window, "assets/images/ui/money.png"),
             SpriteType::MoneyHighlight
                 => load_texture(window, "assets/images/ui/money_highlight.png"),
+            SpriteType::BuildingModeIcon
+                => load_texture(window, "assets/images/ui/building_icon.png"),
+            SpriteType::SelectingModeIcon
+                => load_texture(window, "assets/images/ui/mouse_select.png"),
         },
         background_texture: load_texture(&window, "assets/images/dirt.jpg"),
         wallpaper: load_texture(&window, "assets/images/contagion_wallpaper.png"),
@@ -1129,6 +1135,13 @@ pub fn display(
             GuiType::MoneyUI => {
                 push_gui_vertices(&mut vertex_buffers_gui[SpriteType::MoneyWorldIcon], component);
             }
+            GuiType::SelectingModeIcon => {
+                if control.building_mode {
+                push_gui_vertices(&mut vertex_buffers_gui[SpriteType::BuildingModeIcon], component);}
+                else {
+                    push_gui_vertices(&mut vertex_buffers_gui[SpriteType::SelectingModeIcon], component);
+                }
+            }
             GuiType::Selected => {
                 if selection_count < 1 {} else {
                     // might be useful later...
@@ -1467,6 +1480,30 @@ pub fn display(
                 params,
                 &uniforms);
         } else if _gui_type == SpriteType::CivilianIconHighlight {
+            let uniforms = uniform! {
+                    matrix: mat_gui,
+                    tex: &textures.sprite_textures[_gui_type],
+                };
+            draw_color_sprites(
+                frame,
+                window,
+                &vertex_buffer,
+                &programs.sprite_program,
+                params,
+                &uniforms);
+        }  else if _gui_type == SpriteType::BuildingModeIcon {
+            let uniforms = uniform! {
+                    matrix: mat_gui,
+                    tex: &textures.sprite_textures[_gui_type],
+                };
+            draw_color_sprites(
+                frame,
+                window,
+                &vertex_buffer,
+                &programs.sprite_program,
+                params,
+                &uniforms);
+        }  else if _gui_type == SpriteType::SelectingModeIcon {
             let uniforms = uniform! {
                     matrix: mat_gui,
                     tex: &textures.sprite_textures[_gui_type],
