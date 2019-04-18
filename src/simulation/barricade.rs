@@ -3,6 +3,9 @@ use crate::core::scalar::*;
 use crate::core::geo::polygon::*;
 use crate::simulation::state::ENTITY_RADIUS;
 
+pub const BARRICADE_HEALTH: Scalar = 100.0;
+pub const BARRICADE_MIN_COST: u32 = 2;
+
 #[derive(Clone, Debug)]
 pub struct Barricade {
     pub poly: Polygon,
@@ -26,7 +29,7 @@ impl Barricade {
         Barricade {
             poly,
             outline: Polygon(outlines),
-            health: 100.0
+            health: BARRICADE_HEALTH
         }
     }
 }
@@ -34,4 +37,13 @@ impl Barricade {
 pub fn barricade_poly(start: Vector2, end: Vector2) -> Polygon {
     let normal = (end - start).right() / ((end - start).length() * 4.0);
     Polygon(vec![start + normal, start - normal, end - normal, end + normal])
+}
+
+pub fn barricade_valid(start: Vector2, end: Vector2, money: u32) -> bool {
+    let cost = barricade_cost(start, end);
+    cost >= BARRICADE_MIN_COST && cost <= money
+}
+
+pub fn barricade_cost(start: Vector2, end: Vector2) -> u32 {
+    (end - start).length().round() as u32
 }
