@@ -1443,7 +1443,7 @@ pub fn display(
     if gamestate.summary_text {
         let mat = Mat4::init_id_matrix();
         let system = glium_text::TextSystem::new(window);
-        let text_to_display = "People are turning into zombies!";
+        let text_to_display = "Goal: People are turning into zombies!";
         let text_display = format!("{}", text_to_display);
         let mut color = [1.0, 1.0, 1.0, 1.0 as f32];
         if gamestate.fade_wait > 120 {
@@ -1477,7 +1477,34 @@ pub fn display(
         let mut scale_width = 1.0;
         let mut x_offset = -0.5;
         let (w, h) = frame.get_dimensions();
-        let color = [1.0, 1.0, 1.0, 1.0 as f32];
+        let mut color = [1.0, 1.0, 1.0, 1.0 as f32];
+        // if tutorials are over
+        if !gamestate.tut_01 && !gamestate.tut_02 && !gamestate.tut_03 {
+            scale_width = 1.5;
+            x_offset = -0.7;
+            color = [1.0, 1.0, 1.0, 1.0 as f32];
+            let text_to_display = "Tutorial is finished. You can now continue with the game!";
+            let text_display = format!("{}", text_to_display);
+            let str_slice: &str = &text_display[..];
+            let text = glium_text::TextDisplay::new(&system, font.lowres(), str_slice);
+            let text_width = text.get_width() as f64;
+            let text_offset = scale_width / text_width;
+            let scale_factor = Vector4 { x: text_offset, y: scale_width * (w as f64) / (h as f64) / text_width, z: 1.0, w: 1.0 };
+            let translation_offset = Vector4 { x: x_offset , y: -0.5, z: 0.0, w: gamestate.fade_pers as f64};
+            let mut matrix = mat.scale(scale_factor).translation(translation_offset);
+            glium_text::draw(&text, &system, frame, matrix.as_f32_array(), color);
+            let text_to_display = "Press 'esc' and click 'Instruction' to look at controls.";
+            let text_display = format!("{}", text_to_display);
+            let str_slice: &str = &text_display[..];
+            let text = glium_text::TextDisplay::new(&system, font.lowres(), str_slice);
+            let translation_offset = Vector4 {x: 0.025, y: -0.1, z: 0.0, w: gamestate.fade_pers as f64};
+            matrix = matrix.translation(translation_offset);
+            glium_text::draw(&text, &system, frame, matrix.as_f32_array(), color);
+            if tutorial_text_fade(gamestate) {
+                gamestate.tutorial = false;
+            }
+        }
+
         // if tutorial 1 is not over
         if gamestate.tut_01 {
             let mut text_to_display = "Find and select a cop or drag to select multiple";
@@ -1491,13 +1518,23 @@ pub fn display(
             }
             let text_display = format!("{}", text_to_display);
             let str_slice: &str = &text_display[..];
-            let text = glium_text::TextDisplay::new(&system, font.medres(), str_slice);
+            let text = glium_text::TextDisplay::new(&system, font.lowres(), str_slice);
             let text_width = text.get_width() as f64;
             let text_offset = scale_width / text_width;
             let scale_factor = Vector4 { x: text_offset, y: scale_width * (w as f64) / (h as f64) / text_width, z: 1.0, w: 1.0 };
             let translation_offset = Vector4 { x: x_offset , y: -0.5, z: 0.0, w: 0.0 };
-            let matrix = mat.scale(scale_factor).translation(translation_offset);
+            let mut matrix = mat.scale(scale_factor).translation(translation_offset);
             glium_text::draw(&text, &system, frame, matrix.as_f32_array(), color);
+            // only display if tutorial hasn't been passed
+            if !gamestate.tut_passed {
+                text_to_display = "You can move the camera using 'WSAD'";
+                let text_display = format!("{}", text_to_display);
+                let str_slice: &str = &text_display[..];
+                let text = glium_text::TextDisplay::new(&system, font.lowres(), str_slice);
+                let translation_offset = Vector4 { x: 0.0, y: -0.1, z: 0.0, w: 0.0 };
+                matrix = matrix.translation(translation_offset);
+                glium_text::draw(&text, &system, frame, matrix.as_f32_array(), color);
+            }
         }
         // if tutorial 1 is over and tutorial 2 started
         if !gamestate.tut_01 && gamestate.tut_02 {
@@ -1512,7 +1549,7 @@ pub fn display(
             }
             let text_display = format!("{}", text_to_display);
             let str_slice: &str = &text_display[..];
-            let text = glium_text::TextDisplay::new(&system, font.medres(), str_slice);
+            let text = glium_text::TextDisplay::new(&system, font.lowres(), str_slice);
             let text_width = text.get_width() as f64;
             let text_offset = scale_width / text_width;
             let scale_factor = Vector4 { x: text_offset, y: scale_width * (w as f64) / (h as f64) / text_width, z: 1.0, w: 1.0 };
@@ -1529,11 +1566,13 @@ pub fn display(
                 x_offset = -0.1;
                 if tutorial_text_fade(gamestate) {
                     gamestate.tut_03 = false;
+                    // when tutorial 3 finishes pause the game
+                    gamestate.game_paused = true;
                 }
             }
             let text_display = format!("{}", text_to_display);
             let str_slice: &str = &text_display[..];
-            let text = glium_text::TextDisplay::new(&system, font.medres(), str_slice);
+            let text = glium_text::TextDisplay::new(&system, font.lowres(), str_slice);
             let text_width = text.get_width() as f64;
             let text_offset = scale_width / text_width;
             let scale_factor = Vector4 { x: text_offset, y: scale_width * (w as f64) / (h as f64) / text_width, z: 1.0, w: 1.0 };
@@ -1574,14 +1613,24 @@ pub fn display(
 }
 
 fn tutorial_text_fade(gamestate: &mut GameState) -> bool {
+    let mut tick = 120;
     if gamestate.tut_time == 0 {
         gamestate.tut_time = gamestate.tut_time_curr;
     }
-    if (gamestate.tut_time_curr - gamestate.tut_time) > 60 {
+    if !gamestate.tut_01 && !gamestate.tut_02 && !gamestate.tut_03 {
+        tick = 60 * 5;
+        if gamestate.fade_pers > 0.0 {
+            gamestate.fade_pers -= 1.0 / 60 as f32;
+        }
+    }
+    if (gamestate.tut_time_curr - gamestate.tut_time) > tick {
         gamestate.tut_passed = false;
         gamestate.tut_time = 0;
         return true
     } else {
+//        if (gamestate.tut_time_curr - gamestate.tut_time) > (tick / 2) {
+//            gamestate.fade_alpha -= 1.0 / (tick / 2) as f32
+//        }
         return false
     }
 }
