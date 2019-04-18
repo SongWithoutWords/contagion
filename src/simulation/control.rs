@@ -313,7 +313,7 @@ impl Control {
                             let mut end = self.drag_vertex_end.clone();
                             translate_camera_to_world(&mut end, camera_frame);
 
-                            if barricade_valid(start, end, state.money) {
+                            if barricade_valid(start, end, state) {
                                 state.money = state.money - barricade_cost(start, end);
                                 state.barricades.push(Barricade::new(start, end));
                             }
