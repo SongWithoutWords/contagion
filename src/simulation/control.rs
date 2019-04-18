@@ -3,10 +3,10 @@ use crate::core::scalar::*;
 use crate::core::matrix::*;
 use crate::core::geo::intersect::rectangle_point::*;
 use crate::core::geo::segment2::*;
-use crate::core::geo::polygon::Polygon;
 use crate::simulation::game_state::GameState;
 use crate::simulation::state::MoveMode;
 use crate::simulation::ai::pathfinding::*;
+use crate::simulation::barricade::*;
 
 use glium_sdl2::SDL2Facade;
 use sdl2::event::Event;
@@ -316,7 +316,7 @@ impl Control {
                             let cost = ((end - start).length().round() as u32).max(1);
                             if cost <= state.money {
                                 state.money = state.money - cost;
-                                state.barricades.push(new_barricade(start, end));
+                                state.barricades.push(Barricade::new(start, end));
                             }
 
                             println!("{:?}", state.money);
@@ -387,11 +387,6 @@ fn is_click_on_entity(entity_pos: Vector2, m_pos: Vector2) -> bool {
     let y_pos = entity_pos.y;
     return m_pos.x <= x_pos + entity_delta && m_pos.x >= x_pos - entity_delta
         && m_pos.y <= y_pos + entity_delta && m_pos.y >= y_pos - entity_delta;
-}
-
-pub fn new_barricade(start: Vector2, end: Vector2) -> Polygon {
-    let normal = (end - start).right() / ((end - start).length() * 4.0);
-    Polygon(vec![start + normal, start - normal, end - normal, end + normal])
 }
 
 pub enum PoliceOrder {

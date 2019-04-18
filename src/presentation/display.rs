@@ -17,6 +17,7 @@ use crate::simulation::control::*;
 use crate::simulation::game_state::GameState;
 use crate::simulation::state::*;
 use crate::simulation::update::EntityCounts;
+use crate::simulation::barricade::*;
 
 // Enum ordered by draw order
 #[derive(Copy, Clone, Debug, Enum, PartialEq)]
@@ -390,13 +391,14 @@ fn push_building_vertices(buffer: &mut Vec<ColorVertex>, building: &Polygon, col
     }
 }
 
-fn draw_barricades(buffer: &mut Vec<ColorVertex>, barricade: &Polygon, color: [f32; 4]) {
-    push_building_vertices(buffer, barricade, color);
+fn draw_barricades(buffer: &mut Vec<ColorVertex>, barricade: &Barricade, color: [f32; 4]) {
+    let poly = &barricade.poly;
+    push_building_vertices(buffer, poly, color);
 
     // ASSUMPTION: barricade vertices are in the order dictated in control.rs with the new_barricade function
     // Average the short sides to get the middle of the start and end
-    let start = (barricade.get(0) + barricade.get(1)) / 2.0;
-    let end = (barricade.get(2) + barricade.get(3)) / 2.0;
+    let start = (poly.get(0) + poly.get(1)) / 2.0;
+    let end = (poly.get(2) + poly.get(3)) / 2.0;
 
     // Get the length of the barricade and the unit vector along its length
     let length = (end - start).length();
@@ -1163,12 +1165,7 @@ pub fn display(
                                                 Vector2 { x: rec_max_x, y: rec_min_y },
                                                 Vector2 { x: rec_max_x, y: rec_max_y });
                     } else {
-                        let barricade_rect = new_barricade(control.drag_vertex_start, control.drag_vertex_end);
-//                        println!("{:?}", control.drag_vertex_start);
-//                        println!("{:?}", control.drag_vertex_end);
-//                        println!("{:?}", barricade_rect);
-//                        println!("{:?}", (barricade_rect.get(0) - barricade_rect.get(1)).length());
-//                        println!("{:?}", (barricade_rect.get(1) - barricade_rect.get(2)).length());
+                        let barricade_rect = barricade_poly(control.drag_vertex_start, control.drag_vertex_end);
                         component.set_dimension(barricade_rect.get(0),
                                                 barricade_rect.get(1),
                                                 barricade_rect.get(3),
