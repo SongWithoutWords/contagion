@@ -17,9 +17,9 @@ pub struct GameState {
     pub tut_time: usize,
     pub tut_time_curr: usize,
     pub tut_passed: bool,
-    pub tut_01: bool, // spacebar to unpause
-    pub tut_02: bool, // select police
-    pub tut_03: bool, // Right click to issue attack or move
+    pub tut_01: bool, // select police
+    pub tut_02: bool, // Right click to issue attack or move
+    pub tut_03: bool, // pause
     /*TUTORIAL END*/
 
     /*DEBUG TOOL*/

@@ -235,6 +235,9 @@ impl Control {
                 match key {
                     Keycode::Space => {
                         game_state.game_paused = !game_state.game_paused;
+                        if game_state.tutorial && !game_state.tut_02 && game_state.tut_03 {
+                            game_state.tut_passed = true;
+                        }
                     }
                     // Debugging purposes
                     Keycode::F1 => {
