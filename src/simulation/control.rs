@@ -3,9 +3,11 @@ use crate::core::scalar::*;
 use crate::core::matrix::*;
 use crate::core::geo::intersect::rectangle_point::*;
 use crate::core::geo::segment2::*;
+use crate::core::geo::polygon::*;
 use crate::simulation::game_state::GameState;
 use crate::simulation::state::MoveMode;
 use crate::simulation::ai::pathfinding::*;
+use crate::simulation::barricade::*;
 
 use glium_sdl2::SDL2Facade;
 use sdl2::event::Event;
@@ -18,12 +20,14 @@ use super::state::*;
 #[derive(Clone)]
 pub struct Control {
     pub mouse_drag: bool,
+    pub mouse_held: bool,
     pub shift_pressed: bool,
     pub drag_start_mouse_coord: Vector2,
     pub drag_vertex_start: Vector2,
     pub drag_vertex_end: Vector2,
     pub last_click_time: Instant,
-    pub last_right_click_time: Instant
+    pub last_right_click_time: Instant,
+    pub building_mode: bool
 }
 
 impl Control {
@@ -31,12 +35,14 @@ impl Control {
 
         Control {
             mouse_drag: false,
+            mouse_held: false,
             shift_pressed: false,
             drag_start_mouse_coord: Vector2::zero(),
             drag_vertex_start: Vector2::zero(),
             drag_vertex_end: Vector2::zero(),
             last_click_time: Instant::now(),
-            last_right_click_time: Instant::now()
+            last_right_click_time: Instant::now(),
+            building_mode: false
         }
     }
 
@@ -186,7 +192,8 @@ impl Control {
                         *position,
                         m_pos,
                         &simulation.buildings,
-                        &simulation.building_outlines);
+                        &simulation.building_outlines,
+                        &simulation.barricades);
 
                     // If no zombie clicked, issue regular move order, else issue special attack order
                     state_stack.push(match zombie_index {
@@ -256,7 +263,10 @@ impl Control {
                     },
                     Keycode::LShift => {
                         self.shift_pressed = true;
-                    }
+                    },
+                    Keycode::B => {
+                        self.building_mode = !self.building_mode;
+                    },
                     _ => ()
                 }
             }
@@ -271,7 +281,7 @@ impl Control {
             Event::MouseButtonDown { timestamp: _, window_id: _, which: _, mouse_btn, x, y } => {
                 match mouse_btn {
                     MouseButton::Left { .. } => {
-                        self.mouse_drag = true;
+                        self.mouse_held = true;
                         let mouse_pos = Vector2 { x: x as f64, y: y as f64 };
                         self.update_drag_start(mouse_pos, &window);
                         self.update_drag_end(mouse_pos, &window);
@@ -288,48 +298,98 @@ impl Control {
                 y,
                 xrel: _,
                 yrel: _, } => {
-                if self.mouse_drag {
+                if self.mouse_held {
+                    self.mouse_drag = true;
                     let mouse_pos = Vector2 { x: x as f64, y: y as f64 };
                     self.update_drag_end(mouse_pos, &window);
                 }
             }
             Event::MouseButtonUp { timestamp: _, window_id: _, which: _, mouse_btn, x, y } => {
-                self.mouse_drag = false;
                 let mouse_pos = Vector2 { x: x as f64, y: y as f64 };
                 let delta_millisecond = 300;
 
-                match mouse_btn {
-                    MouseButton::Left { .. } => {
-                        // Select one police if delta of drag is too small, else select all police in drag
-                        let delta = 1.0;
+                if self.mouse_drag {
+                    match mouse_btn {
+                        MouseButton::Left { .. } => {
+                            if self.building_mode {
+                                let mut start = self.drag_vertex_start.clone();
+                                translate_camera_to_world(&mut start, camera_frame);
 
-                        if (mouse_pos.x - self.drag_start_mouse_coord.x).abs() <= delta && (mouse_pos.y - self.drag_start_mouse_coord.y).abs() <= delta {
-                            let current_time = Instant::now();
-                            let duration = current_time.duration_since(self.last_click_time);
-                            if duration.as_secs() == 0 && duration.subsec_millis() < delta_millisecond {
-                                self.double_click_select(state, camera_frame, mouse_pos, &window);
+                                let mut end = self.drag_vertex_end.clone();
+                                translate_camera_to_world(&mut end, camera_frame);
+
+                                if barricade_valid(start, end, state) {
+                                    state.money = state.money - barricade_cost(start, end);
+                                    state.barricades.push(Barricade::new(start, end));
+                                }
                             } else {
-                                self.click_select(state, &window, camera_frame, mouse_pos);
+                                // Select one police if delta of drag is too small, else select all police in drag
+                                let delta = 1.0;
+
+                                if (mouse_pos.x - self.drag_start_mouse_coord.x).abs() <= delta && (mouse_pos.y - self.drag_start_mouse_coord.y).abs() <= delta {
+                                    let current_time = Instant::now();
+                                    let duration = current_time.duration_since(self.last_click_time);
+                                    if duration.as_secs() == 0 && duration.subsec_millis() < delta_millisecond {
+                                        self.double_click_select(state, camera_frame, mouse_pos, &window);
+                                    } else {
+                                        self.click_select(state, &window, camera_frame, mouse_pos);
+                                    }
+                                    self.last_click_time = current_time;
+                                } else {
+                                    self.drag_select(state, &window, camera_frame, mouse_pos);
+                                }
                             }
-                            self.last_click_time = current_time;
-                        } else {
-                            self.drag_select(state, &window, camera_frame, mouse_pos);
                         }
+                        _ => ()
                     }
-                    MouseButton::Right { .. } => {
-                        let current_time = Instant::now();
-                        let duration = current_time.duration_since(self.last_right_click_time);
-                        if duration.as_secs() == 0 && duration.subsec_millis() < delta_millisecond {
-                            // double right click to sprint
-                            self.issue_police_order(PoliceOrder::Sprint, state, &window, camera_frame, mouse_pos);
-                        } else {
-                            // single right click for attack or attack move
-                            self.issue_police_order(PoliceOrder::Move, state, &window, camera_frame, mouse_pos);
+
+                    self.mouse_drag = false;
+
+                } else {
+                    match mouse_btn {
+                        MouseButton::Left { .. } => {
+                            let icon_rect = Polygon(vec![
+                                Vector2 { x: 0.91, y: -0.9 },
+                                Vector2 { x: 0.76, y: -0.9 },
+                                Vector2 { x: 0.76, y: -0.75 },
+                                Vector2 { x: 0.91, y: -0.75 }
+                            ]);
+
+                            let mut gui_mouse_pos = mouse_pos;
+                            translate_mouse_to_camera(&mut gui_mouse_pos, window.window().size());
+
+                            if icon_rect.contains_point(gui_mouse_pos) {
+                                self.building_mode = !self.building_mode;
+                            } else {
+                                let current_time = Instant::now();
+                                let duration = current_time.duration_since(self.last_click_time);
+                                if duration.as_secs() == 0 && duration.subsec_millis() < delta_millisecond {
+                                    self.double_click_select(state, camera_frame, mouse_pos, &window);
+                                } else {
+                                    self.click_select(state, &window, camera_frame, mouse_pos);
+                                }
+                                self.last_click_time = current_time;
+                            }
                         }
-                        self.last_right_click_time = current_time;
+                        MouseButton::Right { .. } => {
+                            if !self.building_mode {
+                                let current_time = Instant::now();
+                                let duration = current_time.duration_since(self.last_right_click_time);
+                                if duration.as_secs() == 0 && duration.subsec_millis() < delta_millisecond {
+                                    // double right click to sprint
+                                    self.issue_police_order(PoliceOrder::Sprint, state, &window, camera_frame, mouse_pos);
+                                } else {
+                                    // single right click for attack or attack move
+                                    self.issue_police_order(PoliceOrder::Move, state, &window, camera_frame, mouse_pos);
+                                }
+                                self.last_right_click_time = current_time;
+                            }
+                        }
+                        _ => ()
                     }
-                    _ => ()
                 }
+
+                self.mouse_held = false;
             }
             _ => ()
         }
