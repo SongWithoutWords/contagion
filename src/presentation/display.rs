@@ -1165,11 +1165,25 @@ pub fn display(
                                                 Vector2 { x: rec_max_x, y: rec_min_y },
                                                 Vector2 { x: rec_max_x, y: rec_max_y });
                     } else {
-                        let barricade_rect = barricade_poly(control.drag_vertex_start, control.drag_vertex_end);
-                        component.set_dimension(barricade_rect.get(0),
-                                                barricade_rect.get(1),
-                                                barricade_rect.get(3),
-                                                barricade_rect.get(2));
+                        let frame = Mat4::from_f32_array(camera_frame);
+
+                        let mut start = control.drag_vertex_start.clone();
+                        translate_camera_to_world(&mut start, frame);
+                        let mut end = control.drag_vertex_end.clone();
+                        translate_camera_to_world(&mut end, frame);
+
+                        let barricade_rect = barricade_poly(start, end);
+
+                        let mut rec_tl = barricade_rect.get(0);
+                        translate_world_to_camera(&mut rec_tl, frame);
+                        let mut rec_tr = barricade_rect.get(1);
+                        translate_world_to_camera(&mut rec_tr, frame);
+                        let mut rec_br = barricade_rect.get(2);
+                        translate_world_to_camera(&mut rec_br, frame);
+                        let mut rec_bl = barricade_rect.get(3);
+                        translate_world_to_camera(&mut rec_bl, frame);
+
+                        component.set_dimension(rec_tl, rec_tr, rec_bl, rec_br);
                     }
 
                     push_gui_vertices(&mut vertex_buffers_gui[SpriteType::SelectionHighlight], component);
