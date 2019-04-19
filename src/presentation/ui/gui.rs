@@ -523,9 +523,6 @@ impl Component {
                             if check_within_bound {
                                 let display_text = text;
                                 if display_text == "Retry" {
-                                    println!("{:?}", game_state.easy);
-                                    println!("{:?}", game_state.medium);
-                                    println!("{:?}", game_state.hard);
                                     if game_state.easy == true {
                                         game_state.easy_game = true;
                                     } else if game_state.medium == true {
@@ -585,9 +582,6 @@ impl Component {
                             if check_within_bound {
                                 let display_text = text;
                                 if display_text == "Retry" {
-                                    println!("{:?}", game_state.easy);
-                                    println!("{:?}", game_state.medium);
-                                    println!("{:?}", game_state.hard);
                                     if game_state.easy == true {
                                         game_state.easy_game = true;
                                     } else if game_state.medium == true {
