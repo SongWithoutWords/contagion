@@ -133,6 +133,7 @@ pub struct Programs {
     shadow_program: glium::Program,
     gui_program: glium::Program,
     shape_program: glium::Program,
+    infection_program: glium::Program,
 }
 
 pub fn load_programs(window: &glium_sdl2::SDL2Facade) -> Programs {
@@ -157,6 +158,10 @@ pub fn load_programs(window: &glium_sdl2::SDL2Facade) -> Programs {
             window,
             include_str!("graphics/shape.vs.glsl"),
             include_str!("graphics/shape.fs.glsl"), None).unwrap(),
+        infection_program: glium::Program::from_source(
+            window,
+            include_str!("graphics/infection.vs.glsl"),
+            include_str!("graphics/infection.fs.glsl"), None).unwrap(),
     }
 }
 
@@ -1507,7 +1512,7 @@ pub fn display(
                 frame,
                 window,
                 &vertex_buffer,
-                &programs.gui_program,
+                &programs.infection_program,
                 params,
                 &uniforms);
         }
