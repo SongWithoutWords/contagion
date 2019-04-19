@@ -35,13 +35,9 @@ pub enum GuiType {
     ZombieUI,
     CopUI,
     CivilianUI,
-    MoneyUI,
     ZombieHighlight,
     CopHighlight,
     CivilianHighlight,
-    MoneyHighlight,
-    BuildingModeIcon,
-    SelectingModeIcon,
 }
 
 #[derive(Clone, PartialEq, Debug)]
@@ -50,7 +46,6 @@ pub enum ActiveWindow {
     Menu,
     Instruction,
     MainMenu,
-    Difficulty,
 }
 
 pub static mut CURRENT: ActiveWindow = ActiveWindow::Game;
@@ -71,10 +66,6 @@ impl Component {
         let cop_highlight = Gui::new(GuiType::CopHighlight, 0.15, 0.197, Vector2 { x: 0.61, y: 0.895 });
         let civilian_ui = Gui::new(GuiType::CivilianUI, 0.1, 0.1, Vector2 { x: 0.76, y: 0.92 });
         let civilian_highlight = Gui::new(GuiType::CivilianHighlight, 0.15, 0.197, Vector2 { x: 0.76, y: 0.895 });
-        let money_highlight = Gui::new(GuiType::MoneyHighlight, 0.15, 0.197, Vector2 { x: 0.46, y: 0.895 });
-        let money_icon = Gui::new(GuiType::MoneyUI, 0.08, 0.08, Vector2 { x: 0.46, y: 0.92 });
-        let building_icon = Gui::new(GuiType::BuildingModeIcon, 0.15, 0.15, Vector2 { x: 0.91, y: -0.9 });
-        let selecting_icon = Gui::new(GuiType::SelectingModeIcon, 0.15, 0.15, Vector2 { x: 0.91, y: -0.9 });
         let drag_ui = Gui::new(GuiType::SelectionDrag, 0.0, 0.0, Vector2 { x: 0.0, y: 0.0 });
         let box_ui = Gui::new(GuiType::Window, 1.8, 1.8, Vector2 { x: 0.0, y: 0.0 });
         let button1 = GuiType::Button { text: "Exit".to_string(), highlight: false };
@@ -85,7 +76,6 @@ impl Component {
         let button_ui_2 = Gui::new(button2, 0.2, 0.09, Vector2 { x: 0.0, y: -0.075 });
         let button_ui_3 = Gui::new(button3, 0.37, 0.09, Vector2 { x: 0.0, y: 0.075 });
         let button_ui_4 = Gui::new(button4, 0.4, 0.09, Vector2 { x: 0.0, y: 0.225 });
-
         let menu_ui = Gui::new(GuiType::Menu {
             _window_gui: Box::new(box_ui),
             _buttons_gui: vec![Box::new(button_ui_4),
@@ -98,9 +88,8 @@ impl Component {
                                0.1, 0.125,
                                Vector2 { x: -0.9, y: 0.9 });
 
-
         Component {
-            components: vec![selected_ui, drag_ui, menu_ui, cop_highlight, civilian_highlight, zombie_highlight, money_highlight, cop_ui, civilian_ui, zombie_ui, money_icon, building_icon, selecting_icon],
+            components: vec![selected_ui, drag_ui, menu_ui, cop_highlight, civilian_highlight, zombie_highlight, cop_ui, civilian_ui, zombie_ui, ],
             active_window: ActiveWindow::Game,
         }
     }
@@ -171,20 +160,6 @@ impl Component {
         }
     }
 
-    // initializer for game difficulty scene's GUI
-    pub fn init_difficulty_gui() -> Component {
-        let button_easy = GuiType::Button { text: "Easy".to_string(), highlight: false };
-        let button_medium = GuiType::Button { text: "Medium".to_string(), highlight: false };
-        let button_hard = GuiType::Button { text: "Hard".to_string(), highlight: false };
-        let button_easy_ui = Gui::new(button_easy, 0.2, 0.09, Vector2 { x: -0.5, y: -0.5 });
-        let button_medium_ui = Gui::new(button_medium, 0.4, 0.09, Vector2 { x: 0.0, y: -0.5 });
-        let button_hard_ui = Gui::new(button_hard, 0.15, 0.09, Vector2 { x: 0.5, y: -0.5 });
-        Component {
-            components: vec![button_easy_ui, button_medium_ui, button_hard_ui],
-            active_window: ActiveWindow::Difficulty,
-        }
-    }
-
     // main game's GUI event handler
     pub fn handle_event(&mut self, event: Event, window: &mut SDL2Facade, camera_frame: Mat4, state: &mut State, game_state: &mut GameState, control: &mut Control) {
         // handle events for any menu laid on top of game
@@ -233,15 +208,7 @@ impl Component {
                                         } else if display_text == "Main Menu" {
                                             game_state.transition_menu = true;
                                         } else if display_text == "Retry" {
-                                            if game_state.easy == true {
-                                                game_state.easy_game = true;
-                                            } else if game_state.medium == true {
-                                                game_state.medium_game = true;
-                                            } else if game_state.hard == true {
-                                                game_state.hard_game = true;
-                                            } else {
-                                                game_state.transition_game = true;
-                                            }
+                                            game_state.transition_game = true;
                                         } else if display_text == "Exit" {
                                             game_state.terminate = true;
                                         }
@@ -352,7 +319,7 @@ impl Component {
                                 if check_within_bound {
                                     let display_text = text;
                                     if display_text == "Start" {
-                                        game_state.difficulty = true;
+                                        game_state.transition_game = true;
                                     } else if display_text == "Exit" {
                                         game_state.terminate = true;
                                     } else if display_text == "Tutorial" {
@@ -531,21 +498,12 @@ impl Component {
                             if check_within_bound {
                                 let display_text = text;
                                 if display_text == "Retry" {
-                                    if game_state.easy == true {
-                                        game_state.easy_game = true;
-                                    } else if game_state.medium == true {
-                                        game_state.medium_game = true;
-                                    } else if game_state.hard == true {
-                                        game_state.hard_game = true;
-                                    }
+                                    game_state.transition_game = true;
                                 } else if display_text == "Main Menu" {
                                     game_state.transition_menu = true;
                                 } else if display_text == "Exit" {
                                     game_state.terminate = true;
-                                } else {
-                                    game_state.transition_game = true;
                                 }
-
                             }
                         }
                         Event::MouseMotion { timestamp: _, window_id: _, which: _, x, y, .. } => {
@@ -590,19 +548,11 @@ impl Component {
                             if check_within_bound {
                                 let display_text = text;
                                 if display_text == "Retry" {
-                                    if game_state.easy == true {
-                                        game_state.easy_game = true;
-                                    } else if game_state.medium == true {
-                                        game_state.medium_game = true;
-                                    } else if game_state.hard == true {
-                                        game_state.hard_game = true;
-                                    }
+                                    game_state.transition_game = true;
                                 } else if display_text == "Main Menu" {
                                     game_state.transition_menu = true;
                                 } else if display_text == "Exit" {
                                     game_state.terminate = true;
-                                } else {
-                                    game_state.transition_game = true;
                                 }
                             }
                         }
@@ -616,56 +566,6 @@ impl Component {
                             if check_within_bound {
                                 let display_text = text;
                                 if display_text == "Retry" || display_text == "Main Menu" || display_text == "Exit" {
-                                    *highlight = true;
-                                }
-                            } else {
-                                *highlight = false;
-                            }
-                        }
-                        __ => ()
-                    }
-                }
-                _ => ()
-            }
-        }
-    }
-
-    // difficulty scene's GUI event handler
-    pub fn handle_difficulty_event(&mut self, event: &Event, window: &mut SDL2Facade, game_state: &mut GameState) {
-        // handle events for any menu laid on top of game
-        for i in 0..self.components.len() {
-            let component = &mut self.components[i];
-            match &mut component.id {
-                GuiType::Button { text, ref mut highlight } => {
-                    match event {
-                        Event::MouseButtonDown { timestamp: _, window_id: _, which: _, mouse_btn: _, x, y } => {
-                            let mouse_pos = &mut Vector2 { x: *x as f64, y: *y as f64 };
-                            translate_mouse_to_camera(mouse_pos, window.window().size());
-
-                            let top_left = Vector2 { x: component.top_left.x, y: component.top_left.y };
-                            let bot_right = Vector2 { x: component.bot_right.x, y: component.bot_right.y };
-                            let check_within_bound = check_bounding_box(top_left, bot_right, *mouse_pos);
-                            if check_within_bound {
-                                let display_text = text;
-                                if display_text == "Easy" {
-                                    game_state.easy_game = true;
-                                } else if display_text == "Medium" {
-                                    game_state.medium_game = true;
-                                } else if display_text == "Hard" {
-                                    game_state.hard_game = true;
-                                }
-                            }
-                        }
-                        Event::MouseMotion { timestamp: _, window_id: _, which: _, x, y, .. } => {
-                            let mouse_pos = &mut Vector2 { x: *x as f64, y: *y as f64 };
-                            translate_mouse_to_camera(mouse_pos, window.window().size());
-
-                            let top_left = Vector2 { x: component.top_left.x, y: component.top_left.y };
-                            let bot_right = Vector2 { x: component.bot_right.x, y: component.bot_right.y };
-                            let check_within_bound = check_bounding_box(top_left, bot_right, *mouse_pos);
-                            if check_within_bound {
-                                let display_text = text;
-                                if display_text == "Easy" || display_text == "Medium" || display_text == "Hard" {
                                     *highlight = true;
                                 }
                             } else {

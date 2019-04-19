@@ -9,13 +9,13 @@ use crate::core::vector::*;
 
 use super::state::*;
 
-pub fn initial_state(entity_count: u32, cop_entities: f64, infected_entities: f64, random_seed: u32) -> State {
-    let portion_of_entities_cop = cop_entities as Scalar;
-    let portion_of_entities_infected = infected_entities as Scalar;
-    let entity_count_fp = entity_count as Scalar;
+const PORTION_OF_ENTITIES_COP: Scalar = 0.05;
+const PORTION_OF_ENTITIES_INFECTED: Scalar = 0.2;
 
-    let cop_count: u32 = ((entity_count_fp * portion_of_entities_cop) as u32).max(1);
-    let infected_count: u32 = ((entity_count_fp * portion_of_entities_infected) as u32).max(1);
+pub fn initial_state(entity_count: u32, random_seed: u32) -> State {
+    let entity_count_fp = entity_count as Scalar;
+    let cop_count: u32 = ((entity_count_fp * PORTION_OF_ENTITIES_COP) as u32).max(1);
+    let infected_count: u32 = ((entity_count_fp * PORTION_OF_ENTITIES_INFECTED) as u32).max(1);
     let civilian_count: u32 = entity_count - (cop_count + infected_count);
 
     println!("Spawning {} entities: {} cops, {} infected, and {} civilians",
@@ -25,11 +25,9 @@ pub fn initial_state(entity_count: u32, cop_entities: f64, infected_entities: f6
         entities: vec!(),
         buildings: vec!(),
         building_outlines: vec!(),
-        barricades: vec!(),
         selection: HashSet::new(),
         projectiles: vec!(),
         rng: XorShiftRng::seed_from_u64(random_seed as u64),
-        money: 20
     };
 
     let entities = &mut state.entities;
@@ -60,12 +58,7 @@ pub fn initial_state(entity_count: u32, cop_entities: f64, infected_entities: f6
             Human::Cop { cop_type, rounds_in_magazine: cop_type.magazine_capacity(), state_stack: vec!() }
         }
         else {
-            Human::Civilian {
-                state: HumanState::Running,
-                punch_time_cooldown: PUNCH_TIME_COOLDOWN,
-                left_hand_status: HandStatus::Normal,
-                right_hand_status: HandStatus::Normal
-            }
+            Human::Civilian
         };
 
         let dead_or_alive = DeadOrAlive::Alive {

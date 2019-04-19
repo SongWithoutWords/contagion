@@ -17,7 +17,6 @@ use crate::simulation::control::*;
 use crate::simulation::game_state::GameState;
 use crate::simulation::state::*;
 use crate::simulation::update::EntityCounts;
-use crate::simulation::barricade::*;
 
 // Enum ordered by draw order
 #[derive(Copy, Clone, Debug, Enum, PartialEq)]
@@ -39,20 +38,15 @@ pub enum SpriteType {
     CopWorldIcon,
     CivilianWorldIcon,
     BuildingOne,
+    ZombieFist,
     ZombieTorso,
     ZombieClawRight,
     ZombieClawLeft,
     ZombieIconHighlight,
     CopIconHighlight,
     CivilianIconHighlight,
-    CivilianHandLeft,
-    CivilianHandRight,
-    CivilianTorso,
-    MoneyHighlight,
-    MoneyWorldIcon,
-    BuildingModeIcon,
-    SelectingModeIcon
     InfectionSymbol,
+}
 
 // pub type Textures = EnumMap<SpriteType, Texture2d>;
 pub struct Textures {
@@ -105,6 +99,8 @@ pub fn load_textures(window: &glium_sdl2::SDL2Facade) -> Textures {
                 => load_texture(window, "assets/images/ui/civilian_world_icon_new.png"),
             SpriteType::BuildingOne
                 => load_texture(window, "assets/images/building/building_one.png"),
+            SpriteType::ZombieFist
+                => load_texture(window, "assets/images/zombie/zombie_claw_right.png"),
             SpriteType::ZombieTorso
                 => load_texture(window, "assets/images/zombie/zombie_torso.png"),
             SpriteType::ZombieClawRight
@@ -117,20 +113,6 @@ pub fn load_textures(window: &glium_sdl2::SDL2Facade) -> Textures {
                 => load_texture(window, "assets/images/ui/cop_highlight.png"),
             SpriteType::CivilianIconHighlight
                 => load_texture(window, "assets/images/ui/civilian_highlight.png"),
-            SpriteType::CivilianHandLeft
-                => load_texture(window, "assets/images/civilian/civilian_hand_left.png"),
-            SpriteType::CivilianHandRight
-                => load_texture(window, "assets/images/civilian/civilian_hand_right.png"),
-            SpriteType::CivilianTorso
-                => load_texture(window, "assets/images/civilian/civilian_torso.png"),
-            SpriteType::MoneyWorldIcon
-                => load_texture(window, "assets/images/ui/money.png"),
-            SpriteType::MoneyHighlight
-                => load_texture(window, "assets/images/ui/money_highlight.png"),
-            SpriteType::BuildingModeIcon
-                => load_texture(window, "assets/images/ui/building_icon.png"),
-            SpriteType::SelectingModeIcon
-                => load_texture(window, "assets/images/ui/mouse_select.png"),
             SpriteType::InfectionSymbol
                 => load_texture(window, "assets/images/ui/biohazard_symbol.png"),
 
@@ -296,54 +278,12 @@ fn push_gui_vertices(buffer: &mut Vec<ColorVertex>, ui: &Gui) {
     buffer.push(vertex2);
 }
 
-fn push_selection_gui_vertices(buffer: &mut Vec<ColorVertex>, ui: &Gui, valid: bool) {
-    let top_left = ui.top_left;
-    let top_right = ui.top_right;
-    let bot_left = ui.bot_left;
-    let bot_right = ui.bot_right;
-    let color;
-
-    if valid {
-        color = [0.105, 0.214, 0.124, 0.3];
-    } else {
-        color = [0.569, 0.129, 0.129, 0.3];
-    }
-
-    let vertex0 = ColorVertex {
-        position: top_left.as_f32_array(),
-        tex_coords: [0.0, 1.0],
-        color,
-    };
-    let vertex1 = ColorVertex {
-        position: top_right.as_f32_array(),
-        tex_coords: [1.0, 1.0],
-        color,
-    };
-    let vertex2 = ColorVertex {
-        position: bot_left.as_f32_array(),
-        tex_coords: [0.0, 0.0],
-        color,
-    };
-    let vertex3 = ColorVertex {
-        position: bot_right.as_f32_array(),
-        tex_coords: [1.0, 0.0],
-        color,
-    };
-    buffer.push(vertex0);
-    buffer.push(vertex1);
-    buffer.push(vertex2);
-    buffer.push(vertex1);
-    buffer.push(vertex3);
-    buffer.push(vertex2);
-}
-
-// right if hand is true, left if hand is false, type_hand = 0 for zombie, 1 for civilian
-fn push_hand_vertices(buffer: &mut Vec<Vertex>, sprite: &Sprite, hand: bool, type_hand: u32) {
+// right if hand is true, left if hand is false
+fn push_hand_vertices(buffer: &mut Vec<Vertex>, sprite: &Sprite, hand: bool) {
     let position = sprite.position;
     let up = sprite.radius * sprite.facing;
     let right = up.right(); //vector2(up.y, -up.x);
 
-    // default to type hand for zombie and hand is left
     let mut top_left = position - right + up;
     let mut top_right = position + up;
     let mut bot_left = position - right;
@@ -354,27 +294,6 @@ fn push_hand_vertices(buffer: &mut Vec<Vertex>, sprite: &Sprite, hand: bool, typ
         top_right = position + right + up;
         bot_left = position;
         bot_right = position + right;
-    }
-
-    if type_hand == 1 {
-        let scaled_up = sprite.radius * sprite.facing * 0.5;
-        let scaled_right = up.right() * 0.1;
-        top_left -= scaled_up;
-        top_right -= scaled_up;
-        bot_left -= scaled_up;
-        bot_right -= scaled_up;
-
-        if hand {
-            top_left -= scaled_right;
-            bot_left -= scaled_right;
-            top_right -= scaled_right;
-            bot_right -= scaled_right;
-        } else {
-            top_left += scaled_right;
-            bot_left += scaled_right;
-            top_right += scaled_right;
-            bot_right += scaled_right;
-        }
     }
 
     // 0      1
@@ -512,53 +431,6 @@ fn push_building_vertices(buffer: &mut Vec<ColorVertex>, building: &Polygon, col
             })
         }
     }
-}
-
-fn draw_barricades(buffer: &mut Vec<ColorVertex>, barricade: &Barricade, color: [f32; 4]) {
-    let poly = &barricade.poly;
-    push_building_vertices(buffer, poly, color);
-
-    // ASSUMPTION: barricade vertices are in the order dictated in control.rs with the new_barricade function
-    // Average the short sides to get the middle of the start and end
-    let start = (poly.get(0) + poly.get(1)) / 2.0;
-    let end = (poly.get(2) + poly.get(3)) / 2.0;
-
-    // Get the length of the barricade and the unit vector along its length
-    let length = (end - start).length();
-    let normal = (end - start).right() / (length * 2.0);
-    let unit = (end - start) / length;
-    let width = unit / 3.0;
-
-    // TODO: move this number somewhere else
-    let segments = (length / 3.0).round();
-    let segment_length = length / segments;
-
-    for i in 0..(segments as usize) {
-        let center = start + (unit * segment_length * (i as f64));
-        let oct = Polygon(vec![
-            center + normal - (width * 0.5),
-            center + normal + (width * 0.5),
-            center + (normal * 0.5) + width,
-            center - (normal * 0.5) + width,
-            center - normal + (width * 0.5),
-            center - normal - (width * 0.5),
-            center - (normal * 0.5) - width,
-            center + (normal * 0.5) - width
-        ]);
-        push_building_vertices(buffer, &oct, color);
-    }
-
-    let oct = Polygon(vec![
-        end + normal - (width * 0.5),
-        end + normal + (width * 0.5),
-        end + (normal * 0.5) + width,
-        end - (normal * 0.5) + width,
-        end - normal + (width * 0.5),
-        end - normal - (width * 0.5),
-        end - (normal * 0.5) - width,
-        end + (normal * 0.5) - width
-    ]);
-    push_building_vertices(buffer, &oct, color);
 }
 
 fn push_path_vertices(buffer: &mut Vec<ColorVertex>, point1: Vector2, point2: Vector2, color: [f32; 4]) {
@@ -1136,7 +1008,6 @@ pub fn display(
     let mut vertex_buffers_green_hp = vec!();
     let mut vertex_buffers_gui = enum_map! {_ => vec!()};
     let mut vertex_buffers_building = vec!();
-    let mut vertex_buffers_barricade = vec!();
     let mut vertex_buffers_path = vec!();
     let mut text_buffers = vec!();
 
@@ -1147,17 +1018,7 @@ pub fn display(
         let sprite_type = match p.kind {
             ProjectileKind::Bullet => SpriteType::BulletInAir,
             ProjectileKind::Casing => SpriteType::BulletCasing,
-            ProjectileKind::Fist { owner_index } => {
-                match &state.entities[owner_index].dead_or_alive {
-                    DeadOrAlive::Alive { zombie_or_human, .. } => match zombie_or_human {
-                        ZombieOrHuman::Zombie { .. } => {
-                            SpriteType::ZombieClawRight
-                        }
-                        _ => SpriteType::CivilianHandRight
-                    }
-                    _ => SpriteType::ZombieClawRight
-                }
-            }
+            ProjectileKind::Fist { .. } => SpriteType::ZombieFist
         };
         let mut rad = BULLET_RADIUS;
         match p.kind {
@@ -1181,24 +1042,19 @@ pub fn display(
             facing: entity.get_facing_normal(),
             radius: 0.5,
         };
-        let hand_sprite = Sprite {
-            position: entity.position,
-            facing: entity.get_facing_normal(),
-            radius: 0.7,
-        };
         let sprite_type = match &entity.dead_or_alive {
             DeadOrAlive::Dead => SpriteType::Dead,
             DeadOrAlive::Alive { zombie_or_human, .. } => match zombie_or_human {
                 ZombieOrHuman::Zombie { state: _, left_hand_status, right_hand_status } => {
                     match left_hand_status {
                         HandStatus::Normal => {
-                            push_hand_vertices(&mut vertex_buffers[SpriteType::ZombieClawLeft], &sprite, false, 0);
+                            push_hand_vertices(&mut vertex_buffers[SpriteType::ZombieClawLeft], &sprite, false);
                         }
                         _ => ()
                     }
                     match right_hand_status {
                         HandStatus::Normal => {
-                            push_hand_vertices(&mut vertex_buffers[SpriteType::ZombieClawRight], &sprite, true, 0);
+                            push_hand_vertices(&mut vertex_buffers[SpriteType::ZombieClawRight], &sprite, true);
                         }
                         _ => ()
                     }
@@ -1209,21 +1065,7 @@ pub fn display(
                         CopType::Normal => SpriteType::Cop,
                         CopType::Soldier => SpriteType::Soldier,
                     },
-                    Human::Civilian { state: _, punch_time_cooldown: _, left_hand_status, right_hand_status } =>  {
-                        match left_hand_status {
-                            HandStatus::Normal => {
-                                push_hand_vertices(&mut vertex_buffers[SpriteType::CivilianHandLeft], &hand_sprite, false, 1);
-                            }
-                            _ => ()
-                        }
-                        match right_hand_status {
-                            HandStatus::Normal => {
-                                push_hand_vertices(&mut vertex_buffers[SpriteType::CivilianHandRight], &hand_sprite, true, 1);
-                            }
-                            _ => ()
-                        }
-                        SpriteType::CivilianTorso
-                    }
+                    Human::Civilian { .. } => SpriteType::Civilian
                 }
             }
         };
@@ -1296,9 +1138,6 @@ pub fn display(
             GuiType::CivilianHighlight => {
                 push_gui_vertices(&mut vertex_buffers_gui[SpriteType::CivilianIconHighlight], component);
             }
-            GuiType::MoneyHighlight => {
-                push_gui_vertices(&mut vertex_buffers_gui[SpriteType::MoneyHighlight], component);
-            }
             GuiType::ZombieUI => {
                 push_gui_vertices(&mut vertex_buffers_gui[SpriteType::ZombieWorldIcon], component);
             }
@@ -1307,16 +1146,6 @@ pub fn display(
             }
             GuiType::CopUI => {
                 push_gui_vertices(&mut vertex_buffers_gui[SpriteType::CopWorldIcon], component);
-            }
-            GuiType::MoneyUI => {
-                push_gui_vertices(&mut vertex_buffers_gui[SpriteType::MoneyWorldIcon], component);
-            }
-            GuiType::SelectingModeIcon => {
-                if control.building_mode {
-                    push_gui_vertices(&mut vertex_buffers_gui[SpriteType::BuildingModeIcon], component);
-                } else {
-                    push_gui_vertices(&mut vertex_buffers_gui[SpriteType::SelectingModeIcon], component);
-                }
             }
             GuiType::Selected => {
                 if selection_count < 1 {} else {
@@ -1329,43 +1158,15 @@ pub fn display(
             }
             GuiType::SelectionDrag => {
                 if control.mouse_drag {
-                    if !control.building_mode {
-                        let rec_min_x = control.drag_vertex_start.x.min(control.drag_vertex_end.x);
-                        let rec_min_y = control.drag_vertex_start.y.min(control.drag_vertex_end.y);
-                        let rec_max_x = control.drag_vertex_start.x.max(control.drag_vertex_end.x);
-                        let rec_max_y = control.drag_vertex_start.y.max(control.drag_vertex_end.y);
-
-                        component.set_dimension(Vector2 { x: rec_min_x, y: rec_min_y },
-                                                Vector2 { x: rec_min_x, y: rec_max_y },
-                                                Vector2 { x: rec_max_x, y: rec_min_y },
-                                                Vector2 { x: rec_max_x, y: rec_max_y });
-
-                        push_gui_vertices(&mut vertex_buffers_gui[SpriteType::SelectionHighlight], component);
-                    } else {
-                        let frame = Mat4::from_f32_array(camera_frame);
-
-                        let mut start = control.drag_vertex_start.clone();
-                        translate_camera_to_world(&mut start, frame);
-                        let mut end = control.drag_vertex_end.clone();
-                        translate_camera_to_world(&mut end, frame);
-
-                        let barricade_rect = barricade_poly(start, end);
-
-                        let mut rec_tl = barricade_rect.get(0);
-                        translate_world_to_camera(&mut rec_tl, frame);
-                        let mut rec_tr = barricade_rect.get(1);
-                        translate_world_to_camera(&mut rec_tr, frame);
-                        let mut rec_br = barricade_rect.get(2);
-                        translate_world_to_camera(&mut rec_br, frame);
-                        let mut rec_bl = barricade_rect.get(3);
-                        translate_world_to_camera(&mut rec_bl, frame);
-
-                        component.set_dimension(rec_tl, rec_tr, rec_bl, rec_br);
-
-                        push_selection_gui_vertices(&mut vertex_buffers_gui[SpriteType::SelectionHighlight],
-                                                    component,
-                                                    barricade_valid(start, end, state));
-                    }
+                    let rec_min_x = control.drag_vertex_start.x.min(control.drag_vertex_end.x);
+                    let rec_min_y = control.drag_vertex_start.y.min(control.drag_vertex_end.y);
+                    let rec_max_x = control.drag_vertex_start.x.max(control.drag_vertex_end.x);
+                    let rec_max_y = control.drag_vertex_start.y.max(control.drag_vertex_end.y);
+                    component.set_dimension(Vector2 { x: rec_min_x, y: rec_min_y },
+                                            Vector2 { x: rec_min_x, y: rec_max_y },
+                                            Vector2 { x: rec_max_x, y: rec_min_y },
+                                            Vector2 { x: rec_max_x, y: rec_max_y });
+                    push_gui_vertices(&mut vertex_buffers_gui[SpriteType::SelectionHighlight], component);
                 }
             }
             GuiType::Score => (),
@@ -1398,11 +1199,6 @@ pub fn display(
     for building in &state.buildings {
         let color = [0.1, 0.1, 0.1, 1.0];
         push_building_vertices(&mut vertex_buffers_building, building, color);
-    }
-
-    for barricade in &state.barricades {
-        let color = [0.1, 0.1, 0.1, 1.0];
-        draw_barricades(&mut vertex_buffers_barricade, barricade, color);
     }
 
     // Compute vertices for cop paths
@@ -1475,20 +1271,6 @@ pub fn display(
     draw_top_fence(frame, window, textures, programs, camera_frame, params);
     draw_lower_fence(frame, window, textures, programs, camera_frame, params);
 
-    // Render barricades
-    {
-        let uniforms = uniform! {
-            matrix: camera_frame
-        };
-        draw_color_sprites(
-            frame,
-            window,
-            &vertex_buffers_barricade,
-            &programs.shape_program,
-            params,
-            &uniforms,
-        )
-    }
 
     // Render shadows
     use crate::presentation::display::SpriteType::*;
@@ -1649,8 +1431,6 @@ pub fn display(
                 &programs.sprite_program,
                 params,
                 &uniforms);
-        }
-        else if _gui_type == SpriteType::MoneyHighlight {
         } else if _gui_type == SpriteType::ZombieIconHighlight {
             let uniforms = uniform! {
                     matrix: mat_gui,
@@ -1663,44 +1443,7 @@ pub fn display(
                 &programs.sprite_program,
                 params,
                 &uniforms);
-        } else if _gui_type == SpriteType::ZombieIconHighlight {
         } else if _gui_type == SpriteType::CivilianIconHighlight {
-            let uniforms = uniform! {
-                    matrix: mat_gui,
-                    tex: &textures.sprite_textures[_gui_type],
-                };
-            draw_color_sprites(
-                frame,
-                window,
-                &vertex_buffer,
-                &programs.sprite_program,
-                params,
-                &uniforms);
-        } else if _gui_type == SpriteType::CivilianIconHighlight {
-            let uniforms = uniform! {
-                    matrix: mat_gui,
-                    tex: &textures.sprite_textures[_gui_type],
-                };
-            draw_color_sprites(
-                frame,
-                window,
-                &vertex_buffer,
-                &programs.sprite_program,
-                params,
-                &uniforms);
-        }  else if _gui_type == SpriteType::BuildingModeIcon {
-            let uniforms = uniform! {
-                    matrix: mat_gui,
-                    tex: &textures.sprite_textures[_gui_type],
-                };
-            draw_color_sprites(
-                frame,
-                window,
-                &vertex_buffer,
-                &programs.sprite_program,
-                params,
-                &uniforms);
-        }  else if _gui_type == SpriteType::SelectingModeIcon {
             let uniforms = uniform! {
                     matrix: mat_gui,
                     tex: &textures.sprite_textures[_gui_type],
@@ -1760,13 +1503,6 @@ pub fn display(
                 &programs.sprite_program,
                 params,
                 &uniforms);
-        } else if _gui_type == SpriteType::MoneyWorldIcon {
-            let uniforms = uniform! {
-                matrix: mat_gui,
-                tex: &textures.sprite_textures[_gui_type],
-            };
-
-            draw_money_num(window, state.money as usize, frame, &font.lowres());
         } else if _gui_type == SpriteType::InfectionSymbol {
 
             // Render infection symbol
@@ -1778,7 +1514,6 @@ pub fn display(
                 frame,
                 window,
                 &vertex_buffer,
-                &programs.sprite_program,
                 &programs.infection_program,
                 params,
                 &uniforms);
@@ -2077,27 +1812,6 @@ fn draw_remaining_cop_num(window: &glium_sdl2::SDL2Facade, cop_num: usize, frame
         [0.0, 1.0 * (w as f32) / (h as f32) / font_scale_down, 0.0, 0.0],
         [0.0, 0.0, 1.0, 0.0],
         [0.5755, 0.83, 0.0, 1.0f32],
-    ];
-
-    glium_text::draw(&text, &system, frame, matrix, color);
-}
-
-fn draw_money_num(window: &glium_sdl2::SDL2Facade, money: usize, frame: &mut glium::Frame, font: &FontTexture) {
-    let system = glium_text::TextSystem::new(window);
-    let money_str: String = money.to_string();
-    let money_num_display = format!("${}", money_str);
-
-    let str_slice: &str = &money_num_display[..];
-    let text = glium_text::TextDisplay::new(&system, font, str_slice);
-    let color = [0.0, 0.0, 0.0, 1.0f32];
-    let font_scale_down = 40.0;
-    let (w, h) = frame.get_dimensions();
-
-    let matrix = [
-        [1.0 / font_scale_down, 0.0, 0.0, 0.0],
-        [0.0, 1.0 * (w as f32) / (h as f32) / font_scale_down, 0.0, 0.0],
-        [0.0, 0.0, 1.0, 0.0],
-        [0.4255, 0.83, 0.0, 1.0f32],
     ];
 
     glium_text::draw(&text, &system, frame, matrix, color);
@@ -2508,107 +2222,3 @@ pub fn display_victory_screen(
     matrix = matrix.translation(translate_offset);
     glium_text::draw(&text, &system, frame, matrix.as_f32_array(), color);
 }
-
-pub fn display_difficulty_screen(
-    frame: &mut glium::Frame,
-    window: &glium_sdl2::SDL2Facade,
-    programs: &Programs,
-    _textures: &Textures,
-    params: &glium::DrawParameters,
-    camera_frame: [[f32; 4]; 4],
-    ui: &mut Component,
-    // state: &State,
-    fonts: &FontPkg,
-) {
-    let font = fonts.get("Consola").unwrap();
-    // background color
-    //   frame.clear_color(0.0, 0.0, 0.0, 1.0);
-
-    // initialize identity matrix
-    let mat = Mat4::init_id_matrix();
-    draw_main_menu_background(frame, window, _textures, programs, camera_frame, params);
-
-
-    let mut vertex_buffers_gui = enum_map! {_ => vec!()};
-    let mut text_buffers = vec!();
-    let mut menu_buttons: Vec<(Vector2, Vector2, Vector2, Vector2)> = vec![];
-
-    // Compute vertices for GUI
-    for component in &mut ui.components {
-        match &component.id {
-            GuiType::Button { .. } => {
-                let button_dimensions = component.get_dimension();
-                text_buffers.push(Box::new(component.clone()));
-                menu_buttons.push(button_dimensions);
-                push_gui_vertices(&mut vertex_buffers_gui[SpriteType::Button], component);
-            }
-            GuiType::Score => (),
-            GuiType::Timer => (),
-            GuiType::Window => (),
-            GuiType::Menu { .. } => (),
-            _ => (),
-        };
-    }
-
-    // Render GUI
-    let mat_gui = mat.as_f32_array();
-    for (_gui_type, vertex_buffer) in &vertex_buffers_gui {
-        if _gui_type == SpriteType::Button {
-            let uniforms = uniform! {
-                    matrix: mat_gui,
-                };
-            draw_color_sprites(
-                frame,
-                window,
-                &vertex_buffer,
-                &programs.gui_program,
-                params,
-                &uniforms);
-        }
-    }
-
-    // Render button text
-    for i in 0..text_buffers.len() {
-        let system = glium_text::TextSystem::new(window);
-        let mut text_to_display = "".to_string();
-        let button = text_buffers[i].clone();
-        let mut color = [1.0, 1.0, 1.0, 1.0f32];
-        match button.id.clone() {
-            GuiType::Button { text, highlight } => {
-                text_to_display = text;
-                if highlight { color = [0.1, 0.1, 0.1, 1.0f32]; }
-            }
-            _ => ()
-        }
-        let text_display = format!("{}", text_to_display);
-        let str_slice: &str = &text_display[..];
-        let text = glium_text::TextDisplay::new(&system, font.medres(), str_slice);
-        let text_width = (text.get_width() as f64) - 0.02;
-        let text_height = 0.06;
-        let dimensions = menu_buttons[i];
-        let button_width = dimensions.1.x - dimensions.0.x;
-        let x_align = dimensions.0.x;
-        let y_align = (dimensions.0.y) - 0.07;
-
-        let menu_matrix = mat.translation(Vector4 { x: x_align, y: y_align, z: 0.0, w: 0.0 })
-            .scale(Vector4 { x: button_width / text_width, y: text_height, z: 1.0, w: 1.0 }).as_f32_array();
-        glium_text::draw(&text, &system, frame, menu_matrix, color);
-    }
-
-    // Render title text
-    let system = glium_text::TextSystem::new(window);
-    let text_1_win = "Select Difficulty Level".to_string();
-    let text_display = format!("{}", text_1_win);
-    let str_slice: &str = &text_display[..];
-    let text = glium_text::TextDisplay::new(&system, font.highres(), str_slice);
-    let color = [1.0, 1.0, 1.0, 1.0f32];
-    let _font_scale_down = 1.5;
-    let text_width = text.get_width() as f64;
-    let (w, h) = frame.get_dimensions();
-    let _text_offset = 1.0 / text_width;
-    let scale_factor = Vector4 { x: 1.0 / text_width, y: 1.0 * (w as f64) / (h as f64) / text_width, z: 1.0, w: 1.0 };
-    let translation_offset = Vector4 { x: -0.5, y: 0.0, z: 0.0, w: 0.0 };
-    let mut matrix = mat.scale(scale_factor).translation(translation_offset);
-    glium_text::draw(&text, &system, frame, matrix.as_f32_array(), color);
-}
-

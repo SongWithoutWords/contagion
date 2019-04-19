@@ -8,7 +8,6 @@ use crate::presentation::display::{Programs, Textures};
 use crate::presentation::graphics::font::FontPkg;
 use crate::presentation::ui::gui::Component;
 use crate::scenes::game;
-use crate::scenes::difficulty_screen;
 use crate::scenes::scene::{Scene, UpdateResult};
 use crate::simulation::game_state::GameState;
 use crate::presentation::camera::*;
@@ -39,16 +38,11 @@ impl Scene for MainMenu {
               delta_time: f64)
               -> UpdateResult {
         match self.game_state {
-            GameState { transition_game, difficulty, easy, medium, hard, terminate, .. } =>
+            GameState { transition_game, terminate, .. } =>
                 {
-
-                    if difficulty {
-                        self.game_state.difficulty = false;
-                        return UpdateResult::Transition(Box::new(difficulty_screen::DifficultyScreen::new(easy, medium, hard)))
-                    }
                     if transition_game {
                         self.game_state.transition_game = false;
-                        return UpdateResult::Transition(Box::new(game::Game::new(self.game_state.tutorial, self.game_state.difficulty, self.game_state.easy_game, self.game_state.medium_game, self.game_state.hard_game)));
+                        return UpdateResult::Transition(Box::new(game::Game::new(self.game_state.tutorial)));
                     }
                     if terminate { return UpdateResult::Exit; }
                 }
