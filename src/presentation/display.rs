@@ -13,11 +13,11 @@ use crate::presentation::ui::glium_text::FontTexture;
 use crate::presentation::ui::gui::*;
 use crate::presentation::ui::gui::Component;
 use crate::presentation::ui::gui::GuiType;
+use crate::simulation::barricade::*;
 use crate::simulation::control::*;
 use crate::simulation::game_state::GameState;
 use crate::simulation::state::*;
 use crate::simulation::update::EntityCounts;
-use crate::simulation::barricade::*;
 
 // Enum ordered by draw order
 #[derive(Copy, Clone, Debug, Enum, PartialEq)]
@@ -51,8 +51,9 @@ pub enum SpriteType {
     MoneyHighlight,
     MoneyWorldIcon,
     BuildingModeIcon,
-    SelectingModeIcon
+    SelectingModeIcon,
     InfectionSymbol,
+}
 
 // pub type Textures = EnumMap<SpriteType, Texture2d>;
 pub struct Textures {
@@ -457,7 +458,7 @@ fn push_infection_symbol_vertices(buffer: &mut Vec<ColorVertex>, sprite: &Sprite
 
     let top_left = Vector2 { x: position.x - up, y: position.y + up + height };
     let top_right = Vector2 { x: position.x + up, y: position.y + up + height };
-    let bot_left = Vector2 { x: position.x - up , y: position.y - down + height };
+    let bot_left = Vector2 { x: position.x - up, y: position.y - down + height };
     let bot_right = Vector2 { x: position.x + up, y: position.y - down + height };
 
     let color = vector4(0.0, 1.0, 0.0, 1.0).lerp(vector4(1.0, 0.0, 0.0, 1.0), infection).as_f32_array();
@@ -1219,7 +1220,7 @@ pub fn display(
                         CopType::Normal => SpriteType::Cop,
                         CopType::Soldier => SpriteType::Soldier,
                     },
-                    Human::Civilian { state: _, punch_time_cooldown: _, left_hand_status, right_hand_status } =>  {
+                    Human::Civilian { state: _, punch_time_cooldown: _, left_hand_status, right_hand_status } => {
                         match left_hand_status {
                             HandStatus::Normal => {
                                 push_hand_vertices(&mut vertex_buffers[SpriteType::CivilianHandLeft], &hand_sprite, false, 1);
@@ -1659,9 +1660,7 @@ pub fn display(
                 &programs.sprite_program,
                 params,
                 &uniforms);
-        }
-        else if _gui_type == SpriteType::MoneyHighlight {
-        } else if _gui_type == SpriteType::ZombieIconHighlight {
+        } else if _gui_type == SpriteType::MoneyHighlight {} else if _gui_type == SpriteType::ZombieIconHighlight {
             let uniforms = uniform! {
                     matrix: mat_gui,
                     tex: &textures.sprite_textures[_gui_type],
@@ -1673,7 +1672,18 @@ pub fn display(
                 &programs.sprite_program,
                 params,
                 &uniforms);
-        } else if _gui_type == SpriteType::ZombieIconHighlight {
+        } else if _gui_type == SpriteType::ZombieIconHighlight {} else if _gui_type == SpriteType::CivilianIconHighlight {
+            let uniforms = uniform! {
+                    matrix: mat_gui,
+                    tex: &textures.sprite_textures[_gui_type],
+                };
+            draw_color_sprites(
+                frame,
+                window,
+                &vertex_buffer,
+                &programs.sprite_program,
+                params,
+                &uniforms);
         } else if _gui_type == SpriteType::CivilianIconHighlight {
             let uniforms = uniform! {
                     matrix: mat_gui,
@@ -1686,7 +1696,7 @@ pub fn display(
                 &programs.sprite_program,
                 params,
                 &uniforms);
-        } else if _gui_type == SpriteType::CivilianIconHighlight {
+        } else if _gui_type == SpriteType::BuildingModeIcon {
             let uniforms = uniform! {
                     matrix: mat_gui,
                     tex: &textures.sprite_textures[_gui_type],
@@ -1698,19 +1708,7 @@ pub fn display(
                 &programs.sprite_program,
                 params,
                 &uniforms);
-        }  else if _gui_type == SpriteType::BuildingModeIcon {
-            let uniforms = uniform! {
-                    matrix: mat_gui,
-                    tex: &textures.sprite_textures[_gui_type],
-                };
-            draw_color_sprites(
-                frame,
-                window,
-                &vertex_buffer,
-                &programs.sprite_program,
-                params,
-                &uniforms);
-        }  else if _gui_type == SpriteType::SelectingModeIcon {
+        } else if _gui_type == SpriteType::SelectingModeIcon {
             let uniforms = uniform! {
                     matrix: mat_gui,
                     tex: &textures.sprite_textures[_gui_type],
@@ -1788,7 +1786,6 @@ pub fn display(
                 frame,
                 window,
                 &vertex_buffer,
-                &programs.sprite_program,
                 &programs.infection_program,
                 params,
                 &uniforms);
