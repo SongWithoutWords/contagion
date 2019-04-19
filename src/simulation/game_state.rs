@@ -76,6 +76,7 @@ impl GameState {
             fade_wait: 0,
             fade_max: 60,
             fade_alpha: 1.0,
+            fade_pers: 1.0,
             game_paused: false,
             transition_game: false,
             transition_menu: false,
