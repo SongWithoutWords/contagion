@@ -18,9 +18,11 @@ use crate::simulation::game_state::GameState;
 use crate::simulation;
 use crate::scenes::scene::*;
 use crate::scenes::main_menu;
+use crate::scenes::difficulty_screen;
 use crate::presentation::graphics::font::FontPkg;
 use crate::scenes::victory_screen::VictoryScreen;
 use crate::scenes::loss_screen::LossScreen;
+use crate::scenes::difficulty_screen::DifficultyScreen;
 
 pub struct Game {
     pub state: State,
@@ -61,13 +63,18 @@ impl Scene for Game {
               delta_time: f64)
               -> UpdateResult {
         match self.game_state {
-            GameState{terminate, transition_menu, transition_game, zombies_win, humans_win, tutorial, summary_text, ..} =>
+            GameState{terminate, transition_menu, transition_game, zombies_win, humans_win, tutorial, summary_text, difficulty, ..} =>
                 {
                     if terminate {return UpdateResult::Exit}
-                    if transition_game {self.game_state.transition_game = false;
+                    if transition_game {
+                        self.game_state.transition_game = false;
                         return UpdateResult::Transition(Box::new(Game::new(self.game_state.tutorial)))}
                     if transition_menu {self.game_state.transition_menu = false;
                         return UpdateResult::Transition(Box::new(main_menu::MainMenu::new()))}
+                    if difficulty {
+                        self.game_state.difficulty = false;
+                        return UpdateResult::Transition(Box::new(difficulty_screen::DifficultyScreen::new()))
+                    }
                     if summary_text {
                         self.game_state.fade_wait += 1;
                         // wait 5 seconds

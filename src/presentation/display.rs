@@ -2092,3 +2092,128 @@ pub fn display_victory_screen(
     matrix = matrix.translation(translate_offset);
     glium_text::draw(&text, &system, frame, matrix.as_f32_array(), color);
 }
+
+pub fn display_difficulty_screen(
+    frame: &mut glium::Frame,
+    window: &glium_sdl2::SDL2Facade,
+    programs: &Programs,
+    _textures: &Textures,
+    params: &glium::DrawParameters,
+    camera_frame: [[f32; 4]; 4],
+    ui: &mut Component,
+    // state: &State,
+    fonts: &FontPkg,
+) {
+    let font = fonts.get("Consola").unwrap();
+    // background color
+    //   frame.clear_color(0.0, 0.0, 0.0, 1.0);
+
+    // initialize identity matrix
+    let mat = Mat4::init_id_matrix();
+    draw_main_menu_background(frame, window, _textures, programs, camera_frame, params);
+
+
+    let mut vertex_buffers_gui = enum_map! {_ => vec!()};
+    let mut text_buffers = vec!();
+    let mut menu_buttons: Vec<(Vector2, Vector2, Vector2, Vector2)> = vec![];
+
+    // Compute vertices for GUI
+    for component in &mut ui.components {
+        match &component.id {
+            GuiType::Button { .. } => {
+                let button_dimensions = component.get_dimension();
+                text_buffers.push(Box::new(component.clone()));
+                menu_buttons.push(button_dimensions);
+                push_gui_vertices(&mut vertex_buffers_gui[SpriteType::Button], component);
+            }
+            GuiType::Score => (),
+            GuiType::Timer => (),
+            GuiType::Window => (),
+            GuiType::Menu { .. } => (),
+            _ => (),
+        };
+    }
+
+    // Render GUI
+    let mat_gui = mat.as_f32_array();
+    for (_gui_type, vertex_buffer) in &vertex_buffers_gui {
+        if _gui_type == SpriteType::Button {
+            let uniforms = uniform! {
+                    matrix: mat_gui,
+                };
+            draw_color_sprites(
+                frame,
+                window,
+                &vertex_buffer,
+                &programs.gui_program,
+                params,
+                &uniforms);
+        }
+    }
+
+    // Render Button Text
+    for i in 0..text_buffers.len() {
+        let system = glium_text::TextSystem::new(window);
+        let mut text_to_display = "".to_string();
+        let button = text_buffers[i].clone();
+        let mut color = [1.0, 1.0, 1.0, 1.0f32];
+        match button.id.clone() {
+            GuiType::Button { text, highlight } => {
+                text_to_display = text;
+                if highlight { color = [0.1, 0.1, 0.1, 1.0f32]; }
+            }
+            _ => ()
+        }
+        let text_display = format!("{}", text_to_display);
+        let str_slice: &str = &text_display[..];
+        let text = glium_text::TextDisplay::new(&system, font.medres(), str_slice);
+        let text_width = (text.get_width() as f64) - 0.02;
+        let text_height = 0.06;
+        let dimensions = menu_buttons[i];
+        let button_width = dimensions.1.x - dimensions.0.x;
+        let x_align = dimensions.0.x;
+        let y_align = (dimensions.0.y) - 0.07;
+
+        let menu_matrix = mat.translation(Vector4 { x: x_align, y: y_align, z: 0.0, w: 0.0 })
+            .scale(Vector4 { x: button_width / text_width, y: text_height, z: 1.0, w: 1.0 }).as_f32_array();
+        glium_text::draw(&text, &system, frame, menu_matrix, color);
+    }
+
+//    let score = compute_score(entity_counts);
+
+    let system = glium_text::TextSystem::new(window);
+    let text_1_win = "Select Difficulty Level".to_string();
+    let text_display = format!("{}", text_1_win);
+    let str_slice: &str = &text_display[..];
+    let text = glium_text::TextDisplay::new(&system, font.highres(), str_slice);
+    let color = [0.0, 0.0, 0.0, 1.0f32];
+    let _font_scale_down = 1.5;
+    let text_width = text.get_width() as f64;
+    let (w, h) = frame.get_dimensions();
+    let _text_offset = 1.0 / text_width;
+    let scale_factor = Vector4 { x: 2.0 / text_width, y: 2.0 * (w as f64) / (h as f64) / text_width, z: 1.0, w: 1.0 };
+    let translation_offset = Vector4 { x: -1.0, y: 0.8, z: 0.0, w: 0.0 };
+    let mut matrix = mat.scale(scale_factor).translation(translation_offset);
+    glium_text::draw(&text, &system, frame, matrix.as_f32_array(), color);
+
+    // Score
+//    let text_display = format!("Score: {}", score);
+//    let str_slice: &str = &text_display[..];
+//    let text = glium_text::TextDisplay::new(&system, font.medres(), str_slice);
+//    let color = [0.0, 0.0, 0.0, 1.0f32];
+//    let scale_factor = Vector4 { x: 0.5, y: 0.5, z: 1.0, w: 1.0 };
+//    let translate_offset = Vector4 { x: 0.1, y: -0.2, z: 0.0, w: 0.0 };
+//    matrix = matrix.scale(scale_factor).translation(translate_offset);
+//    glium_text::draw(&text, &system, frame, matrix.as_f32_array(), color);
+
+    // Stats
+//    let text_display = format!("Cops: {}, Civilians: {}, Zombies: {}",
+//                               entity_counts.cops, entity_counts.civilians, entity_counts.zombies);
+//    let str_slice: &str = &text_display[..];
+//    let text = glium_text::TextDisplay::new(&system, font.medres(), str_slice);
+//    let color = [0.0, 0.0, 0.0, 1.0f32];
+//    let translate_offset = Vector4 { x: 0.0, y: -0.2, z: 0.0, w: 0.0 };
+//    matrix = matrix.translation(translate_offset);
+//    glium_text::draw(&text, &system, frame, matrix.as_f32_array(), color);
+}
+

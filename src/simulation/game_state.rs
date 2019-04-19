@@ -24,7 +24,9 @@ pub struct GameState {
 
     /*DEBUG TOOL*/
     pub humans_win: bool,
-    pub zombies_win: bool
+    pub zombies_win: bool,
+
+    pub difficulty: bool,
 }
 
 impl GameState {
@@ -48,6 +50,7 @@ impl GameState {
             tut_01: false,
             tut_02: false,
             tut_03: false,
+            difficulty: false,
         }
     }
 
@@ -71,6 +74,7 @@ impl GameState {
             tut_01: true,
             tut_02: true,
             tut_03: true,
+            difficulty: false,
         }
     }
 }
