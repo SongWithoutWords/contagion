@@ -9,7 +9,7 @@ use sdl2::video::FullscreenType::True;
 pub struct Camera {
     position: Vector2,
     velocity: Vector2,
-    zoom: Vector2,
+    pub zoom: Vector2,
     initial_mouse_pos: Vector2,
 }
 
@@ -21,6 +21,12 @@ impl Camera {
             zoom: Vector2 { x: 0.09 as f64, y: 0.09 as f64 },  // initial zoom level
             initial_mouse_pos: Vector2 { x: 0.0 as f64, y: 0.0 as f64 },    // initial mouse wheel button position
         }
+    }
+
+    pub fn get_world_position(&self) -> Vector2 {
+        // I wish our camera's position was stored in world coordinates
+        // but with 1.5 days until our course ends its not worth changing now
+        vector2(self.position.x / self.zoom.x, self.position.y / self.zoom.y)
     }
 
     const DRAG_FACTOR: Scalar = 8.0;

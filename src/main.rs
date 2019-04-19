@@ -22,7 +22,7 @@ use crate::core::vector:: *;
 use crate::presentation::audio::sound_effects:: *;
 use crate::scenes::main_menu;
 use crate::scenes::scene::{Scene, UpdateResult};
-use crate::simulation::update::Sound;
+use crate::simulation::update::SoundType;
 use crate::presentation::graphics::font::{Font, FontPkg};
 
 pub mod constants;
@@ -80,7 +80,7 @@ fn main() {
     let mut last_frame = Instant::now();
 
     // Handle the sound effects for the game
-    music::start_context::<Music, Sound, _>(&_sdl_context, 200, || {
+    music::start_context::<Music, SoundType, _>(&_sdl_context, 200, || {
 
         load_sound_effects();
 
