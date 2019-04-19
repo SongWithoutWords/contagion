@@ -3,6 +3,7 @@ use crate::core::scalar::Scalar;
 use crate::core::geo::polygon::*;
 
 use crate::simulation::ai::path::Path;
+use crate::simulation::barricade::*;
 
 use std::collections::HashSet;
 
@@ -11,9 +12,11 @@ pub struct State {
     pub entities: Vec<Entity>,
     pub buildings: Vec<Polygon>,
     pub building_outlines: Vec<Polygon>,
+    pub barricades: Vec<Barricade>,
     pub selection: HashSet<usize>,
     pub projectiles: Vec<Projectile>,
     pub rng: rand_xorshift::XorShiftRng,
+    pub money: u32
 }
 
 pub const ENTITY_RADIUS: Scalar = 0.5;

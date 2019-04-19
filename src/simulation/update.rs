@@ -8,9 +8,11 @@ use crate::core::geo::segment2::*;
 
 use crate::simulation::ai::pathfinding::find_path;
 use crate::simulation::state::MoveMode;
+use crate::simulation::barricade::*;
 
 use super::state::*;
 
+const SPRING_CONSTANT: f64 = 32.0;
 
 #[derive(Copy, Clone, Hash, PartialEq, Eq)]
 pub enum SoundType {
@@ -111,6 +113,31 @@ pub fn update(args: &UpdateArgs, state: &mut State) -> SimulationResults {
                 break;
             }
         }
+
+        // Collisions with barricades
+        for j in 0..state.barricades.len() {
+            let mut overlap = state.barricades[j].poly.contains_point(p1);
+            let inside = overlap;
+
+            if !inside {
+                for k in 0..state.barricades[j].poly.num_sides() {
+                    let segment = Segment2 {
+                        p1: state.barricades[j].poly.get(k),
+                        p2: state.barricades[j].poly.get((k + 1) % state.barricades[j].poly.num_sides())
+                    };
+
+                    if segment_circle_has_intersection(&segment, &circle) {
+                        overlap = true;
+                        break;
+                    }
+                }
+            }
+
+            if overlap {
+                handle_barricade_collision(args, &mut state.entities[i], &mut state.barricades[j], inside);
+                break;
+            }
+        }
     }
 
     // Apply individual behaviours
@@ -128,6 +155,8 @@ pub fn update(args: &UpdateArgs, state: &mut State) -> SimulationResults {
             }
             DeadOrAlive::Alive { zombie_or_human, health } => {
                 if *health <= ENTITY_HEALTH_MIN {
+                    // Pay out bounty if zombie is killed
+                    if entity.is_zombie() { state.money += 1 }
                     state.entities[i].dead_or_alive = DeadOrAlive::Dead;
                     sounds.push(Sound {
                         position: state.entities[i].position,
@@ -359,6 +388,12 @@ pub fn update(args: &UpdateArgs, state: &mut State) -> SimulationResults {
         }
     }
 
+    for i in 0..state.barricades.len() {
+        if state.barricades[i].health <= 0.0 {
+            state.barricades.remove(i);
+        }
+    }
+
     SimulationResults { entity_counts, sounds: sounds }
 }
 
@@ -418,10 +453,7 @@ fn handle_building_collision(
         }
     }
 
-    const SPRING_CONSTANT: f64 = 32.0;
-
     let distance = distance_squared.sqrt();
-
 
     if inside {
         // If the entity is inside move them to the nearest edge
@@ -436,6 +468,52 @@ fn handle_building_collision(
         }
         else {
         entity.velocity += args.dt * SPRING_CONSTANT * overlap * normal}
+    }
+}
+
+fn handle_barricade_collision(
+    args: &UpdateArgs,
+    entity: &mut Entity,
+    barricade: &mut Barricade,
+    inside: bool) {
+
+    let mut distance_squared = INFINITY;
+    let mut normal = Vector2::zero();
+    let normals = barricade.poly.normals();
+
+    for i in 0..barricade.poly.num_sides() {
+        let seg_i = Segment2 {
+            p1: barricade.poly.get(i),
+            p2: barricade.poly.get((i + 1) % barricade.poly.num_sides())
+        };
+        let dist_i = seg_i.distance_from_segment_to_point_squared(entity.position);
+
+        if distance_squared > dist_i {
+            distance_squared = dist_i;
+            normal = normals[i];
+        }
+    }
+
+    let distance = distance_squared.sqrt();
+
+    if inside {
+        // If the entity is inside move them to the nearest edge
+        entity.position += (distance + ENTITY_RADIUS) * normal;
+    } else {
+        // If the entity is overlapping, force them away from the edge
+        let overlap = ENTITY_RADIUS - distance;
+        let force: Vector2 = args.dt * SPRING_CONSTANT * overlap * normal;
+
+        entity.velocity += force;
+
+        // Only zombies damage barricades by running into them
+        match &entity.dead_or_alive {
+            DeadOrAlive::Alive { zombie_or_human, .. } => match zombie_or_human {
+                ZombieOrHuman::Zombie { .. } => barricade.health -= force.length() * BARRICADE_HEALTH / 25.0,
+                _ => ()
+            },
+            _ => ()
+        }
     }
 }
 
@@ -462,6 +540,7 @@ fn update_cop(
     let entities = &mut sim_state.entities;
     let buildings = &sim_state.buildings;
     let building_outlines = &sim_state.building_outlines;
+    let barricades = &sim_state.barricades;
 
     enum StateChange {
         // Exit the state you're in
@@ -515,7 +594,8 @@ fn update_cop(
                         })
                     }
                     else {
-                        match find_path(entities[index].position, entities[*target_index].position, buildings, building_outlines) {
+                        match find_path(entities[index].position, entities[*target_index].position,
+                                        buildings, building_outlines, barricades) {
                             None => {
                                 // No path to zombie possible, end chase
                                 StateChange::Exit
@@ -607,7 +687,8 @@ fn update_cop(
                 Some(CopState::Moving { waypoint, mode, path: _ }) => {
                     match mode {
                         MoveMode::Moving => {
-                            match find_path(entities[index].position, *waypoint, buildings, building_outlines) {
+                            match find_path(entities[index].position, *waypoint,
+                                            buildings, building_outlines, barricades) {
                                 None => {
                                     StateChange::Exit
                                 },

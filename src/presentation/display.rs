@@ -14,9 +14,10 @@ use crate::presentation::ui::gui::*;
 use crate::presentation::ui::gui::Component;
 use crate::presentation::ui::gui::GuiType;
 use crate::simulation::control::*;
+use crate::simulation::game_state::GameState;
 use crate::simulation::state::*;
 use crate::simulation::update::EntityCounts;
-use crate::simulation::game_state::GameState;
+use crate::simulation::barricade::*;
 
 // Enum ordered by draw order
 #[derive(Copy, Clone, Debug, Enum, PartialEq)]
@@ -46,7 +47,11 @@ pub enum SpriteType {
     CivilianIconHighlight,
     CivilianHandLeft,
     CivilianHandRight,
-    CivilianTorso
+    CivilianTorso,
+    MoneyHighlight,
+    MoneyWorldIcon,
+    BuildingModeIcon,
+    SelectingModeIcon
 }
 
 // pub type Textures = EnumMap<SpriteType, Texture2d>;
@@ -118,7 +123,14 @@ pub fn load_textures(window: &glium_sdl2::SDL2Facade) -> Textures {
                 => load_texture(window, "assets/images/civilian/civilian_hand_right.png"),
             SpriteType::CivilianTorso
                 => load_texture(window, "assets/images/civilian/civilian_torso.png"),
-
+            SpriteType::MoneyWorldIcon
+                => load_texture(window, "assets/images/ui/money.png"),
+            SpriteType::MoneyHighlight
+                => load_texture(window, "assets/images/ui/money_highlight.png"),
+            SpriteType::BuildingModeIcon
+                => load_texture(window, "assets/images/ui/building_icon.png"),
+            SpriteType::SelectingModeIcon
+                => load_texture(window, "assets/images/ui/mouse_select.png"),
         },
         background_texture: load_texture(&window, "assets/images/dirt.jpg"),
         wallpaper: load_texture(&window, "assets/images/contagion_wallpaper.png"),
@@ -247,6 +259,47 @@ fn push_gui_vertices(buffer: &mut Vec<ColorVertex>, ui: &Gui) {
         GuiType::Menu { .. } => { color = [0.6, 0.7, 0.8, 0.0] }
         _ => (),
     };
+
+    let vertex0 = ColorVertex {
+        position: top_left.as_f32_array(),
+        tex_coords: [0.0, 1.0],
+        color,
+    };
+    let vertex1 = ColorVertex {
+        position: top_right.as_f32_array(),
+        tex_coords: [1.0, 1.0],
+        color,
+    };
+    let vertex2 = ColorVertex {
+        position: bot_left.as_f32_array(),
+        tex_coords: [0.0, 0.0],
+        color,
+    };
+    let vertex3 = ColorVertex {
+        position: bot_right.as_f32_array(),
+        tex_coords: [1.0, 0.0],
+        color,
+    };
+    buffer.push(vertex0);
+    buffer.push(vertex1);
+    buffer.push(vertex2);
+    buffer.push(vertex1);
+    buffer.push(vertex3);
+    buffer.push(vertex2);
+}
+
+fn push_selection_gui_vertices(buffer: &mut Vec<ColorVertex>, ui: &Gui, valid: bool) {
+    let top_left = ui.top_left;
+    let top_right = ui.top_right;
+    let bot_left = ui.bot_left;
+    let bot_right = ui.bot_right;
+    let color;
+
+    if valid {
+        color = [0.105, 0.214, 0.124, 0.3];
+    } else {
+        color = [0.569, 0.129, 0.129, 0.3];
+    }
 
     let vertex0 = ColorVertex {
         position: top_left.as_f32_array(),
@@ -405,6 +458,53 @@ fn push_building_vertices(buffer: &mut Vec<ColorVertex>, building: &Polygon, col
             })
         }
     }
+}
+
+fn draw_barricades(buffer: &mut Vec<ColorVertex>, barricade: &Barricade, color: [f32; 4]) {
+    let poly = &barricade.poly;
+    push_building_vertices(buffer, poly, color);
+
+    // ASSUMPTION: barricade vertices are in the order dictated in control.rs with the new_barricade function
+    // Average the short sides to get the middle of the start and end
+    let start = (poly.get(0) + poly.get(1)) / 2.0;
+    let end = (poly.get(2) + poly.get(3)) / 2.0;
+
+    // Get the length of the barricade and the unit vector along its length
+    let length = (end - start).length();
+    let normal = (end - start).right() / (length * 2.0);
+    let unit = (end - start) / length;
+    let width = unit / 3.0;
+
+    // TODO: move this number somewhere else
+    let segments = (length / 3.0).round();
+    let segment_length = length / segments;
+
+    for i in 0..(segments as usize) {
+        let center = start + (unit * segment_length * (i as f64));
+        let oct = Polygon(vec![
+            center + normal - (width * 0.5),
+            center + normal + (width * 0.5),
+            center + (normal * 0.5) + width,
+            center - (normal * 0.5) + width,
+            center - normal + (width * 0.5),
+            center - normal - (width * 0.5),
+            center - (normal * 0.5) - width,
+            center + (normal * 0.5) - width
+        ]);
+        push_building_vertices(buffer, &oct, color);
+    }
+
+    let oct = Polygon(vec![
+        end + normal - (width * 0.5),
+        end + normal + (width * 0.5),
+        end + (normal * 0.5) + width,
+        end - (normal * 0.5) + width,
+        end - normal + (width * 0.5),
+        end - normal - (width * 0.5),
+        end - (normal * 0.5) - width,
+        end + (normal * 0.5) - width
+    ]);
+    push_building_vertices(buffer, &oct, color);
 }
 
 fn push_path_vertices(buffer: &mut Vec<ColorVertex>, point1: Vector2, point2: Vector2, color: [f32; 4]) {
@@ -982,6 +1082,7 @@ pub fn display(
     let mut vertex_buffers_green_hp = vec!();
     let mut vertex_buffers_gui = enum_map! {_ => vec!()};
     let mut vertex_buffers_building = vec!();
+    let mut vertex_buffers_barricade = vec!();
     let mut vertex_buffers_path = vec!();
     let mut text_buffers = vec!();
 
@@ -1114,7 +1215,6 @@ pub fn display(
     //let offset = 0.1;
     for component in &mut ui.components {
         match &component.id {
-
             GuiType::ZombieHighlight => {
                 push_gui_vertices(&mut vertex_buffers_gui[SpriteType::ZombieIconHighlight], component);
             }
@@ -1124,6 +1224,9 @@ pub fn display(
             GuiType::CivilianHighlight => {
                 push_gui_vertices(&mut vertex_buffers_gui[SpriteType::CivilianIconHighlight], component);
             }
+            GuiType::MoneyHighlight => {
+                push_gui_vertices(&mut vertex_buffers_gui[SpriteType::MoneyHighlight], component);
+            }
             GuiType::ZombieUI => {
                 push_gui_vertices(&mut vertex_buffers_gui[SpriteType::ZombieWorldIcon], component);
             }
@@ -1132,6 +1235,16 @@ pub fn display(
             }
             GuiType::CopUI => {
                 push_gui_vertices(&mut vertex_buffers_gui[SpriteType::CopWorldIcon], component);
+            }
+            GuiType::MoneyUI => {
+                push_gui_vertices(&mut vertex_buffers_gui[SpriteType::MoneyWorldIcon], component);
+            }
+            GuiType::SelectingModeIcon => {
+                if control.building_mode {
+                    push_gui_vertices(&mut vertex_buffers_gui[SpriteType::BuildingModeIcon], component);
+                } else {
+                    push_gui_vertices(&mut vertex_buffers_gui[SpriteType::SelectingModeIcon], component);
+                }
             }
             GuiType::Selected => {
                 if selection_count < 1 {} else {
@@ -1144,15 +1257,43 @@ pub fn display(
             }
             GuiType::SelectionDrag => {
                 if control.mouse_drag {
-                    let rec_min_x = control.drag_vertex_start.x.min(control.drag_vertex_end.x);
-                    let rec_min_y = control.drag_vertex_start.y.min(control.drag_vertex_end.y);
-                    let rec_max_x = control.drag_vertex_start.x.max(control.drag_vertex_end.x);
-                    let rec_max_y = control.drag_vertex_start.y.max(control.drag_vertex_end.y);
-                    component.set_dimension(Vector2 { x: rec_min_x, y: rec_min_y },
-                                            Vector2 { x: rec_min_x, y: rec_max_y },
-                                            Vector2 { x: rec_max_x, y: rec_min_y },
-                                            Vector2 { x: rec_max_x, y: rec_max_y });
-                    push_gui_vertices(&mut vertex_buffers_gui[SpriteType::SelectionHighlight], component);
+                    if !control.building_mode {
+                        let rec_min_x = control.drag_vertex_start.x.min(control.drag_vertex_end.x);
+                        let rec_min_y = control.drag_vertex_start.y.min(control.drag_vertex_end.y);
+                        let rec_max_x = control.drag_vertex_start.x.max(control.drag_vertex_end.x);
+                        let rec_max_y = control.drag_vertex_start.y.max(control.drag_vertex_end.y);
+
+                        component.set_dimension(Vector2 { x: rec_min_x, y: rec_min_y },
+                                                Vector2 { x: rec_min_x, y: rec_max_y },
+                                                Vector2 { x: rec_max_x, y: rec_min_y },
+                                                Vector2 { x: rec_max_x, y: rec_max_y });
+
+                        push_gui_vertices(&mut vertex_buffers_gui[SpriteType::SelectionHighlight], component);
+                    } else {
+                        let frame = Mat4::from_f32_array(camera_frame);
+
+                        let mut start = control.drag_vertex_start.clone();
+                        translate_camera_to_world(&mut start, frame);
+                        let mut end = control.drag_vertex_end.clone();
+                        translate_camera_to_world(&mut end, frame);
+
+                        let barricade_rect = barricade_poly(start, end);
+
+                        let mut rec_tl = barricade_rect.get(0);
+                        translate_world_to_camera(&mut rec_tl, frame);
+                        let mut rec_tr = barricade_rect.get(1);
+                        translate_world_to_camera(&mut rec_tr, frame);
+                        let mut rec_br = barricade_rect.get(2);
+                        translate_world_to_camera(&mut rec_br, frame);
+                        let mut rec_bl = barricade_rect.get(3);
+                        translate_world_to_camera(&mut rec_bl, frame);
+
+                        component.set_dimension(rec_tl, rec_tr, rec_bl, rec_br);
+
+                        push_selection_gui_vertices(&mut vertex_buffers_gui[SpriteType::SelectionHighlight],
+                                                    component,
+                                                    barricade_valid(start, end, state));
+                    }
                 }
             }
             GuiType::Score => (),
@@ -1185,6 +1326,11 @@ pub fn display(
     for building in &state.buildings {
         let color = [0.1, 0.1, 0.1, 1.0];
         push_building_vertices(&mut vertex_buffers_building, building, color);
+    }
+
+    for barricade in &state.barricades {
+        let color = [0.1, 0.1, 0.1, 1.0];
+        draw_barricades(&mut vertex_buffers_barricade, barricade, color);
     }
 
     // Compute vertices for cop paths
@@ -1257,6 +1403,20 @@ pub fn display(
     draw_top_fence(frame, window, textures, programs, camera_frame, params);
     draw_lower_fence(frame, window, textures, programs, camera_frame, params);
 
+    // Render barricades
+    {
+        let uniforms = uniform! {
+            matrix: camera_frame
+        };
+        draw_color_sprites(
+            frame,
+            window,
+            &vertex_buffers_barricade,
+            &programs.shape_program,
+            params,
+            &uniforms,
+        )
+    }
 
     // Render shadows
     use crate::presentation::display::SpriteType::*;
@@ -1405,8 +1565,7 @@ pub fn display(
                 &programs.sprite_program,
                 params,
                 &uniforms);
-        }
-        else if _gui_type == SpriteType::CopIconHighlight {
+        } else if _gui_type == SpriteType::CopIconHighlight {
             let uniforms = uniform! {
                     matrix: mat_gui,
                     tex: &textures.sprite_textures[_gui_type],
@@ -1419,7 +1578,7 @@ pub fn display(
                 params,
                 &uniforms);
         }
-        else if _gui_type == SpriteType::ZombieIconHighlight {
+        else if _gui_type == SpriteType::MoneyHighlight {
             let uniforms = uniform! {
                     matrix: mat_gui,
                     tex: &textures.sprite_textures[_gui_type],
@@ -1431,8 +1590,7 @@ pub fn display(
                 &programs.sprite_program,
                 params,
                 &uniforms);
-        }
-       else if _gui_type == SpriteType::CivilianIconHighlight {
+        } else if _gui_type == SpriteType::ZombieIconHighlight {
             let uniforms = uniform! {
                     matrix: mat_gui,
                     tex: &textures.sprite_textures[_gui_type],
@@ -1444,9 +1602,43 @@ pub fn display(
                 &programs.sprite_program,
                 params,
                 &uniforms);
-        }
-
-        else if _gui_type == SpriteType::ZombieWorldIcon {
+        } else if _gui_type == SpriteType::CivilianIconHighlight {
+            let uniforms = uniform! {
+                    matrix: mat_gui,
+                    tex: &textures.sprite_textures[_gui_type],
+                };
+            draw_color_sprites(
+                frame,
+                window,
+                &vertex_buffer,
+                &programs.sprite_program,
+                params,
+                &uniforms);
+        }  else if _gui_type == SpriteType::BuildingModeIcon {
+            let uniforms = uniform! {
+                    matrix: mat_gui,
+                    tex: &textures.sprite_textures[_gui_type],
+                };
+            draw_color_sprites(
+                frame,
+                window,
+                &vertex_buffer,
+                &programs.sprite_program,
+                params,
+                &uniforms);
+        }  else if _gui_type == SpriteType::SelectingModeIcon {
+            let uniforms = uniform! {
+                    matrix: mat_gui,
+                    tex: &textures.sprite_textures[_gui_type],
+                };
+            draw_color_sprites(
+                frame,
+                window,
+                &vertex_buffer,
+                &programs.sprite_program,
+                params,
+                &uniforms);
+        } else if _gui_type == SpriteType::ZombieWorldIcon {
             let uniforms = uniform! {
                     matrix: mat_gui,
                     tex: &textures.sprite_textures[_gui_type],
@@ -1494,6 +1686,20 @@ pub fn display(
                 &programs.sprite_program,
                 params,
                 &uniforms);
+        } else if _gui_type == SpriteType::MoneyWorldIcon {
+            let uniforms = uniform! {
+                matrix: mat_gui,
+                tex: &textures.sprite_textures[_gui_type],
+            };
+
+            draw_money_num(window, state.money as usize, frame, &font.lowres());
+            draw_color_sprites(
+                frame,
+                window,
+                &vertex_buffer,
+                &programs.sprite_program,
+                params,
+                &uniforms);
         }
     }
 
@@ -1515,7 +1721,7 @@ pub fn display(
         let (w, h) = frame.get_dimensions();
         let _text_offset = 1.0 / text_width;
         let scale_factor = Vector4 { x: 1.0 / text_width, y: 1.0 * (w as f64) / (h as f64) / text_width, z: 1.0, w: 1.0 };
-        let translation_offset = Vector4 { x: -0.8 , y: 0.7, z: 0.0, w: 0.0 };
+        let translation_offset = Vector4 { x: -0.8, y: 0.7, z: 0.0, w: 0.0 };
         let mut matrix = mat.scale(scale_factor).translation(translation_offset);
         glium_text::draw(&text, &system, frame, matrix.as_f32_array(), color);
 
@@ -1523,7 +1729,7 @@ pub fn display(
         let text_display = format!("{}", text_to_display);
         let str_slice: &str = &text_display[..];
         let text = glium_text::TextDisplay::new(&system, font.medres(), str_slice);
-        let translation_offset = Vector4 {x: 0.0, y: -0.1, z: 0.0, w: 0.0};
+        let translation_offset = Vector4 { x: 0.0, y: -0.1, z: 0.0, w: 0.0 };
         matrix = matrix.translation(translation_offset);
         glium_text::draw(&text, &system, frame, matrix.as_f32_array(), color);
     }
@@ -1789,6 +1995,27 @@ fn draw_remaining_cop_num(window: &glium_sdl2::SDL2Facade, cop_num: usize, frame
         [0.0, 1.0 * (w as f32) / (h as f32) / font_scale_down, 0.0, 0.0],
         [0.0, 0.0, 1.0, 0.0],
         [0.5755, 0.83, 0.0, 1.0f32],
+    ];
+
+    glium_text::draw(&text, &system, frame, matrix, color);
+}
+
+fn draw_money_num(window: &glium_sdl2::SDL2Facade, money: usize, frame: &mut glium::Frame, font: &FontTexture) {
+    let system = glium_text::TextSystem::new(window);
+    let money_str: String = money.to_string();
+    let money_num_display = format!("${}", money_str);
+
+    let str_slice: &str = &money_num_display[..];
+    let text = glium_text::TextDisplay::new(&system, font, str_slice);
+    let color = [0.0, 0.0, 0.0, 1.0f32];
+    let font_scale_down = 40.0;
+    let (w, h) = frame.get_dimensions();
+
+    let matrix = [
+        [1.0 / font_scale_down, 0.0, 0.0, 0.0],
+        [0.0, 1.0 * (w as f32) / (h as f32) / font_scale_down, 0.0, 0.0],
+        [0.0, 0.0, 1.0, 0.0],
+        [0.4255, 0.83, 0.0, 1.0f32],
     ];
 
     glium_text::draw(&text, &system, frame, matrix, color);
