@@ -80,35 +80,6 @@ impl Mat4 {
         ]
     }
 
-    pub fn from_f32_array(arr: [[f32; 4]; 4]) -> Mat4 {
-        Mat4 {
-            i: Vector4 {
-                x: (arr[0][0] as f64),
-                y: (arr[0][1] as f64),
-                z: (arr[0][2] as f64),
-                w: (arr[0][3] as f64)
-            },
-            j: Vector4 {
-                x: (arr[1][0] as f64),
-                y: (arr[1][1] as f64),
-                z: (arr[1][2] as f64),
-                w: (arr[1][3] as f64)
-            },
-            k: Vector4 {
-                x: (arr[2][0] as f64),
-                y: (arr[2][1] as f64),
-                z: (arr[2][2] as f64),
-                w: (arr[2][3] as f64)
-            },
-            w: Vector4 {
-                x: (arr[3][0] as f64),
-                y: (arr[3][1] as f64),
-                z: (arr[3][2] as f64),
-                w: (arr[3][3] as f64)
-            }
-        }
-    }
-
     pub fn init_id_matrix() -> Mat4 {
         Mat4 {
             i: Vector4 {x: 1.0, y: 0.0, z: 0.0, w: 0.0},

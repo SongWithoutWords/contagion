@@ -25,17 +25,7 @@ pub struct GameState {
 
     /*DEBUG TOOL*/
     pub humans_win: bool,
-    pub zombies_win: bool,
-
-    /* GAME DIFFICULTY SELECTION */
-    pub difficulty: bool,
-    pub easy_game: bool,
-    pub medium_game: bool,
-    pub hard_game: bool,
-
-    pub easy: bool,
-    pub medium: bool,
-    pub hard: bool,
+    pub zombies_win: bool
 }
 
 impl GameState {
@@ -60,44 +50,6 @@ impl GameState {
             tut_01: false,
             tut_02: false,
             tut_03: false,
-            difficulty: false,
-            easy_game: false,
-            medium_game: false,
-            hard_game: false,
-            easy: false,
-            medium: false,
-            hard: false,
-        }
-    }
-
-    pub fn new_difficulty(easy_state: bool, medium_state: bool, hard_state: bool) -> GameState{
-        GameState {
-            trans_wait: 0,
-            fade_wait: 0,
-            fade_max: 60,
-            fade_alpha: 1.0,
-            fade_pers: 1.0,
-            game_paused: false,
-            transition_game: false,
-            transition_menu: false,
-            terminate: false,
-            humans_win: false,
-            zombies_win: false,
-            summary_text: true,
-            tutorial: false,
-            tut_time: 0,
-            tut_time_curr: 0,
-            tut_passed: false,
-            tut_01: false,
-            tut_02: false,
-            tut_03: false,
-            difficulty: false,
-            easy_game: false,
-            medium_game: false,
-            hard_game: false,
-            easy: easy_state,
-            medium: medium_state,
-            hard: hard_state,
         }
     }
 
@@ -122,13 +74,6 @@ impl GameState {
             tut_01: true,
             tut_02: true,
             tut_03: true,
-            difficulty: false,
-            easy_game: false,
-            medium_game: false,
-            hard_game: false,
-            easy: false,
-            medium: false,
-            hard: false,
         }
     }
 }

@@ -2,7 +2,6 @@ use crate::core::vector::*;
 use crate::core::scalar::*;
 use crate::simulation::ai::path::{Node, Edge, Path};
 use crate::core::geo::polygon::*;
-use crate::simulation::barricade::*;
 
 struct Graph {
     _start: Node,
@@ -42,49 +41,22 @@ impl Graph {
     }
 }
 
-struct Intersection {
-    pos: Vector2,
-    index: usize,
-    intersect_type: IntersectType
-}
-
-enum IntersectType {
-    Building,
-    Barricade
-}
-
 // Find the shortest path from start_pos to end_pos, accounting for obstacles
 pub fn find_path(
     start_pos: Vector2,
     end_pos: Vector2,
     obstacles: &Vec<Polygon>,
-    outlines: &Vec<Polygon>,
-    barricades: &Vec<Barricade>) -> Option<Path> {
+    outlines: &Vec<Polygon>) -> Option<Path> {
 
     // Initialize the graph representing the viable paths from start to end
     let mut graph = Graph::new(start_pos, end_pos);
 
     // Find all intervening obstacles between the start and the goal and store the position of the
     // intersect and the index of the obstacle
-    let mut intersections: Vec<Intersection> = vec!();
-
+    let mut intersections: Vec<(Vector2, usize)> = vec!();
     for i in 0..obstacles.len() {
         for intersect in obstacles[i].intersects(start_pos, end_pos) {
-            intersections.push(Intersection {
-                pos: intersect,
-                index: i,
-                intersect_type: IntersectType::Building
-            });
-        }
-    }
-
-    for i in 0..barricades.len() {
-        for intersect in barricades[i].poly.intersects(start_pos, end_pos) {
-            intersections.push(Intersection {
-                pos: intersect,
-                index: i,
-                intersect_type: IntersectType::Barricade
-            });
+            intersections.push((intersect, i));
         }
     }
 
@@ -92,33 +64,20 @@ pub fn find_path(
     match get_min_index_by_dist(start_pos, intersections) {
 
         // Nothing between start and end, answer is a straight line
+//        None => return Some(vec![start_pos, end_pos]),
         None => return Some(Path::from_edge(Edge {
             start: Node { pos: start_pos, h: euclidean_dist(start_pos, end_pos) },
             end: Node { pos: end_pos, h: 0.0 },
             cost: euclidean_dist(start_pos, end_pos)
         })),
-        Some(intersection) => {
+        Some(i) => {
             // Initializing the frontier
             let mut frontier = vec!();
 
-            let mut outline;
-            let mut obstacle;
-
-            match intersection.intersect_type {
-                IntersectType::Building => {
-                    outline = outlines[intersection.index].clone();
-                    obstacle = obstacles[intersection.index].clone();
-                },
-                IntersectType::Barricade => {
-                    outline = barricades[intersection.index].clone().outline;
-                    obstacle = barricades[intersection.index].clone().poly;
-                }
-            };
-
             // Add paths to the frontier based on outline of closest obstacle
-            for i in 0..outline.num_sides() {
-                if obstacle.intersects(start_pos, outline.get(i)).len() == 0 {
-                    frontier.push(Path::from_edge(graph.add_edge(start_pos, outline.get(i))));
+            for j in 0..outlines[i].num_sides() {
+                if obstacles[i].intersects(start_pos, outlines[i].get(j)).len() == 0 {
+                    frontier.push(Path::from_edge(graph.add_edge(start_pos, outlines[i].get(j))));
                 }
             }
 
@@ -137,22 +96,9 @@ pub fn find_path(
 
                                 // Find all intersections between current edge and goal
                                 intersections = vec!();
-                                for i in 0..obstacles.len() {
-                                    for intersect in obstacles[i].intersects(edge.end.pos, end_pos) {
-                                        intersections.push(Intersection {
-                                            pos: intersect,
-                                            index: i,
-                                            intersect_type: IntersectType::Building
-                                        });
-                                    }
-                                }
-                                for i in 0..barricades.len() {
-                                    for intersect in barricades[i].poly.intersects(edge.end.pos, end_pos) {
-                                        intersections.push(Intersection {
-                                            pos: intersect,
-                                            index: i,
-                                            intersect_type: IntersectType::Barricade
-                                        });
+                                for j in 0..obstacles.len() {
+                                    for intersect in obstacles[j].intersects(edge.end.pos, end_pos) {
+                                        intersections.push((intersect, j));
                                     }
                                 }
 
@@ -162,23 +108,12 @@ pub fn find_path(
                                         path.append_edge(graph.add_edge(edge.end.pos, end_pos));
                                         frontier.push(path);
                                     }
-                                    Some(intersection) => {
-                                        match intersection.intersect_type {
-                                            IntersectType::Building => {
-                                                outline = outlines[intersection.index].clone();
-                                                obstacle = obstacles[intersection.index].clone();
-                                            },
-                                            IntersectType::Barricade => {
-                                                outline = barricades[intersection.index].clone().outline;
-                                                obstacle = barricades[intersection.index].clone().poly;
-                                            }
-                                        };
-
+                                    Some(j) => {
                                         // Add paths to the frontier based on outline of closest obstacle
-                                        for j in 0..outline.num_sides() {
-                                            if edge.end.pos != outline.get(j) && obstacle.intersects(edge.end.pos, outline.get(j)).len() == 0 {
+                                        for k in 0..outlines[j].num_sides() {
+                                            if edge.end.pos != outlines[j].get(k) && obstacles[j].intersects(edge.end.pos, outlines[j].get(k)).len() == 0 {
                                                 let mut new_path = path.clone();
-                                                new_path.append_edge(graph.add_edge(edge.end.pos, outline.get(j)));
+                                                new_path.append_edge(graph.add_edge(edge.end.pos, outlines[j].get(k)));
                                                 frontier.push(new_path);
                                             }
                                         }
@@ -196,20 +131,21 @@ pub fn find_path(
     }
 }
 
-fn get_min_index_by_dist(pos: Vector2, intersections: Vec<Intersection>) -> Option<Intersection> {
-    if intersections.len() == 0 { return None }
+fn get_min_index_by_dist(pos: Vector2, intersections: Vec<(Vector2, usize)>) -> Option<usize> {
 
-    let mut intersection = None;
+    let mut index = 0;
     let mut dist = INFINITY;
 
-    for i in intersections {
-        if euclidean_dist(pos, i.pos) < dist {
-            dist = euclidean_dist(pos, i.pos);
-            intersection = Some(i);
+    if intersections.len() == 0 { return None }
+
+    for intersection in intersections {
+        if euclidean_dist(pos, intersection.0) < dist {
+            dist = euclidean_dist(pos, intersection.0);
+            index = intersection.1;
         }
     }
 
-    intersection
+    Some(index)
 }
 
 fn euclidean_dist(a: Vector2, b: Vector2) -> Scalar {
