@@ -34,12 +34,22 @@ pub struct Game {
 }
 
 impl Game {
-    pub fn new(tutorial: bool) -> Game {
-        let state = simulation::initial_state::initial_state(100, rand::random::<u32>());
+    pub fn new(tutorial: bool, easy_game: bool, medium_game: bool, hard_game: bool) -> Game {
         let gui = presentation::ui::gui::Component::init_game_gui();
         let camera = presentation::camera::Camera::new();
         let control = simulation::control::Control::new();
         let game_state: GameState;
+
+        if easy_game {
+            entity_count = 20;
+        } else if medium_game {
+            entity_count = 50;
+        } else if hard_game {
+            entity_count = 100;
+        }
+
+        let state = simulation::initial_state::initial_state(entity_count, rand::random::<u32>());
+
         if tutorial {
             game_state = simulation::game_state::GameState::new_tutorial();
         } else {
@@ -68,7 +78,7 @@ impl Scene for Game {
                     if terminate {return UpdateResult::Exit}
                     if transition_game {
                         self.game_state.transition_game = false;
-                        return UpdateResult::Transition(Box::new(Game::new(self.game_state.tutorial)))}
+                        return UpdateResult::Transition(Box::new(Game::new(self.game_state.tutorial, false, false, false)))}
                     if transition_menu {self.game_state.transition_menu = false;
                         return UpdateResult::Transition(Box::new(main_menu::MainMenu::new()))}
                     if difficulty {

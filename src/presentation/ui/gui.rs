@@ -336,7 +336,6 @@ impl Component {
                                 if check_within_bound {
                                     let display_text = text;
                                     if display_text == "Start" {
-//                                        game_state.transition_game = true;
                                         game_state.difficulty = true;
                                     } else if display_text == "Exit" {
                                         game_state.terminate = true;
@@ -616,11 +615,14 @@ impl Component {
                             if check_within_bound {
                                 let display_text = text;
                                 if display_text == "Easy" {
-                                    game_state.transition_game = true;
+//                                    game_state.transition_game = true;
+                                    game_state.easy_game = true;
                                 } else if display_text == "Medium" {
-                                    game_state.transition_game = true;
+//                                    game_state.transition_game = true;
+                                    game_state.medium_game = true;
                                 } else if display_text == "Hard" {
-                                    game_state.transition_game = true;
+//                                    game_state.transition_game = true;
+                                    game_state.hard_game = true;
                                 }
                             }
                         }

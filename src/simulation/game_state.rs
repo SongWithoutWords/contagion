@@ -26,7 +26,11 @@ pub struct GameState {
     pub humans_win: bool,
     pub zombies_win: bool,
 
+    /* GAME DIFFICULTY SELECTION */
     pub difficulty: bool,
+    pub easy_game: bool,
+    pub medium_game: bool,
+    pub hard_game: bool,
 }
 
 impl GameState {
@@ -51,6 +55,9 @@ impl GameState {
             tut_02: false,
             tut_03: false,
             difficulty: false,
+            easy_game: false,
+            medium_game: false,
+            hard_game: false,
         }
     }
 
@@ -75,6 +82,9 @@ impl GameState {
             tut_02: true,
             tut_03: true,
             difficulty: false,
+            easy_game: false,
+            medium_game: false,
+            hard_game: false,
         }
     }
 }

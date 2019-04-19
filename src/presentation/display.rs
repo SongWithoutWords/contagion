@@ -2151,7 +2151,7 @@ pub fn display_difficulty_screen(
         }
     }
 
-    // Render Button Text
+    // Render button text
     for i in 0..text_buffers.len() {
         let system = glium_text::TextSystem::new(window);
         let mut text_to_display = "".to_string();
@@ -2179,41 +2179,20 @@ pub fn display_difficulty_screen(
         glium_text::draw(&text, &system, frame, menu_matrix, color);
     }
 
-//    let score = compute_score(entity_counts);
-
+    // Render title text
     let system = glium_text::TextSystem::new(window);
     let text_1_win = "Select Difficulty Level".to_string();
     let text_display = format!("{}", text_1_win);
     let str_slice: &str = &text_display[..];
     let text = glium_text::TextDisplay::new(&system, font.highres(), str_slice);
-    let color = [0.0, 0.0, 0.0, 1.0f32];
+    let color = [1.0, 1.0, 1.0, 1.0f32];
     let _font_scale_down = 1.5;
     let text_width = text.get_width() as f64;
     let (w, h) = frame.get_dimensions();
     let _text_offset = 1.0 / text_width;
-    let scale_factor = Vector4 { x: 2.0 / text_width, y: 2.0 * (w as f64) / (h as f64) / text_width, z: 1.0, w: 1.0 };
-    let translation_offset = Vector4 { x: -1.0, y: 0.8, z: 0.0, w: 0.0 };
+    let scale_factor = Vector4 { x: 1.0 / text_width, y: 1.0 * (w as f64) / (h as f64) / text_width, z: 1.0, w: 1.0 };
+    let translation_offset = Vector4 { x: -0.5, y: 0.0, z: 0.0, w: 0.0 };
     let mut matrix = mat.scale(scale_factor).translation(translation_offset);
     glium_text::draw(&text, &system, frame, matrix.as_f32_array(), color);
-
-    // Score
-//    let text_display = format!("Score: {}", score);
-//    let str_slice: &str = &text_display[..];
-//    let text = glium_text::TextDisplay::new(&system, font.medres(), str_slice);
-//    let color = [0.0, 0.0, 0.0, 1.0f32];
-//    let scale_factor = Vector4 { x: 0.5, y: 0.5, z: 1.0, w: 1.0 };
-//    let translate_offset = Vector4 { x: 0.1, y: -0.2, z: 0.0, w: 0.0 };
-//    matrix = matrix.scale(scale_factor).translation(translate_offset);
-//    glium_text::draw(&text, &system, frame, matrix.as_f32_array(), color);
-
-    // Stats
-//    let text_display = format!("Cops: {}, Civilians: {}, Zombies: {}",
-//                               entity_counts.cops, entity_counts.civilians, entity_counts.zombies);
-//    let str_slice: &str = &text_display[..];
-//    let text = glium_text::TextDisplay::new(&system, font.medres(), str_slice);
-//    let color = [0.0, 0.0, 0.0, 1.0f32];
-//    let translate_offset = Vector4 { x: 0.0, y: -0.2, z: 0.0, w: 0.0 };
-//    matrix = matrix.translation(translate_offset);
-//    glium_text::draw(&text, &system, frame, matrix.as_f32_array(), color);
 }
 

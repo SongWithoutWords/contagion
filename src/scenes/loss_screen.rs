@@ -39,7 +39,7 @@ impl Scene for LossScreen  {
             GameState{transition_game, transition_menu, terminate, ..} =>
                 {
                     if transition_game {self.game_state.transition_game = false;
-                        return UpdateResult::Transition(Box::new(game::Game::new(self.game_state.tutorial)))}
+                        return UpdateResult::Transition(Box::new(game::Game::new(self.game_state.tutorial, false, false, false)))}
                     if transition_menu {self.game_state.transition_menu = false;
                         return UpdateResult::Transition(Box::new(main_menu::MainMenu::new()))}
                     if terminate {return UpdateResult::Exit}
