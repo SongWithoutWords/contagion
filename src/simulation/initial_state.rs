@@ -25,9 +25,11 @@ pub fn initial_state(entity_count: u32, cop_entities: f64, infected_entities: f6
         entities: vec!(),
         buildings: vec!(),
         building_outlines: vec!(),
+        barricades: vec!(),
         selection: HashSet::new(),
         projectiles: vec!(),
         rng: XorShiftRng::seed_from_u64(random_seed as u64),
+        money: 20
     };
 
     let entities = &mut state.entities;
@@ -58,7 +60,12 @@ pub fn initial_state(entity_count: u32, cop_entities: f64, infected_entities: f6
             Human::Cop { cop_type, rounds_in_magazine: cop_type.magazine_capacity(), state_stack: vec!() }
         }
         else {
-            Human::Civilian
+            Human::Civilian {
+                state: HumanState::Running,
+                punch_time_cooldown: PUNCH_TIME_COOLDOWN,
+                left_hand_status: HandStatus::Normal,
+                right_hand_status: HandStatus::Normal
+            }
         };
 
         let dead_or_alive = DeadOrAlive::Alive {

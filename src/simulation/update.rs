@@ -8,17 +8,24 @@ use crate::core::geo::segment2::*;
 
 use crate::simulation::ai::pathfinding::find_path;
 use crate::simulation::state::MoveMode;
+use crate::simulation::barricade::*;
 
 use super::state::*;
 
+const SPRING_CONSTANT: f64 = 32.0;
 
 #[derive(Copy, Clone, Hash, PartialEq, Eq)]
-pub enum Sound {
+pub enum SoundType {
     GunshotHandgun,
     GunshotRifle,
     Reload,
     PersonInfected,
     ZombieDeath,
+}
+
+pub struct Sound {
+    pub position: Vector2,
+    pub sound_type: SoundType,
 }
 
 pub struct UpdateArgs {
@@ -106,6 +113,31 @@ pub fn update(args: &UpdateArgs, state: &mut State) -> SimulationResults {
                 break;
             }
         }
+
+        // Collisions with barricades
+        for j in 0..state.barricades.len() {
+            let mut overlap = state.barricades[j].poly.contains_point(p1);
+            let inside = overlap;
+
+            if !inside {
+                for k in 0..state.barricades[j].poly.num_sides() {
+                    let segment = Segment2 {
+                        p1: state.barricades[j].poly.get(k),
+                        p2: state.barricades[j].poly.get((k + 1) % state.barricades[j].poly.num_sides())
+                    };
+
+                    if segment_circle_has_intersection(&segment, &circle) {
+                        overlap = true;
+                        break;
+                    }
+                }
+            }
+
+            if overlap {
+                handle_barricade_collision(args, &mut state.entities[i], &mut state.barricades[j], inside);
+                break;
+            }
+        }
     }
 
     // Apply individual behaviours
@@ -123,8 +155,13 @@ pub fn update(args: &UpdateArgs, state: &mut State) -> SimulationResults {
             }
             DeadOrAlive::Alive { zombie_or_human, health } => {
                 if *health <= ENTITY_HEALTH_MIN {
+                    // Pay out bounty if zombie is killed
+                    if entity.is_zombie() { state.money += 1 }
                     state.entities[i].dead_or_alive = DeadOrAlive::Dead;
-                    sounds.push(Sound::ZombieDeath);
+                    sounds.push(Sound {
+                        position: state.entities[i].position,
+                        sound_type: SoundType::ZombieDeath
+                    });
                 }
                 else {
                     match zombie_or_human {
@@ -149,7 +186,10 @@ pub fn update(args: &UpdateArgs, state: &mut State) -> SimulationResults {
                                     left_hand_status: HandStatus::Normal,
                                     right_hand_status: HandStatus::Normal
                                 };
-                                sounds.push(Sound::PersonInfected);
+                                sounds.push(Sound {
+                                    position: state.entities[i].position,
+                                    sound_type: SoundType::PersonInfected
+                                });
                             }
                             else {
                                 match human {
@@ -157,9 +197,11 @@ pub fn update(args: &UpdateArgs, state: &mut State) -> SimulationResults {
                                         entity_counts.cops += 1;
                                         update_cop(&args, state, i, &mut sounds);
                                     }
-                                    Human::Civilian { .. } => {
+                                    Human::Civilian { state: civilian_state, punch_time_cooldown, left_hand_status, right_hand_status } => {
                                         entity_counts.civilians += 1;
-                                        simulate_human(args, &mut state.entities, &state.buildings, i)
+                                        let old_state = civilian_state.clone();
+                                        let next_state = simulate_human(args, state, i, punch_time_cooldown, old_state, left_hand_status, right_hand_status);
+                                        *civilian_state = next_state;
                                     }
                                 }
                             }
@@ -197,7 +239,14 @@ pub fn update(args: &UpdateArgs, state: &mut State) -> SimulationResults {
                                 ZombieOrHuman::Zombie { state: _, left_hand_status: _, ref mut right_hand_status } => {
                                     *right_hand_status = HandStatus::Normal;
                                 }
-                                _ => ()
+                                ZombieOrHuman::Human { infection: _, human } => {
+                                    match human {
+                                        Human::Civilian { state: _, punch_time_cooldown: _, left_hand_status: _, ref mut right_hand_status} => {
+                                            *right_hand_status = HandStatus::Normal;
+                                        }
+                                        _ => ()
+                                    }
+                                }
                             }
                         }
                         _ => ()
@@ -297,21 +346,51 @@ pub fn update(args: &UpdateArgs, state: &mut State) -> SimulationResults {
                     }
                 }
             }
-            ProjectileKind::Fist { owner_index: _ } => {
-                match &first_collision {
-                    None => (),
-                    Some(Collision{entity_id: i, ..}) => {
-                        match &mut state.entities[*i].dead_or_alive {
-                            DeadOrAlive::Alive {zombie_or_human: ZombieOrHuman::Human { infection, .. }, ..} => {
-                                *infection += ZOMBIE_HUMAN_COLLISION_INFECTION_RATE
+            ProjectileKind::Fist { owner_index } => {
+                let owner = &mut state.entities[owner_index];
+                match owner.dead_or_alive {
+                    DeadOrAlive::Alive { health: _, ref mut zombie_or_human } => {
+                        match zombie_or_human {
+                            ZombieOrHuman::Zombie { .. } => {
+                                match &first_collision {
+                                    None => (),
+                                    Some(Collision{entity_id: i, ..}) => {
+                                        match &mut state.entities[*i].dead_or_alive {
+                                            DeadOrAlive::Alive {zombie_or_human: ZombieOrHuman::Human { ref mut infection, .. }, ..} => {
+                                                *infection += ZOMBIE_HUMAN_COLLISION_INFECTION_RATE
+                                            }
+                                            _ => ()
+                                        }
+                                        p.velocity = Vector2::zero();
+                                    }
+                                }
                             }
-                            _ => ()
+                            ZombieOrHuman::Human { .. } => {
+                                match &first_collision {
+                                    None => (),
+                                    Some(Collision{entity_id: i, ..}) => {
+                                        match &mut state.entities[*i].dead_or_alive {
+                                            DeadOrAlive::Alive {zombie_or_human: ZombieOrHuman::Zombie { .. }, ref mut health } => {
+                                                *health -= FIST_DAMAGE
+                                            }
+                                            _ => ()
+                                        }
+                                        p.velocity = Vector2::zero();
+                                    }
+                                }
+                            }
                         }
-                        p.velocity = Vector2::zero();
                     }
+                    _ => ()
                 }
             }
             _ => panic!("Not a valid projectile")
+        }
+    }
+
+    for i in 0..state.barricades.len() {
+        if state.barricades[i].health <= 0.0 {
+            state.barricades.remove(i);
         }
     }
 
@@ -374,10 +453,7 @@ fn handle_building_collision(
         }
     }
 
-    const SPRING_CONSTANT: f64 = 32.0;
-
     let distance = distance_squared.sqrt();
-
 
     if inside {
         // If the entity is inside move them to the nearest edge
@@ -392,6 +468,52 @@ fn handle_building_collision(
         }
         else {
         entity.velocity += args.dt * SPRING_CONSTANT * overlap * normal}
+    }
+}
+
+fn handle_barricade_collision(
+    args: &UpdateArgs,
+    entity: &mut Entity,
+    barricade: &mut Barricade,
+    inside: bool) {
+
+    let mut distance_squared = INFINITY;
+    let mut normal = Vector2::zero();
+    let normals = barricade.poly.normals();
+
+    for i in 0..barricade.poly.num_sides() {
+        let seg_i = Segment2 {
+            p1: barricade.poly.get(i),
+            p2: barricade.poly.get((i + 1) % barricade.poly.num_sides())
+        };
+        let dist_i = seg_i.distance_from_segment_to_point_squared(entity.position);
+
+        if distance_squared > dist_i {
+            distance_squared = dist_i;
+            normal = normals[i];
+        }
+    }
+
+    let distance = distance_squared.sqrt();
+
+    if inside {
+        // If the entity is inside move them to the nearest edge
+        entity.position += (distance + ENTITY_RADIUS) * normal;
+    } else {
+        // If the entity is overlapping, force them away from the edge
+        let overlap = ENTITY_RADIUS - distance;
+        let force: Vector2 = args.dt * SPRING_CONSTANT * overlap * normal;
+
+        entity.velocity += force;
+
+        // Only zombies damage barricades by running into them
+        match &entity.dead_or_alive {
+            DeadOrAlive::Alive { zombie_or_human, .. } => match zombie_or_human {
+                ZombieOrHuman::Zombie { .. } => barricade.health -= force.length() * BARRICADE_HEALTH / 25.0,
+                _ => ()
+            },
+            _ => ()
+        }
     }
 }
 
@@ -418,6 +540,7 @@ fn update_cop(
     let entities = &mut sim_state.entities;
     let buildings = &sim_state.buildings;
     let building_outlines = &sim_state.building_outlines;
+    let barricades = &sim_state.barricades;
 
     enum StateChange {
         // Exit the state you're in
@@ -471,7 +594,8 @@ fn update_cop(
                         })
                     }
                     else {
-                        match find_path(entities[index].position, entities[*target_index].position, buildings, building_outlines) {
+                        match find_path(entities[index].position, entities[*target_index].position,
+                                        buildings, building_outlines, barricades) {
                             None => {
                                 // No path to zombie possible, end chase
                                 StateChange::Exit
@@ -548,9 +672,12 @@ fn update_cop(
 
                             *rounds_in_magazine -= 1;
 
-                            sounds.push(match cop_type {
-                                CopType::Normal => Sound::GunshotHandgun,
-                                CopType::Soldier => Sound::GunshotRifle,
+                            sounds.push(Sound {
+                                position: entities[index].position,
+                                sound_type: match cop_type {
+                                    CopType::Normal => SoundType::GunshotHandgun,
+                                    CopType::Soldier => SoundType::GunshotRifle,
+                                }
                             });
                             StateChange::Exit
                         }
@@ -560,7 +687,8 @@ fn update_cop(
                 Some(CopState::Moving { waypoint, mode, path: _ }) => {
                     match mode {
                         MoveMode::Moving => {
-                            match find_path(entities[index].position, *waypoint, buildings, building_outlines) {
+                            match find_path(entities[index].position, *waypoint,
+                                            buildings, building_outlines, barricades) {
                                 None => {
                                     StateChange::Exit
                                 },
@@ -596,7 +724,10 @@ fn update_cop(
                     // Play the reload sound when half-done reloading
                     if *reload_time_remaining > half_reload_time &&
                         half_reload_time > new_reload_time_remaining {
-                            sounds.push(Sound::Reload);
+                            sounds.push(Sound{
+                                position: entities[index].position,
+                                sound_type: SoundType::Reload
+                            });
                     }
 
                     if *reload_time_remaining > 0.0 {
@@ -690,7 +821,7 @@ fn update_zombie(
 
             // If target is within fighting range, fight
             if entities[target_index].is_human() && delta.x.abs() <= FIGHTING_RANGE && delta.y.abs() <= FIGHTING_RANGE && can_see_target {
-                return ZombieState::Fighting { punch_time_remaining: PUNCH_TIME_COOLDOWN, target_index }
+                return ZombieState::Fighting { punch_time_remaining: PUNCH_TIME, target_index }
             }
 
             entities[index].accelerate_along_vector(delta, args.dt, ZOMBIE_MOVEMENT_FORCE);
@@ -789,7 +920,7 @@ fn update_zombie(
             }
 
             // Stop fighting if we're not in fight range
-            if delta.x.abs() <= FIGHTING_RANGE && delta.y.abs() <= FIGHTING_RANGE {
+            if delta.x.abs() > FIGHTING_RANGE && delta.y.abs() > FIGHTING_RANGE {
                 return ZombieState::Chasing { target_index }
             }
 
@@ -847,29 +978,102 @@ fn closest_human(my_pos: Vector2, entities: &Vec<Entity>, buildings: &Vec<Polygo
     closest_index
 }
 
-fn simulate_human(args: &UpdateArgs, entities: &mut Vec<Entity>, buildings: &Vec<Polygon>, index: usize) {
-    let my_pos = entities[index].position;
+fn simulate_human(args: &UpdateArgs,
+                  sim_state: &mut State,
+                  index: usize,
+                  punch_time_cooldown: &mut Scalar,
+                  state: HumanState,
+                  left_hand_status: &mut HandStatus,
+                  right_hand_status: &mut HandStatus) -> HumanState {
 
     let mut min_delta = Vector2::zero();
     let mut min_distance_sqr = INFINITY;
+    let entities = &mut sim_state.entities;
+    let buildings = &sim_state.buildings;
+    let my_pos = entities[index].position;
 
-    for i in 0..entities.len() {
-        if entities[i].is_zombie() {
-            // Run from zombies
-            let delta = entities[i].position - my_pos;
-            let distance_sqr = delta.length_squared();
-            if distance_sqr < HUMAN_SIGHT_RADIUS_SQUARE &&
-                can_see(buildings, my_pos, entities[i].position) &&
-                distance_sqr < min_distance_sqr {
+    match state {
+        HumanState::Running => {
+            let mut zombie_index = 0;
+            for i in 0..entities.len() {
+                if entities[i].is_zombie() {
+                    // Run from zombies
+                    let delta = entities[i].position - my_pos;
+                    let distance_sqr = delta.length_squared();
+                    if distance_sqr < HUMAN_SIGHT_RADIUS_SQUARE &&
+                        can_see(buildings, my_pos, entities[i].position) &&
+                        distance_sqr < min_distance_sqr {
 
-                    min_delta = delta;
-                    min_distance_sqr = distance_sqr;
+                        min_delta = delta;
+                        min_distance_sqr = distance_sqr;
+                        zombie_index = i;
+                    }
                 }
-        }
-    }
+            }
 
-    if min_distance_sqr < INFINITY {
-        // Accelerate away from the nearest zombie
-        entities[index].accelerate_along_vector(-min_delta, args.dt, CIVILIAN_MOVEMENT_FORCE);
+            // If zombie is close
+            if min_delta.x.abs() <= FIGHTING_RANGE && min_delta.y.abs() <= FIGHTING_RANGE && *punch_time_cooldown <= 0.0 {
+                return HumanState::Fighting { target_index: zombie_index, punch_time_remaining: PUNCH_TIME }
+            }
+
+            *punch_time_cooldown -= args.dt;
+
+            // else run
+            if min_distance_sqr < INFINITY {
+                // Accelerate away from the nearest zombie
+                entities[index].accelerate_along_vector(-min_delta, args.dt, CIVILIAN_MOVEMENT_FORCE);
+            }
+            return HumanState::Running
+        }
+        HumanState::Fighting { target_index, punch_time_remaining } => {
+            // Stop fighting if the target is already dead
+            if entities[target_index].is_dead() {
+                return HumanState::Running
+            }
+
+            let target_pos = entities[target_index].position;
+            let my_pos = entities[index].position;
+            let delta = target_pos - my_pos;
+
+            // Stop fighting if we can no longer see the target
+            if !can_see(buildings,
+                        entities[index].position,
+                        entities[target_index].position) {
+                return HumanState::Running
+            }
+
+            // Stop fighting if we're not in fight range
+            if delta.x.abs() > FIGHTING_RANGE && delta.y.abs() > FIGHTING_RANGE {
+                return HumanState::Running
+            }
+
+            entities[index].look_along_vector(delta, args.dt);
+
+            if punch_time_remaining > 0.0 {
+                return HumanState::Fighting { punch_time_remaining: punch_time_remaining - args.dt, target_index }
+            } else {
+                let angular_deviation =
+                    Normal::new(0.0, ANGULAR_ACCURACY_STD_DEV).sample(&mut sim_state.rng);
+
+                let delta_normal = delta.rotate_by(angular_deviation);
+
+                // Spawn outside of the entity - don't want to punch the entity itself
+                let spawn_pos = entities[index].position +
+                    FIST_SPAWN_DISTANCE_MULTIPLIER * ENTITY_RADIUS * delta_normal;
+
+                // Punch the target
+                sim_state.projectiles.push(
+                    Projectile {
+                        position: spawn_pos,
+                        velocity: FIST_SPEED * delta_normal,
+                        kind: ProjectileKind::Fist { owner_index: index }
+                    });
+
+                *right_hand_status = HandStatus::None;
+                *punch_time_cooldown = PUNCH_TIME_COOLDOWN;
+
+                HumanState::Running
+            }
+        }
     }
 }

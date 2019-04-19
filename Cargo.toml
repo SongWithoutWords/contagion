@@ -13,7 +13,6 @@ lerp = "0.2.0"
 num = "0.2"
 rand = "0.6.0"
 rand_xorshift = "0.1.1"
-rodio = "0.8.1"
 freetype-sys = "0.7"
 libc = "0.2"
 piston-music = "0.23.0"
@@ -22,3 +21,8 @@ piston-music = "0.23.0"
 version = "0.30"
 default-features = false
 features = ["ttf"]
+
+# See https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html
+# for details on patching libraries like this
+[patch.crates-io]
+piston-music = { git = "https://github.com/SongWithoutWords/music", branch = "volume-fix" }

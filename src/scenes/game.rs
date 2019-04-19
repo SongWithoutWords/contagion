@@ -219,7 +219,7 @@ impl Scene for Game {
                 self.game_state.zombies_win = true;
             }
 
-            presentation::audio::sound_effects::play_sounds(&simulation_results.sounds);
+            presentation::audio::sound_effects::play_sounds(&simulation_results.sounds, &self.camera);
         }
         UpdateResult::Continue
     }
