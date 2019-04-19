@@ -282,6 +282,48 @@ fn push_gui_vertices(buffer: &mut Vec<ColorVertex>, ui: &Gui) {
     buffer.push(vertex2);
 }
 
+fn push_selection_gui_vertices(buffer: &mut Vec<ColorVertex>, ui: &Gui, valid: bool) {
+    let top_left = ui.top_left;
+    let top_right = ui.top_right;
+    let bot_left = ui.bot_left;
+    let bot_right = ui.bot_right;
+    let color;
+
+    if valid {
+        color = [0.105, 0.214, 0.124, 0.3];
+    } else {
+//        color = [0.957, 0.259, 0.259, 0.3];
+        color = [0.569, 0.129, 0.129, 0.3];
+    }
+
+    let vertex0 = ColorVertex {
+        position: top_left.as_f32_array(),
+        tex_coords: [0.0, 1.0],
+        color,
+    };
+    let vertex1 = ColorVertex {
+        position: top_right.as_f32_array(),
+        tex_coords: [1.0, 1.0],
+        color,
+    };
+    let vertex2 = ColorVertex {
+        position: bot_left.as_f32_array(),
+        tex_coords: [0.0, 0.0],
+        color,
+    };
+    let vertex3 = ColorVertex {
+        position: bot_right.as_f32_array(),
+        tex_coords: [1.0, 0.0],
+        color,
+    };
+    buffer.push(vertex0);
+    buffer.push(vertex1);
+    buffer.push(vertex2);
+    buffer.push(vertex1);
+    buffer.push(vertex3);
+    buffer.push(vertex2);
+}
+
 // right if hand is true, left if hand is false
 fn push_hand_vertices(buffer: &mut Vec<Vertex>, sprite: &Sprite, hand: bool) {
     let position = sprite.position;
@@ -1139,8 +1181,8 @@ pub fn display(
             }
             GuiType::SelectingModeIcon => {
                 if control.building_mode {
-                push_gui_vertices(&mut vertex_buffers_gui[SpriteType::BuildingModeIcon], component);}
-                else {
+                    push_gui_vertices(&mut vertex_buffers_gui[SpriteType::BuildingModeIcon], component);
+                } else {
                     push_gui_vertices(&mut vertex_buffers_gui[SpriteType::SelectingModeIcon], component);
                 }
             }
@@ -1160,10 +1202,13 @@ pub fn display(
                         let rec_min_y = control.drag_vertex_start.y.min(control.drag_vertex_end.y);
                         let rec_max_x = control.drag_vertex_start.x.max(control.drag_vertex_end.x);
                         let rec_max_y = control.drag_vertex_start.y.max(control.drag_vertex_end.y);
+
                         component.set_dimension(Vector2 { x: rec_min_x, y: rec_min_y },
                                                 Vector2 { x: rec_min_x, y: rec_max_y },
                                                 Vector2 { x: rec_max_x, y: rec_min_y },
                                                 Vector2 { x: rec_max_x, y: rec_max_y });
+
+                        push_gui_vertices(&mut vertex_buffers_gui[SpriteType::SelectionHighlight], component);
                     } else {
                         let frame = Mat4::from_f32_array(camera_frame);
 
@@ -1184,9 +1229,11 @@ pub fn display(
                         translate_world_to_camera(&mut rec_bl, frame);
 
                         component.set_dimension(rec_tl, rec_tr, rec_bl, rec_br);
-                    }
 
-                    push_gui_vertices(&mut vertex_buffers_gui[SpriteType::SelectionHighlight], component);
+                        push_selection_gui_vertices(&mut vertex_buffers_gui[SpriteType::SelectionHighlight],
+                                                    component,
+                                                    barricade_valid(start, end, state));
+                    }
                 }
             }
             GuiType::Score => (),
