@@ -9,13 +9,13 @@ use crate::core::vector::*;
 
 use super::state::*;
 
-const PORTION_OF_ENTITIES_COP: Scalar = 0.05;
-const PORTION_OF_ENTITIES_INFECTED: Scalar = 0.2;
-
-pub fn initial_state(entity_count: u32, random_seed: u32) -> State {
+pub fn initial_state(entity_count: u32, cop_entities: f64, infected_entities: f64, random_seed: u32) -> State {
+    let portion_of_entities_cop = cop_entities as Scalar;
+    let portion_of_entities_infected = infected_entities as Scalar;
     let entity_count_fp = entity_count as Scalar;
-    let cop_count: u32 = ((entity_count_fp * PORTION_OF_ENTITIES_COP) as u32).max(1);
-    let infected_count: u32 = ((entity_count_fp * PORTION_OF_ENTITIES_INFECTED) as u32).max(1);
+
+    let cop_count: u32 = ((entity_count_fp * portion_of_entities_cop) as u32).max(1);
+    let infected_count: u32 = ((entity_count_fp * portion_of_entities_infected) as u32).max(1);
     let civilian_count: u32 = entity_count - (cop_count + infected_count);
 
     println!("Spawning {} entities: {} cops, {} infected, and {} civilians",
