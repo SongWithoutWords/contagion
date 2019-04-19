@@ -39,16 +39,16 @@ impl Scene for MainMenu {
               delta_time: f64)
               -> UpdateResult {
         match self.game_state {
-            GameState { transition_game, difficulty, terminate, .. } =>
+            GameState { transition_game, difficulty, easy, medium, hard, terminate, .. } =>
                 {
 
                     if difficulty {
                         self.game_state.difficulty = false;
-                        return UpdateResult::Transition(Box::new(difficulty_screen::DifficultyScreen::new()))
+                        return UpdateResult::Transition(Box::new(difficulty_screen::DifficultyScreen::new(easy, medium, hard)))
                     }
                     if transition_game {
                         self.game_state.transition_game = false;
-                        return UpdateResult::Transition(Box::new(game::Game::new(self.game_state.tutorial, false, false, false)));
+                        return UpdateResult::Transition(Box::new(game::Game::new(self.game_state.tutorial, self.game_state.difficulty, self.game_state.easy_game, self.game_state.medium_game, self.game_state.hard_game)));
                     }
                     if terminate { return UpdateResult::Exit; }
                 }

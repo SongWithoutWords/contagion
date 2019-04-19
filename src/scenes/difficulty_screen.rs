@@ -19,8 +19,8 @@ pub struct DifficultyScreen {
 }
 
 impl DifficultyScreen {
-    pub fn new() -> DifficultyScreen {
-        let game_state = simulation::game_state::GameState::new();
+    pub fn new(easy: bool, medium: bool, hard: bool) -> DifficultyScreen {
+        let game_state = simulation::game_state::GameState::new_difficulty(easy, medium, hard);
         let gui = presentation::ui::gui::Component::init_difficulty_gui();
         let camera = presentation::camera::Camera::new();
         DifficultyScreen {
@@ -38,25 +38,23 @@ impl Scene for DifficultyScreen {
               delta_time: f64
     ) -> UpdateResult {
         match self.game_state {
-            GameState{transition_game, transition_menu, terminate, easy_game, medium_game, hard_game, ..} =>
+            GameState{ easy_game, medium_game, hard_game, ..} =>
                 {
                     if easy_game {
                         self.game_state.easy_game = false;
-                        return UpdateResult::Transition(Box::new(game::Game::new(false, true, false, false)))
+                        self.game_state.easy = true;
+                        return UpdateResult::Transition(Box::new(game::Game::new(false, true, self.game_state.easy, false, false)))
                     }
                     if medium_game {
                         self.game_state.medium_game = false;
-                        return UpdateResult::Transition(Box::new(game::Game::new(false, false, true, false)))
+                        self.game_state.medium = true;
+                        return UpdateResult::Transition(Box::new(game::Game::new(false, true, false, self.game_state.medium, false)))
                     }
                     if hard_game {
                         self.game_state.hard_game = false;
-                        return UpdateResult::Transition(Box::new(game::Game::new(false, false, false, true)))
+                        self.game_state.hard = true;
+                        return UpdateResult::Transition(Box::new(game::Game::new(false, true, false, false, self.game_state.hard)))
                     }
-//                    if transition_game {self.game_state.transition_game = false;
-//                        return UpdateResult::Transition(Box::new(game::Game::new(self.game_state.tutorial)))}
-//                    if transition_menu {self.game_state.transition_menu = false;
-//                        return UpdateResult::Transition(Box::new(main_menu::MainMenu::new()))}
-//                    if terminate {return UpdateResult::Exit}
                 }
         }
         for event in event_pump.poll_iter() {

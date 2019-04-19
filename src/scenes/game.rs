@@ -23,6 +23,7 @@ use crate::presentation::graphics::font::FontPkg;
 use crate::scenes::victory_screen::VictoryScreen;
 use crate::scenes::loss_screen::LossScreen;
 use crate::scenes::difficulty_screen::DifficultyScreen;
+use crate::core::scalar::Scalar;
 
 pub struct Game {
     pub state: State,
@@ -33,28 +34,47 @@ pub struct Game {
     pub game_state: GameState,
 }
 
+// Counts are out of 100%
+const EASY_COP_COUNT: Scalar = 0.1;
+const EASY_INFECTED_COUNT: Scalar = 0.07;
+const MEDIUM_COP_COUNT: Scalar = 0.075;
+const MEDIUM_INFECTED_COUNT: Scalar = 0.1;
+const HARD_COP_COUNT: Scalar = 0.04;
+const HARD_INFECTED_COUNT: Scalar = 0.4;
+
 impl Game {
-    pub fn new(tutorial: bool, easy_game: bool, medium_game: bool, hard_game: bool) -> Game {
+    pub fn new(tutorial: bool, difficulty: bool, easy: bool, medium: bool, hard: bool) -> Game {
         let gui = presentation::ui::gui::Component::init_game_gui();
         let camera = presentation::camera::Camera::new();
         let control = simulation::control::Control::new();
         let game_state: GameState;
+        let entity_count = 100;
+        let mut cop_entities = 0.05;
+        let mut infected_entities = 0.2;
 
-        if easy_game {
-            entity_count = 20;
-        } else if medium_game {
-            entity_count = 50;
-        } else if hard_game {
-            entity_count = 100;
+        // Set difficulty
+        if easy {
+            cop_entities = EASY_COP_COUNT;
+            infected_entities = EASY_INFECTED_COUNT;
+        } else if medium {
+            cop_entities = MEDIUM_COP_COUNT;
+            infected_entities = MEDIUM_INFECTED_COUNT;
+        } else if hard {
+            cop_entities = HARD_COP_COUNT;
+            infected_entities = HARD_INFECTED_COUNT;
         }
 
-        let state = simulation::initial_state::initial_state(entity_count, rand::random::<u32>());
+        let state = simulation::initial_state::initial_state(entity_count, cop_entities, infected_entities, rand::random::<u32>());
 
-        if tutorial {
+        if difficulty {
+            game_state = simulation::game_state::GameState::new_difficulty(easy, medium, hard);
+        } else if tutorial {
             game_state = simulation::game_state::GameState::new_tutorial();
         } else {
             game_state = simulation::game_state::GameState::new();
         }
+
+
         Game {
             state: state,
             entity_counts: EntityCounts::default(),
@@ -73,17 +93,37 @@ impl Scene for Game {
               delta_time: f64)
               -> UpdateResult {
         match self.game_state {
-            GameState{terminate, transition_menu, transition_game, zombies_win, humans_win, tutorial, summary_text, difficulty, ..} =>
+            GameState{terminate, transition_menu, transition_game, zombies_win, humans_win, tutorial, summary_text, difficulty, easy, medium, hard, easy_game, medium_game, hard_game, ..} =>
                 {
-                    if terminate {return UpdateResult::Exit}
+                    if terminate {
+                        return UpdateResult::Exit
+                    }
                     if transition_game {
                         self.game_state.transition_game = false;
-                        return UpdateResult::Transition(Box::new(Game::new(self.game_state.tutorial, false, false, false)))}
+                        return UpdateResult::Transition(Box::new(Game::new(self.game_state.tutorial, false, false, false, false)))
+                    }
                     if transition_menu {self.game_state.transition_menu = false;
-                        return UpdateResult::Transition(Box::new(main_menu::MainMenu::new()))}
+                        return UpdateResult::Transition(Box::new(main_menu::MainMenu::new()))
+                    }
+                    if easy_game {
+                        self.game_state.easy_game = false;
+                        self.game_state.easy = true;
+                        return UpdateResult::Transition(Box::new(Game::new(false, true, self.game_state.easy, false, false)))
+                    }
+                    if medium_game {
+                        self.game_state.medium_game = false;
+                        self.game_state.medium = true;
+                        return UpdateResult::Transition(Box::new(Game::new(false, true, false, self.game_state.medium, false)))
+                    }
+                    if hard_game {
+                        self.game_state.hard_game = false;
+                        self.game_state.hard = true;
+                        return UpdateResult::Transition(Box::new(Game::new(false, true, false, false, self.game_state.hard)))
+                    }
+                    // Display difficulty selection screen
                     if difficulty {
                         self.game_state.difficulty = false;
-                        return UpdateResult::Transition(Box::new(difficulty_screen::DifficultyScreen::new()))
+                        return UpdateResult::Transition(Box::new(difficulty_screen::DifficultyScreen::new(easy, medium, hard)))
                     }
                     if summary_text {
                         self.game_state.fade_wait += 1;
@@ -119,7 +159,7 @@ impl Scene for Game {
                         // wait 2 seconds
                         if self.game_state.trans_wait == 120 {
                             self.game_state.zombies_win = false;
-                            return UpdateResult::Transition(Box::new(LossScreen::new(self.entity_counts.clone())))
+                            return UpdateResult::Transition(Box::new(LossScreen::new(self.entity_counts.clone(), easy, medium, hard)))
                         }
                     }
                     if humans_win {
@@ -127,7 +167,7 @@ impl Scene for Game {
                         // wait 2 seconds
                         if self.game_state.trans_wait == 120 {
                             self.game_state.humans_win = false;
-                            return UpdateResult::Transition(Box::new(VictoryScreen::new(self.entity_counts.clone())))
+                            return UpdateResult::Transition(Box::new(VictoryScreen::new(self.entity_counts.clone(), easy, medium, hard)))
                         }
                     }
                 }

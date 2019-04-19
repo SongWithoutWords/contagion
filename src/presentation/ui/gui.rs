@@ -225,7 +225,15 @@ impl Component {
                                         } else if display_text == "Main Menu" {
                                             game_state.transition_menu = true;
                                         } else if display_text == "Retry" {
-                                            game_state.transition_game = true;
+                                            if game_state.easy == true {
+                                                game_state.easy_game = true;
+                                            } else if game_state.medium == true {
+                                                game_state.medium_game = true;
+                                            } else if game_state.hard == true {
+                                                game_state.hard_game = true;
+                                            } else {
+                                                game_state.transition_game = true;
+                                            }
                                         } else if display_text == "Exit" {
                                             game_state.terminate = true;
                                         }
@@ -515,12 +523,24 @@ impl Component {
                             if check_within_bound {
                                 let display_text = text;
                                 if display_text == "Retry" {
-                                    game_state.transition_game = true;
+                                    println!("{:?}", game_state.easy);
+                                    println!("{:?}", game_state.medium);
+                                    println!("{:?}", game_state.hard);
+                                    if game_state.easy == true {
+                                        game_state.easy_game = true;
+                                    } else if game_state.medium == true {
+                                        game_state.medium_game = true;
+                                    } else if game_state.hard == true {
+                                        game_state.hard_game = true;
+                                    }
                                 } else if display_text == "Main Menu" {
                                     game_state.transition_menu = true;
                                 } else if display_text == "Exit" {
                                     game_state.terminate = true;
+                                } else {
+                                    game_state.transition_game = true;
                                 }
+
                             }
                         }
                         Event::MouseMotion { timestamp: _, window_id: _, which: _, x, y, .. } => {
@@ -565,11 +585,22 @@ impl Component {
                             if check_within_bound {
                                 let display_text = text;
                                 if display_text == "Retry" {
-                                    game_state.transition_game = true;
+                                    println!("{:?}", game_state.easy);
+                                    println!("{:?}", game_state.medium);
+                                    println!("{:?}", game_state.hard);
+                                    if game_state.easy == true {
+                                        game_state.easy_game = true;
+                                    } else if game_state.medium == true {
+                                        game_state.medium_game = true;
+                                    } else if game_state.hard == true {
+                                        game_state.hard_game = true;
+                                    }
                                 } else if display_text == "Main Menu" {
                                     game_state.transition_menu = true;
                                 } else if display_text == "Exit" {
                                     game_state.terminate = true;
+                                } else {
+                                    game_state.transition_game = true;
                                 }
                             }
                         }
@@ -615,13 +646,10 @@ impl Component {
                             if check_within_bound {
                                 let display_text = text;
                                 if display_text == "Easy" {
-//                                    game_state.transition_game = true;
                                     game_state.easy_game = true;
                                 } else if display_text == "Medium" {
-//                                    game_state.transition_game = true;
                                     game_state.medium_game = true;
                                 } else if display_text == "Hard" {
-//                                    game_state.transition_game = true;
                                     game_state.hard_game = true;
                                 }
                             }
