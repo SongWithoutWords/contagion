@@ -52,7 +52,7 @@ pub enum SpriteType {
     MoneyWorldIcon,
     BuildingModeIcon,
     SelectingModeIcon
-}
+    InfectionSymbol,
 
 // pub type Textures = EnumMap<SpriteType, Texture2d>;
 pub struct Textures {
@@ -131,6 +131,9 @@ pub fn load_textures(window: &glium_sdl2::SDL2Facade) -> Textures {
                 => load_texture(window, "assets/images/ui/building_icon.png"),
             SpriteType::SelectingModeIcon
                 => load_texture(window, "assets/images/ui/mouse_select.png"),
+            SpriteType::InfectionSymbol
+                => load_texture(window, "assets/images/ui/biohazard_symbol.png"),
+
         },
         background_texture: load_texture(&window, "assets/images/dirt.jpg"),
         wallpaper: load_texture(&window, "assets/images/contagion_wallpaper.png"),
@@ -148,6 +151,7 @@ pub struct Programs {
     shadow_program: glium::Program,
     gui_program: glium::Program,
     shape_program: glium::Program,
+    infection_program: glium::Program,
 }
 
 pub fn load_programs(window: &glium_sdl2::SDL2Facade) -> Programs {
@@ -172,6 +176,10 @@ pub fn load_programs(window: &glium_sdl2::SDL2Facade) -> Programs {
             window,
             include_str!("graphics/shape.vs.glsl"),
             include_str!("graphics/shape.fs.glsl"), None).unwrap(),
+        infection_program: glium::Program::from_source(
+            window,
+            include_str!("graphics/infection.vs.glsl"),
+            include_str!("graphics/infection.fs.glsl"), None).unwrap(),
     }
 }
 
@@ -402,8 +410,8 @@ fn push_hand_vertices(buffer: &mut Vec<Vertex>, sprite: &Sprite, hand: bool, typ
 }
 
 fn push_health_bar_vertices(buffer: &mut Vec<ColorVertex>, sprite: &Sprite, health: Scalar) {
-    let position = Vector2 { x: sprite.position.x, y: sprite.position.y + 1.0 };
-    let up = 0.5;
+    let position = Vector2 { x: sprite.position.x, y: sprite.position.y + 0.6 };
+    let up = 0.4;
     let down = 0.2;
 
     let top_left = Vector2 { x: position.x - up, y: position.y + up };
@@ -432,6 +440,52 @@ fn push_health_bar_vertices(buffer: &mut Vec<ColorVertex>, sprite: &Sprite, heal
         position: bot_right.as_f32_array(),
         tex_coords: [1.0, 0.0],
         color,
+    };
+    buffer.push(vertex0);
+    buffer.push(vertex1);
+    buffer.push(vertex2);
+    buffer.push(vertex1);
+    buffer.push(vertex3);
+    buffer.push(vertex2);
+}
+
+fn push_infection_symbol_vertices(buffer: &mut Vec<ColorVertex>, sprite: &Sprite, infection: Scalar) {
+    let position = Vector2 { x: sprite.position.x, y: sprite.position.y + 1.0 };
+    let up = 0.4;
+    let down = 0.4;
+    let height = 0.6;
+
+    let top_left = Vector2 { x: position.x - up, y: position.y + up + height };
+    let top_right = Vector2 { x: position.x + up, y: position.y + up + height };
+    let bot_left = Vector2 { x: position.x - up , y: position.y - down + height };
+    let bot_right = Vector2 { x: position.x + up, y: position.y - down + height };
+
+    let color = vector4(0.0, 1.0, 0.0, 1.0).lerp(vector4(1.0, 0.0, 0.0, 1.0), infection).as_f32_array();
+
+    let vertex0 = ColorVertex {
+        position: top_left.as_f32_array(),
+        tex_coords: [0.0, 1.0],
+//        tex_coords: [0.0, 2.0],
+        color,
+    };
+    let vertex1 = ColorVertex {
+        position: top_right.as_f32_array(),
+        tex_coords: [1.0, 1.0],
+//        tex_coords: [2.0, 2.0],
+        color,
+    };
+    let vertex2 = ColorVertex {
+        position: bot_left.as_f32_array(),
+        tex_coords: [0.0, 0.0],
+//        tex_coords: [0.0, 0.0],
+        color,
+    };
+    let vertex3 = ColorVertex {
+        position: bot_right.as_f32_array(),
+        tex_coords: [1.0, 0.0],
+//        tex_coords: [2.0, 0.0],
+        color,
+
     };
     buffer.push(vertex0);
     buffer.push(vertex1);
@@ -1173,6 +1227,7 @@ pub fn display(
                 }
             }
         };
+
         push_sprite_vertices(&mut vertex_buffers[sprite_type], &sprite);
 
         let health = match &entity.dead_or_alive {
@@ -1180,11 +1235,28 @@ pub fn display(
             _ => ENTITY_HEALTH_MIN
         };
 
+
+        let infection = match &entity.dead_or_alive {
+            DeadOrAlive::Alive {
+                zombie_or_human: ZombieOrHuman::Human {
+                    infection,
+                    ..
+                },
+                ..
+            } => *infection,
+            _ => INFECTION_MIN
+        };
+
         // Display a health bar only for entities that are wounded but not dead
         if ENTITY_HEALTH_MIN < health && health < ENTITY_HEALTH_MAX {
             push_health_bar_vertices(&mut vertex_buffers_green_hp, &sprite, health);
         }
+        // Display a health bar only for entities that are wounded but not dead
+        if INFECTION_MIN < infection && infection < INFECTION_MAX {
+            push_infection_symbol_vertices(&mut vertex_buffers_gui[SpriteType::InfectionSymbol], &sprite, infection);
+        }
     }
+
 
     // Compute vertices for selection highlights
     let mut selection_count = 0;
@@ -1579,6 +1651,7 @@ pub fn display(
                 &uniforms);
         }
         else if _gui_type == SpriteType::MoneyHighlight {
+        } else if _gui_type == SpriteType::ZombieIconHighlight {
             let uniforms = uniform! {
                     matrix: mat_gui,
                     tex: &textures.sprite_textures[_gui_type],
@@ -1591,6 +1664,7 @@ pub fn display(
                 params,
                 &uniforms);
         } else if _gui_type == SpriteType::ZombieIconHighlight {
+        } else if _gui_type == SpriteType::CivilianIconHighlight {
             let uniforms = uniform! {
                     matrix: mat_gui,
                     tex: &textures.sprite_textures[_gui_type],
@@ -1693,11 +1767,19 @@ pub fn display(
             };
 
             draw_money_num(window, state.money as usize, frame, &font.lowres());
+        } else if _gui_type == SpriteType::InfectionSymbol {
+
+            // Render infection symbol
+            let uniforms = uniform! {
+        matrix: camera_frame,
+          tex: &textures.sprite_textures[_gui_type],
+    };
             draw_color_sprites(
                 frame,
                 window,
                 &vertex_buffer,
                 &programs.sprite_program,
+                &programs.infection_program,
                 params,
                 &uniforms);
         }
@@ -1754,14 +1836,14 @@ pub fn display(
             let text_width = text.get_width() as f64;
             let text_offset = scale_width / text_width;
             let scale_factor = Vector4 { x: text_offset, y: scale_width * (w as f64) / (h as f64) / text_width, z: 1.0, w: 1.0 };
-            let translation_offset = Vector4 { x: x_offset , y: -0.5, z: 0.0, w: gamestate.fade_pers as f64};
+            let translation_offset = Vector4 { x: x_offset, y: -0.5, z: 0.0, w: gamestate.fade_pers as f64 };
             let mut matrix = mat.scale(scale_factor).translation(translation_offset);
             glium_text::draw(&text, &system, frame, matrix.as_f32_array(), color);
             let text_to_display = "Press 'esc' and click 'Instruction' to look at controls.";
             let text_display = format!("{}", text_to_display);
             let str_slice: &str = &text_display[..];
             let text = glium_text::TextDisplay::new(&system, font.lowres(), str_slice);
-            let translation_offset = Vector4 {x: 0.025, y: -0.1, z: 0.0, w: gamestate.fade_pers as f64};
+            let translation_offset = Vector4 { x: 0.025, y: -0.1, z: 0.0, w: gamestate.fade_pers as f64 };
             matrix = matrix.translation(translation_offset);
             glium_text::draw(&text, &system, frame, matrix.as_f32_array(), color);
             if tutorial_text_fade(gamestate) {
@@ -1786,7 +1868,7 @@ pub fn display(
             let text_width = text.get_width() as f64;
             let text_offset = scale_width / text_width;
             let scale_factor = Vector4 { x: text_offset, y: scale_width * (w as f64) / (h as f64) / text_width, z: 1.0, w: 1.0 };
-            let translation_offset = Vector4 { x: x_offset , y: -0.5, z: 0.0, w: 0.0 };
+            let translation_offset = Vector4 { x: x_offset, y: -0.5, z: 0.0, w: 0.0 };
             let mut matrix = mat.scale(scale_factor).translation(translation_offset);
             glium_text::draw(&text, &system, frame, matrix.as_f32_array(), color);
             // only display if tutorial hasn't been passed
@@ -1817,7 +1899,7 @@ pub fn display(
             let text_width = text.get_width() as f64;
             let text_offset = scale_width / text_width;
             let scale_factor = Vector4 { x: text_offset, y: scale_width * (w as f64) / (h as f64) / text_width, z: 1.0, w: 1.0 };
-            let translation_offset = Vector4 { x: x_offset , y: -0.5, z: 0.0, w: 0.0 };
+            let translation_offset = Vector4 { x: x_offset, y: -0.5, z: 0.0, w: 0.0 };
             let matrix = mat.scale(scale_factor).translation(translation_offset);
             glium_text::draw(&text, &system, frame, matrix.as_f32_array(), color);
         }
@@ -1840,7 +1922,7 @@ pub fn display(
             let text_width = text.get_width() as f64;
             let text_offset = scale_width / text_width;
             let scale_factor = Vector4 { x: text_offset, y: scale_width * (w as f64) / (h as f64) / text_width, z: 1.0, w: 1.0 };
-            let translation_offset = Vector4 { x: x_offset , y: -0.5, z: 0.0, w: 0.0 };
+            let translation_offset = Vector4 { x: x_offset, y: -0.5, z: 0.0, w: 0.0 };
             let matrix = mat.scale(scale_factor).translation(translation_offset);
             glium_text::draw(&text, &system, frame, matrix.as_f32_array(), color);
         }
@@ -1890,12 +1972,12 @@ fn tutorial_text_fade(gamestate: &mut GameState) -> bool {
     if (gamestate.tut_time_curr - gamestate.tut_time) > tick {
         gamestate.tut_passed = false;
         gamestate.tut_time = 0;
-        return true
+        return true;
     } else {
 //        if (gamestate.tut_time_curr - gamestate.tut_time) > (tick / 2) {
 //            gamestate.fade_alpha -= 1.0 / (tick / 2) as f32
 //        }
-        return false
+        return false;
     }
 }
 
