@@ -38,13 +38,15 @@ pub enum SpriteType {
     CopWorldIcon,
     CivilianWorldIcon,
     BuildingOne,
-    ZombieFist,
     ZombieTorso,
     ZombieClawRight,
     ZombieClawLeft,
     ZombieIconHighlight,
     CopIconHighlight,
     CivilianIconHighlight,
+    CivilianHandLeft,
+    CivilianHandRight,
+    CivilianTorso
 }
 
 // pub type Textures = EnumMap<SpriteType, Texture2d>;
@@ -98,8 +100,6 @@ pub fn load_textures(window: &glium_sdl2::SDL2Facade) -> Textures {
                 => load_texture(window, "assets/images/ui/civilian_world_icon_new.png"),
             SpriteType::BuildingOne
                 => load_texture(window, "assets/images/building/building_one.png"),
-            SpriteType::ZombieFist
-                => load_texture(window, "assets/images/zombie/zombie_claw_right.png"),
             SpriteType::ZombieTorso
                 => load_texture(window, "assets/images/zombie/zombie_torso.png"),
             SpriteType::ZombieClawRight
@@ -112,6 +112,13 @@ pub fn load_textures(window: &glium_sdl2::SDL2Facade) -> Textures {
                 => load_texture(window, "assets/images/ui/cop_highlight.png"),
             SpriteType::CivilianIconHighlight
                 => load_texture(window, "assets/images/ui/civilian_highlight.png"),
+            SpriteType::CivilianHandLeft
+                => load_texture(window, "assets/images/civilian/civilian_hand_left.png"),
+            SpriteType::CivilianHandRight
+                => load_texture(window, "assets/images/civilian/civilian_hand_right.png"),
+            SpriteType::CivilianTorso
+                => load_texture(window, "assets/images/civilian/civilian_torso.png"),
+
         },
         background_texture: load_texture(&window, "assets/images/dirt.jpg"),
         wallpaper: load_texture(&window, "assets/images/contagion_wallpaper.png"),
@@ -269,12 +276,13 @@ fn push_gui_vertices(buffer: &mut Vec<ColorVertex>, ui: &Gui) {
     buffer.push(vertex2);
 }
 
-// right if hand is true, left if hand is false
-fn push_hand_vertices(buffer: &mut Vec<Vertex>, sprite: &Sprite, hand: bool) {
+// right if hand is true, left if hand is false, type_hand = 0 for zombie, 1 for civilian
+fn push_hand_vertices(buffer: &mut Vec<Vertex>, sprite: &Sprite, hand: bool, type_hand: u32) {
     let position = sprite.position;
     let up = sprite.radius * sprite.facing;
     let right = up.right(); //vector2(up.y, -up.x);
 
+    // default to type hand for zombie and hand is left
     let mut top_left = position - right + up;
     let mut top_right = position + up;
     let mut bot_left = position - right;
@@ -285,6 +293,27 @@ fn push_hand_vertices(buffer: &mut Vec<Vertex>, sprite: &Sprite, hand: bool) {
         top_right = position + right + up;
         bot_left = position;
         bot_right = position + right;
+    }
+
+    if type_hand == 1 {
+        let scaled_up = sprite.radius * sprite.facing * 0.5;
+        let scaled_right = up.right() * 0.1;
+        top_left -= scaled_up;
+        top_right -= scaled_up;
+        bot_left -= scaled_up;
+        bot_right -= scaled_up;
+
+        if hand {
+            top_left -= scaled_right;
+            bot_left -= scaled_right;
+            top_right -= scaled_right;
+            bot_right -= scaled_right;
+        } else {
+            top_left += scaled_right;
+            bot_left += scaled_right;
+            top_right += scaled_right;
+            bot_right += scaled_right;
+        }
     }
 
     // 0      1
@@ -963,7 +992,17 @@ pub fn display(
         let sprite_type = match p.kind {
             ProjectileKind::Bullet => SpriteType::BulletInAir,
             ProjectileKind::Casing => SpriteType::BulletCasing,
-            ProjectileKind::Fist { .. } => SpriteType::ZombieFist
+            ProjectileKind::Fist { owner_index } => {
+                match &state.entities[owner_index].dead_or_alive {
+                    DeadOrAlive::Alive { zombie_or_human, .. } => match zombie_or_human {
+                        ZombieOrHuman::Zombie { .. } => {
+                            SpriteType::ZombieClawRight
+                        }
+                        _ => SpriteType::CivilianHandRight
+                    }
+                    _ => SpriteType::ZombieClawRight
+                }
+            }
         };
         let mut rad = BULLET_RADIUS;
         match p.kind {
@@ -987,19 +1026,24 @@ pub fn display(
             facing: entity.get_facing_normal(),
             radius: 0.5,
         };
+        let hand_sprite = Sprite {
+            position: entity.position,
+            facing: entity.get_facing_normal(),
+            radius: 0.7,
+        };
         let sprite_type = match &entity.dead_or_alive {
             DeadOrAlive::Dead => SpriteType::Dead,
             DeadOrAlive::Alive { zombie_or_human, .. } => match zombie_or_human {
                 ZombieOrHuman::Zombie { state: _, left_hand_status, right_hand_status } => {
                     match left_hand_status {
                         HandStatus::Normal => {
-                            push_hand_vertices(&mut vertex_buffers[SpriteType::ZombieClawLeft], &sprite, false);
+                            push_hand_vertices(&mut vertex_buffers[SpriteType::ZombieClawLeft], &sprite, false, 0);
                         }
                         _ => ()
                     }
                     match right_hand_status {
                         HandStatus::Normal => {
-                            push_hand_vertices(&mut vertex_buffers[SpriteType::ZombieClawRight], &sprite, true);
+                            push_hand_vertices(&mut vertex_buffers[SpriteType::ZombieClawRight], &sprite, true, 0);
                         }
                         _ => ()
                     }
@@ -1010,7 +1054,21 @@ pub fn display(
                         CopType::Normal => SpriteType::Cop,
                         CopType::Soldier => SpriteType::Soldier,
                     },
-                    Human::Civilian { .. } => SpriteType::Civilian
+                    Human::Civilian { state: _, punch_time_cooldown: _, left_hand_status, right_hand_status } =>  {
+                        match left_hand_status {
+                            HandStatus::Normal => {
+                                push_hand_vertices(&mut vertex_buffers[SpriteType::CivilianHandLeft], &hand_sprite, false, 1);
+                            }
+                            _ => ()
+                        }
+                        match right_hand_status {
+                            HandStatus::Normal => {
+                                push_hand_vertices(&mut vertex_buffers[SpriteType::CivilianHandRight], &hand_sprite, true, 1);
+                            }
+                            _ => ()
+                        }
+                        SpriteType::CivilianTorso
+                    }
                 }
             }
         };

@@ -123,7 +123,9 @@ pub const INFECTION_MAX: f64 = 1.0;
 
 pub const FIGHTING_RANGE: Scalar = 1.0;
 pub const ANGULAR_ACCURACY_STD_DEV: Scalar = 0.1;
-pub const PUNCH_TIME_COOLDOWN: Scalar = 0.0;
+
+pub const PUNCH_TIME: Scalar = 2.0;
+pub const PUNCH_TIME_COOLDOWN: Scalar = 10.0;
 
 
 #[derive(Clone)]
@@ -144,13 +146,18 @@ pub enum ZombieOrHuman {
     },
     Human {
         infection: Scalar,
-        human: Human,
+        human: Human
     }
 }
 
 #[derive(Clone)]
 pub enum Human {
-    Civilian,
+    Civilian {
+        state: HumanState,
+        punch_time_cooldown: Scalar,
+        left_hand_status: HandStatus,
+        right_hand_status: HandStatus
+    },
     Cop {
         cop_type: CopType,
         rounds_in_magazine: i64,
@@ -230,8 +237,10 @@ pub enum ZombieState {
 
 #[derive(Clone, PartialEq)]
 pub enum HumanState {
+    Running,
     Fighting {
-        target_index: usize
+        target_index: usize,
+        punch_time_remaining: Scalar
     }
 }
 
@@ -260,6 +269,7 @@ pub const FIST_RADIUS: Scalar = 0.3;
 pub const FIST_SPEED: Scalar = 0.6;
 pub const FIST_SPEED_MIN: Scalar = 0.3;
 pub const FIST_SPAWN_DISTANCE_MULTIPLIER: Scalar = 1.25;
+pub const FIST_DAMAGE: Scalar = 0.20;
 
 
 #[derive(Copy, Clone, PartialEq)]
