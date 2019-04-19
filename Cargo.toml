@@ -21,3 +21,8 @@ piston-music = "0.23.0"
 version = "0.30"
 default-features = false
 features = ["ttf"]
+
+# See https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html
+# for details on patching libraries like this
+[patch.crates-io]
+piston-music = { git = "https://github.com/SongWithoutWords/music", branch = "volume-fix" }

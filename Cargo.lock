@@ -129,7 +129,7 @@ dependencies = [
  "lerp 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "libc 0.2.51 (registry+https://github.com/rust-lang/crates.io-index)",
  "num 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "piston-music 0.23.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "piston-music 0.23.0 (git+https://github.com/SongWithoutWords/music?branch=volume-fix)",
  "rand 0.6.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "rand_xorshift 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "sdl2 0.30.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -707,7 +707,7 @@ dependencies = [
 [[package]]
 name = "piston-music"
 version = "0.23.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
+source = "git+https://github.com/SongWithoutWords/music?branch=volume-fix#125dd8cbffcd140cf1415faea02f0e5a5e5d2589"
 dependencies = [
  "current 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "sdl2 0.30.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1280,7 +1280,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum phf_codegen 0.7.24 (registry+https://github.com/rust-lang/crates.io-index)" = "b03e85129e324ad4166b06b2c7491ae27fe3ec353af72e72cd1654c7225d517e"
 "checksum phf_generator 0.7.24 (registry+https://github.com/rust-lang/crates.io-index)" = "09364cc93c159b8b06b1f4dd8a4398984503483891b0c26b867cf431fb132662"
 "checksum phf_shared 0.7.24 (registry+https://github.com/rust-lang/crates.io-index)" = "234f71a15de2288bcb7e3b6515828d22af7ec8598ee6d24c3b526fa0a80b67a0"
-"checksum piston-music 0.23.0 (registry+https://github.com/rust-lang/crates.io-index)" = "cd26774cd140576db6d7645470c7d208951192c75c6a6b5fccdcb62fc54cc659"
+"checksum piston-music 0.23.0 (git+https://github.com/SongWithoutWords/music?branch=volume-fix)" = "<none>"
 "checksum pkg-config 0.3.14 (registry+https://github.com/rust-lang/crates.io-index)" = "676e8eb2b1b4c9043511a9b7bea0915320d7e502b0a079fb03f9635a5252b18c"
 "checksum png 0.14.0 (registry+https://github.com/rust-lang/crates.io-index)" = "9adebf7fb91ccf5eac9da1a8e00e83cb8ae882c3e8d8e4ad59da73cb8c82a2c9"
 "checksum proc-macro2 0.4.27 (registry+https://github.com/rust-lang/crates.io-index)" = "4d317f9caece796be1980837fd5cb3dfec5613ebdb04ad0956deea83ce168915"
