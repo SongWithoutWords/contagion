@@ -14,9 +14,9 @@ use crate::presentation::ui::gui::*;
 use crate::presentation::ui::gui::Component;
 use crate::presentation::ui::gui::GuiType;
 use crate::simulation::control::*;
+use crate::simulation::game_state::GameState;
 use crate::simulation::state::*;
 use crate::simulation::update::EntityCounts;
-use crate::simulation::game_state::GameState;
 
 // Enum ordered by draw order
 #[derive(Copy, Clone, Debug, Enum, PartialEq)]
@@ -330,6 +330,47 @@ fn push_health_bar_vertices(buffer: &mut Vec<ColorVertex>, sprite: &Sprite, heal
     let bot_right = bot_left.lerp(Vector2 { x: position.x + up, y: position.y + down }, health);
 
     let color = vector4(1.0, 0.0, 0.0, 1.0).lerp(vector4(0.0, 1.0, 0.0, 1.0), health).as_f32_array();
+
+    let vertex0 = ColorVertex {
+        position: top_left.as_f32_array(),
+        tex_coords: [0.0, 1.0],
+        color,
+    };
+    let vertex1 = ColorVertex {
+        position: top_right.as_f32_array(),
+        tex_coords: [1.0, 1.0],
+        color,
+    };
+    let vertex2 = ColorVertex {
+        position: bot_left.as_f32_array(),
+        tex_coords: [0.0, 0.0],
+        color,
+    };
+    let vertex3 = ColorVertex {
+        position: bot_right.as_f32_array(),
+        tex_coords: [1.0, 0.0],
+        color,
+    };
+    buffer.push(vertex0);
+    buffer.push(vertex1);
+    buffer.push(vertex2);
+    buffer.push(vertex1);
+    buffer.push(vertex3);
+    buffer.push(vertex2);
+}
+
+fn push_infection_symbol_vertices(buffer: &mut Vec<ColorVertex>, sprite: &Sprite, infection: Scalar) {
+    let position = Vector2 { x: sprite.position.x, y: sprite.position.y + 1.0 };
+    let up = 1.0;
+    let down = 0.7;
+
+
+    let top_left = Vector2 { x: position.x - up, y: position.y + up };
+    let top_right = top_left.lerp(Vector2 { x: position.x + up, y: position.y + up }, -infection);
+    let bot_left = Vector2 { x: position.x - up, y: position.y + down };
+    let bot_right = bot_left.lerp(Vector2 { x: position.x + up, y: position.y + down }, -infection);
+
+    let color = vector4(0.0, 1.0, 0.0, 1.0).lerp(vector4(1.0, 0.0, 0.0, 1.0), infection).as_f32_array();
 
     let vertex0 = ColorVertex {
         position: top_left.as_f32_array(),
@@ -951,6 +992,7 @@ pub fn display(
 
     let mut vertex_buffers = enum_map! {_ => vec!()};
     let mut vertex_buffers_green_hp = vec!();
+    let mut vertex_buffers_red_hp = vec!();
     let mut vertex_buffers_gui = enum_map! {_ => vec!()};
     let mut vertex_buffers_building = vec!();
     let mut vertex_buffers_path = vec!();
@@ -1014,6 +1056,7 @@ pub fn display(
                 }
             }
         };
+
         push_sprite_vertices(&mut vertex_buffers[sprite_type], &sprite);
 
         let health = match &entity.dead_or_alive {
@@ -1021,11 +1064,34 @@ pub fn display(
             _ => ENTITY_HEALTH_MIN
         };
 
+
+
+//        let infection = match &entity.dead_or_alive {
+//            ZombieOrHuman::Human { infection, .. } => *infection,
+//            _ => INFECTION_MIN
+//        };
+
+        let infection = match &entity.dead_or_alive {
+            DeadOrAlive::Alive {
+                zombie_or_human: ZombieOrHuman::Human {
+                    infection,
+                    .. },
+                ..
+            } =>  *infection,
+            _=> INFECTION_MIN
+        };
+
+        println!("{}", infection);
         // Display a health bar only for entities that are wounded but not dead
         if ENTITY_HEALTH_MIN < health && health < ENTITY_HEALTH_MAX {
             push_health_bar_vertices(&mut vertex_buffers_green_hp, &sprite, health);
         }
+        // Display a health bar only for entities that are wounded but not dead
+        if INFECTION_MIN < infection && infection < INFECTION_MAX {
+            push_infection_symbol_vertices(&mut vertex_buffers_red_hp, &sprite, infection);
+        }
     }
+
 
     // Compute vertices for selection highlights
     let mut selection_count = 0;
@@ -1056,7 +1122,6 @@ pub fn display(
     //let offset = 0.1;
     for component in &mut ui.components {
         match &component.id {
-
             GuiType::ZombieHighlight => {
                 push_gui_vertices(&mut vertex_buffers_gui[SpriteType::ZombieIconHighlight], component);
             }
@@ -1244,6 +1309,18 @@ pub fn display(
         params,
         &uniforms);
 
+    // Render green HP
+    let uniforms = uniform! {
+        matrix: camera_frame,
+    };
+    draw_color_sprites(
+        frame,
+        window,
+        &vertex_buffers_red_hp,
+        &programs.gui_program,
+        params,
+        &uniforms);
+
     // Render GUI
     let mat_gui = [
         [1.0, 0.0, 0.0, 0.0],
@@ -1347,8 +1424,7 @@ pub fn display(
                 &programs.sprite_program,
                 params,
                 &uniforms);
-        }
-        else if _gui_type == SpriteType::CopIconHighlight {
+        } else if _gui_type == SpriteType::CopIconHighlight {
             let uniforms = uniform! {
                     matrix: mat_gui,
                     tex: &textures.sprite_textures[_gui_type],
@@ -1360,8 +1436,7 @@ pub fn display(
                 &programs.sprite_program,
                 params,
                 &uniforms);
-        }
-        else if _gui_type == SpriteType::ZombieIconHighlight {
+        } else if _gui_type == SpriteType::ZombieIconHighlight {
             let uniforms = uniform! {
                     matrix: mat_gui,
                     tex: &textures.sprite_textures[_gui_type],
@@ -1373,8 +1448,7 @@ pub fn display(
                 &programs.sprite_program,
                 params,
                 &uniforms);
-        }
-       else if _gui_type == SpriteType::CivilianIconHighlight {
+        } else if _gui_type == SpriteType::CivilianIconHighlight {
             let uniforms = uniform! {
                     matrix: mat_gui,
                     tex: &textures.sprite_textures[_gui_type],
@@ -1386,9 +1460,7 @@ pub fn display(
                 &programs.sprite_program,
                 params,
                 &uniforms);
-        }
-
-        else if _gui_type == SpriteType::ZombieWorldIcon {
+        } else if _gui_type == SpriteType::ZombieWorldIcon {
             let uniforms = uniform! {
                     matrix: mat_gui,
                     tex: &textures.sprite_textures[_gui_type],
@@ -1457,7 +1529,7 @@ pub fn display(
         let (w, h) = frame.get_dimensions();
         let _text_offset = 1.0 / text_width;
         let scale_factor = Vector4 { x: 1.0 / text_width, y: 1.0 * (w as f64) / (h as f64) / text_width, z: 1.0, w: 1.0 };
-        let translation_offset = Vector4 { x: -0.8 , y: 0.7, z: 0.0, w: 0.0 };
+        let translation_offset = Vector4 { x: -0.8, y: 0.7, z: 0.0, w: 0.0 };
         let mut matrix = mat.scale(scale_factor).translation(translation_offset);
         glium_text::draw(&text, &system, frame, matrix.as_f32_array(), color);
 
@@ -1465,7 +1537,7 @@ pub fn display(
         let text_display = format!("{}", text_to_display);
         let str_slice: &str = &text_display[..];
         let text = glium_text::TextDisplay::new(&system, font.medres(), str_slice);
-        let translation_offset = Vector4 {x: 0.0, y: -0.1, z: 0.0, w: 0.0};
+        let translation_offset = Vector4 { x: 0.0, y: -0.1, z: 0.0, w: 0.0 };
         matrix = matrix.translation(translation_offset);
         glium_text::draw(&text, &system, frame, matrix.as_f32_array(), color);
     }
@@ -1490,14 +1562,14 @@ pub fn display(
             let text_width = text.get_width() as f64;
             let text_offset = scale_width / text_width;
             let scale_factor = Vector4 { x: text_offset, y: scale_width * (w as f64) / (h as f64) / text_width, z: 1.0, w: 1.0 };
-            let translation_offset = Vector4 { x: x_offset , y: -0.5, z: 0.0, w: gamestate.fade_pers as f64};
+            let translation_offset = Vector4 { x: x_offset, y: -0.5, z: 0.0, w: gamestate.fade_pers as f64 };
             let mut matrix = mat.scale(scale_factor).translation(translation_offset);
             glium_text::draw(&text, &system, frame, matrix.as_f32_array(), color);
             let text_to_display = "Press 'esc' and click 'Instruction' to look at controls.";
             let text_display = format!("{}", text_to_display);
             let str_slice: &str = &text_display[..];
             let text = glium_text::TextDisplay::new(&system, font.lowres(), str_slice);
-            let translation_offset = Vector4 {x: 0.025, y: -0.1, z: 0.0, w: gamestate.fade_pers as f64};
+            let translation_offset = Vector4 { x: 0.025, y: -0.1, z: 0.0, w: gamestate.fade_pers as f64 };
             matrix = matrix.translation(translation_offset);
             glium_text::draw(&text, &system, frame, matrix.as_f32_array(), color);
             if tutorial_text_fade(gamestate) {
@@ -1522,7 +1594,7 @@ pub fn display(
             let text_width = text.get_width() as f64;
             let text_offset = scale_width / text_width;
             let scale_factor = Vector4 { x: text_offset, y: scale_width * (w as f64) / (h as f64) / text_width, z: 1.0, w: 1.0 };
-            let translation_offset = Vector4 { x: x_offset , y: -0.5, z: 0.0, w: 0.0 };
+            let translation_offset = Vector4 { x: x_offset, y: -0.5, z: 0.0, w: 0.0 };
             let mut matrix = mat.scale(scale_factor).translation(translation_offset);
             glium_text::draw(&text, &system, frame, matrix.as_f32_array(), color);
             // only display if tutorial hasn't been passed
@@ -1553,7 +1625,7 @@ pub fn display(
             let text_width = text.get_width() as f64;
             let text_offset = scale_width / text_width;
             let scale_factor = Vector4 { x: text_offset, y: scale_width * (w as f64) / (h as f64) / text_width, z: 1.0, w: 1.0 };
-            let translation_offset = Vector4 { x: x_offset , y: -0.5, z: 0.0, w: 0.0 };
+            let translation_offset = Vector4 { x: x_offset, y: -0.5, z: 0.0, w: 0.0 };
             let matrix = mat.scale(scale_factor).translation(translation_offset);
             glium_text::draw(&text, &system, frame, matrix.as_f32_array(), color);
         }
@@ -1576,7 +1648,7 @@ pub fn display(
             let text_width = text.get_width() as f64;
             let text_offset = scale_width / text_width;
             let scale_factor = Vector4 { x: text_offset, y: scale_width * (w as f64) / (h as f64) / text_width, z: 1.0, w: 1.0 };
-            let translation_offset = Vector4 { x: x_offset , y: -0.5, z: 0.0, w: 0.0 };
+            let translation_offset = Vector4 { x: x_offset, y: -0.5, z: 0.0, w: 0.0 };
             let matrix = mat.scale(scale_factor).translation(translation_offset);
             glium_text::draw(&text, &system, frame, matrix.as_f32_array(), color);
         }
@@ -1626,12 +1698,12 @@ fn tutorial_text_fade(gamestate: &mut GameState) -> bool {
     if (gamestate.tut_time_curr - gamestate.tut_time) > tick {
         gamestate.tut_passed = false;
         gamestate.tut_time = 0;
-        return true
+        return true;
     } else {
 //        if (gamestate.tut_time_curr - gamestate.tut_time) > (tick / 2) {
 //            gamestate.fade_alpha -= 1.0 / (tick / 2) as f32
 //        }
-        return false
+        return false;
     }
 }
 
