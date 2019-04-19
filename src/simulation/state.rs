@@ -127,8 +127,9 @@ pub const INFECTION_MAX: f64 = 1.0;
 pub const FIGHTING_RANGE: Scalar = 1.0;
 pub const ANGULAR_ACCURACY_STD_DEV: Scalar = 0.1;
 
+pub const ZOMBIE_PUNCH_TIME: Scalar = 1.0;
 pub const PUNCH_TIME: Scalar = 2.0;
-pub const PUNCH_TIME_COOLDOWN: Scalar = 10.0;
+pub const PUNCH_TIME_COOLDOWN: Scalar = 5.0;
 
 
 #[derive(Clone)]
@@ -272,15 +273,17 @@ pub const FIST_RADIUS: Scalar = 0.3;
 pub const FIST_SPEED: Scalar = 0.6;
 pub const FIST_SPEED_MIN: Scalar = 0.3;
 pub const FIST_SPAWN_DISTANCE_MULTIPLIER: Scalar = 1.25;
-pub const FIST_DAMAGE: Scalar = 0.20;
+pub const FIST_DAMAGE: Scalar = 0.50;
 
 
+// When left hand is true, hand generated is left, else hand generated is right
 #[derive(Copy, Clone, PartialEq)]
 pub enum ProjectileKind {
     Bullet,
     Casing,
     Fist {
-        owner_index: usize
+        owner_index: usize,
+        left_hand: bool,
     }
 }
 

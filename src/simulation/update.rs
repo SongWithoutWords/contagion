@@ -230,19 +230,27 @@ pub fn update(args: &UpdateArgs, state: &mut State) -> SimulationResults {
     while i < state.projectiles.len() {
         let p = state.projectiles[i];
         match p.kind {
-            ProjectileKind::Fist { owner_index } => {
+            ProjectileKind::Fist { owner_index, left_hand } => {
                 if p.velocity.length_squared() <= FIST_SPEED_MIN {
                     let owner = &mut state.entities[owner_index];
                     match owner.dead_or_alive {
                         DeadOrAlive::Alive { health: _, ref mut zombie_or_human } => {
                             match zombie_or_human {
-                                ZombieOrHuman::Zombie { state: _, left_hand_status: _, ref mut right_hand_status } => {
-                                    *right_hand_status = HandStatus::Normal;
+                                ZombieOrHuman::Zombie { state: _, ref mut left_hand_status, ref mut right_hand_status } => {
+                                    if left_hand {
+                                        *left_hand_status = HandStatus::Normal;
+                                    } else {
+                                        *right_hand_status = HandStatus::Normal;
+                                    }
                                 }
                                 ZombieOrHuman::Human { infection: _, human } => {
                                     match human {
-                                        Human::Civilian { state: _, punch_time_cooldown: _, left_hand_status: _, ref mut right_hand_status} => {
-                                            *right_hand_status = HandStatus::Normal;
+                                        Human::Civilian { state: _, punch_time_cooldown: _, ref mut left_hand_status, ref mut right_hand_status} => {
+                                            if left_hand {
+                                                *left_hand_status = HandStatus::Normal;
+                                            } else {
+                                                *right_hand_status = HandStatus::Normal;
+                                            }
                                         }
                                         _ => ()
                                     }
@@ -346,7 +354,7 @@ pub fn update(args: &UpdateArgs, state: &mut State) -> SimulationResults {
                     }
                 }
             }
-            ProjectileKind::Fist { owner_index } => {
+            ProjectileKind::Fist { owner_index, left_hand: _ } => {
                 let owner = &mut state.entities[owner_index];
                 match owner.dead_or_alive {
                     DeadOrAlive::Alive { health: _, ref mut zombie_or_human } => {
@@ -805,7 +813,7 @@ fn update_zombie(
     sim_state: &mut State,
     index: usize,
     state: ZombieState,
-    _left_hand_status: &mut HandStatus,
+    left_hand_status: &mut HandStatus,
     right_hand_status: &mut HandStatus) -> ZombieState {
 
     let entities = &mut sim_state.entities;
@@ -821,7 +829,7 @@ fn update_zombie(
 
             // If target is within fighting range, fight
             if entities[target_index].is_human() && delta.x.abs() <= FIGHTING_RANGE && delta.y.abs() <= FIGHTING_RANGE && can_see_target {
-                return ZombieState::Fighting { punch_time_remaining: PUNCH_TIME, target_index }
+                return ZombieState::Fighting { punch_time_remaining: ZOMBIE_PUNCH_TIME, target_index }
             }
 
             entities[index].accelerate_along_vector(delta, args.dt, ZOMBIE_MOVEMENT_FORCE);
@@ -938,15 +946,23 @@ fn update_zombie(
                 let spawn_pos = entities[index].position +
                     FIST_SPAWN_DISTANCE_MULTIPLIER * ENTITY_RADIUS * delta_normal;
 
+                // Generate either left fist or right fist
+                use rand::prelude::*;
+                let left_hand = rand::random();
+
                 // Punch the target
                 sim_state.projectiles.push(
                     Projectile {
                         position: spawn_pos,
                         velocity: FIST_SPEED * delta_normal,
-                        kind: ProjectileKind::Fist { owner_index: index }
+                        kind: ProjectileKind::Fist { owner_index: index, left_hand }
                     });
 
-                *right_hand_status = HandStatus::None;
+                if left_hand {
+                    *left_hand_status = HandStatus::None;
+                } else {
+                    *right_hand_status = HandStatus::None;
+                }
 
                 ZombieState::Roaming {
                     jerk: Vector2::zero(),
@@ -1061,15 +1077,24 @@ fn simulate_human(args: &UpdateArgs,
                 let spawn_pos = entities[index].position +
                     FIST_SPAWN_DISTANCE_MULTIPLIER * ENTITY_RADIUS * delta_normal;
 
+                // Generate either left fist or right fist
+                use rand::prelude::*;
+                let left_hand = rand::random();
+
                 // Punch the target
                 sim_state.projectiles.push(
                     Projectile {
                         position: spawn_pos,
                         velocity: FIST_SPEED * delta_normal,
-                        kind: ProjectileKind::Fist { owner_index: index }
+                        kind: ProjectileKind::Fist { owner_index: index, left_hand }
                     });
 
-                *right_hand_status = HandStatus::None;
+                if left_hand {
+                    *left_hand_status = HandStatus::None;
+                } else {
+                    *right_hand_status = HandStatus::None;
+                }
+
                 *punch_time_cooldown = PUNCH_TIME_COOLDOWN;
 
                 HumanState::Running

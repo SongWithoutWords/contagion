@@ -1093,13 +1093,23 @@ pub fn display(
         let sprite_type = match p.kind {
             ProjectileKind::Bullet => SpriteType::BulletInAir,
             ProjectileKind::Casing => SpriteType::BulletCasing,
-            ProjectileKind::Fist { owner_index } => {
+            ProjectileKind::Fist { owner_index, left_hand } => {
                 match &state.entities[owner_index].dead_or_alive {
                     DeadOrAlive::Alive { zombie_or_human, .. } => match zombie_or_human {
                         ZombieOrHuman::Zombie { .. } => {
-                            SpriteType::ZombieClawRight
+                            if left_hand {
+                                SpriteType::ZombieClawLeft
+                            } else {
+                                SpriteType::ZombieClawRight
+                            }
                         }
-                        _ => SpriteType::CivilianHandRight
+                        _ => {
+                            if left_hand {
+                                SpriteType::CivilianHandLeft
+                            } else {
+                                SpriteType::CivilianHandRight
+                            }
+                        }
                     }
                     _ => SpriteType::ZombieClawRight
                 }
