@@ -72,8 +72,8 @@ impl Component {
         let civilian_highlight = Gui::new(GuiType::CivilianHighlight, 0.15, 0.197, Vector2 { x: 0.76, y: 0.895 });
         let money_highlight = Gui::new(GuiType::MoneyHighlight, 0.15, 0.197, Vector2 { x: 0.46, y: 0.895 });
         let money_icon = Gui::new(GuiType::MoneyUI, 0.08, 0.08, Vector2 { x: 0.46, y: 0.92 });
-        let building_icon = Gui::new(GuiType::BuildingModeIcon, 0.1, 0.1, Vector2 { x: 0.91, y: -0.9 });
-        let selecting_icon = Gui::new(GuiType::SelectingModeIcon, 0.1, 0.1, Vector2 { x: 0.91, y: -0.9 });
+        let building_icon = Gui::new(GuiType::BuildingModeIcon, 0.15, 0.15, Vector2 { x: 0.91, y: -0.9 });
+        let selecting_icon = Gui::new(GuiType::SelectingModeIcon, 0.15, 0.15, Vector2 { x: 0.91, y: -0.9 });
         let drag_ui = Gui::new(GuiType::SelectionDrag, 0.0, 0.0, Vector2 { x: 0.0, y: 0.0 });
         let box_ui = Gui::new(GuiType::Window, 1.8, 1.8, Vector2 { x: 0.0, y: 0.0 });
         let button1 = GuiType::Button { text: "Exit".to_string(), highlight: false };
