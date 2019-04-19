@@ -189,7 +189,8 @@ impl Control {
                         *position,
                         m_pos,
                         &simulation.buildings,
-                        &simulation.building_outlines);
+                        &simulation.building_outlines,
+                        &simulation.barricades);
 
                     // If no zombie clicked, issue regular move order, else issue special attack order
                     state_stack.push(match zombie_index {
@@ -260,9 +261,6 @@ impl Control {
                     Keycode::B => {
                         self.building_mode = !self.building_mode;
                     },
-                    Keycode::N => {
-                        println!("{:?}", state.barricades);
-                    }
                     _ => ()
                 }
             }
@@ -317,9 +315,6 @@ impl Control {
                                 state.money = state.money - barricade_cost(start, end);
                                 state.barricades.push(Barricade::new(start, end));
                             }
-
-                            println!("{:?}", state.money);
-                            println!("{:?}", state.barricades.last());
                         } else {
                             // Select one police if delta of drag is too small, else select all police in drag
                             let delta = 1.0;

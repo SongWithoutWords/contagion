@@ -4,7 +4,7 @@ use crate::core::geo::polygon::*;
 use crate::simulation::state::*;
 
 pub const BARRICADE_HEALTH: Scalar = 100.0;
-pub const BARRICADE_MIN_COST: u32 = 2;
+pub const BARRICADE_MIN_COST: u32 = 1;
 
 #[derive(Clone, Debug)]
 pub struct Barricade {
