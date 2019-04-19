@@ -298,56 +298,74 @@ impl Control {
                 }
             }
             Event::MouseButtonUp { timestamp: _, window_id: _, which: _, mouse_btn, x, y } => {
-                self.mouse_drag = false;
                 let mouse_pos = Vector2 { x: x as f64, y: y as f64 };
                 let delta_millisecond = 300;
 
-                match mouse_btn {
-                    MouseButton::Left { .. } => {
-                        if self.building_mode {
-                            let mut start = self.drag_vertex_start.clone();
-                            translate_camera_to_world(&mut start, camera_frame);
+                if self.mouse_drag {
+                    match mouse_btn {
+                        MouseButton::Left { .. } => {
+                            if self.building_mode {
+                                let mut start = self.drag_vertex_start.clone();
+                                translate_camera_to_world(&mut start, camera_frame);
 
-                            let mut end = self.drag_vertex_end.clone();
-                            translate_camera_to_world(&mut end, camera_frame);
+                                let mut end = self.drag_vertex_end.clone();
+                                translate_camera_to_world(&mut end, camera_frame);
 
-                            if barricade_valid(start, end, state) {
-                                state.money = state.money - barricade_cost(start, end);
-                                state.barricades.push(Barricade::new(start, end));
-                            }
-                        } else {
-                            // Select one police if delta of drag is too small, else select all police in drag
-                            let delta = 1.0;
-
-                            if (mouse_pos.x - self.drag_start_mouse_coord.x).abs() <= delta && (mouse_pos.y - self.drag_start_mouse_coord.y).abs() <= delta {
-                                let current_time = Instant::now();
-                                let duration = current_time.duration_since(self.last_click_time);
-                                if duration.as_secs() == 0 && duration.subsec_millis() < delta_millisecond {
-                                    self.double_click_select(state, camera_frame, mouse_pos, &window);
-                                } else {
-                                    self.click_select(state, &window, camera_frame, mouse_pos);
+                                if barricade_valid(start, end, state) {
+                                    state.money = state.money - barricade_cost(start, end);
+                                    state.barricades.push(Barricade::new(start, end));
                                 }
-                                self.last_click_time = current_time;
                             } else {
-                                self.drag_select(state, &window, camera_frame, mouse_pos);
+                                // Select one police if delta of drag is too small, else select all police in drag
+                                let delta = 1.0;
+
+                                if (mouse_pos.x - self.drag_start_mouse_coord.x).abs() <= delta && (mouse_pos.y - self.drag_start_mouse_coord.y).abs() <= delta {
+                                    let current_time = Instant::now();
+                                    let duration = current_time.duration_since(self.last_click_time);
+                                    if duration.as_secs() == 0 && duration.subsec_millis() < delta_millisecond {
+                                        self.double_click_select(state, camera_frame, mouse_pos, &window);
+                                    } else {
+                                        self.click_select(state, &window, camera_frame, mouse_pos);
+                                    }
+                                    self.last_click_time = current_time;
+                                } else {
+                                    self.drag_select(state, &window, camera_frame, mouse_pos);
+                                }
                             }
                         }
+                        _ => ()
                     }
-                    MouseButton::Right { .. } => {
-                        if !self.building_mode {
+
+                    self.mouse_drag = false;
+
+                } else {
+                    match mouse_btn {
+                        MouseButton::Left { .. } => {
                             let current_time = Instant::now();
-                            let duration = current_time.duration_since(self.last_right_click_time);
+                            let duration = current_time.duration_since(self.last_click_time);
                             if duration.as_secs() == 0 && duration.subsec_millis() < delta_millisecond {
-                                // double right click to sprint
-                                self.issue_police_order(PoliceOrder::Sprint, state, &window, camera_frame, mouse_pos);
+                                self.double_click_select(state, camera_frame, mouse_pos, &window);
                             } else {
-                                // single right click for attack or attack move
-                                self.issue_police_order(PoliceOrder::Move, state, &window, camera_frame, mouse_pos);
+                                self.click_select(state, &window, camera_frame, mouse_pos);
                             }
-                            self.last_right_click_time = current_time;
+                            self.last_click_time = current_time;
                         }
+                        MouseButton::Right { .. } => {
+                            if !self.building_mode {
+                                let current_time = Instant::now();
+                                let duration = current_time.duration_since(self.last_right_click_time);
+                                if duration.as_secs() == 0 && duration.subsec_millis() < delta_millisecond {
+                                    // double right click to sprint
+                                    self.issue_police_order(PoliceOrder::Sprint, state, &window, camera_frame, mouse_pos);
+                                } else {
+                                    // single right click for attack or attack move
+                                    self.issue_police_order(PoliceOrder::Move, state, &window, camera_frame, mouse_pos);
+                                }
+                                self.last_right_click_time = current_time;
+                            }
+                        }
+                        _ => ()
                     }
-                    _ => ()
                 }
             }
             _ => ()
