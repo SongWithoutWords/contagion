@@ -13,12 +13,17 @@ use super::state::*;
 
 
 #[derive(Copy, Clone, Hash, PartialEq, Eq)]
-pub enum Sound {
+pub enum SoundType {
     GunshotHandgun,
     GunshotRifle,
     Reload,
     PersonInfected,
     ZombieDeath,
+}
+
+pub struct Sound {
+    pub position: Vector2,
+    pub sound_type: SoundType,
 }
 
 pub struct UpdateArgs {
@@ -124,7 +129,10 @@ pub fn update(args: &UpdateArgs, state: &mut State) -> SimulationResults {
             DeadOrAlive::Alive { zombie_or_human, health } => {
                 if *health <= ENTITY_HEALTH_MIN {
                     state.entities[i].dead_or_alive = DeadOrAlive::Dead;
-                    sounds.push(Sound::ZombieDeath);
+                    sounds.push(Sound {
+                        position: state.entities[i].position,
+                        sound_type: SoundType::ZombieDeath
+                    });
                 }
                 else {
                     match zombie_or_human {
@@ -149,7 +157,10 @@ pub fn update(args: &UpdateArgs, state: &mut State) -> SimulationResults {
                                     left_hand_status: HandStatus::Normal,
                                     right_hand_status: HandStatus::Normal
                                 };
-                                sounds.push(Sound::PersonInfected);
+                                sounds.push(Sound {
+                                    position: state.entities[i].position,
+                                    sound_type: SoundType::PersonInfected
+                                });
                             }
                             else {
                                 match human {
@@ -581,9 +592,12 @@ fn update_cop(
 
                             *rounds_in_magazine -= 1;
 
-                            sounds.push(match cop_type {
-                                CopType::Normal => Sound::GunshotHandgun,
-                                CopType::Soldier => Sound::GunshotRifle,
+                            sounds.push(Sound {
+                                position: entities[index].position,
+                                sound_type: match cop_type {
+                                    CopType::Normal => SoundType::GunshotHandgun,
+                                    CopType::Soldier => SoundType::GunshotRifle,
+                                }
                             });
                             StateChange::Exit
                         }
@@ -629,7 +643,10 @@ fn update_cop(
                     // Play the reload sound when half-done reloading
                     if *reload_time_remaining > half_reload_time &&
                         half_reload_time > new_reload_time_remaining {
-                            sounds.push(Sound::Reload);
+                            sounds.push(Sound{
+                                position: entities[index].position,
+                                sound_type: SoundType::Reload
+                            });
                     }
 
                     if *reload_time_remaining > 0.0 {
