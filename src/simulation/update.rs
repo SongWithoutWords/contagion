@@ -531,6 +531,107 @@ fn can_see(
     return true;
 }
 
+// Returns the index of the best target, if such a target exists
+fn cop_find_best_target(sim_state: &mut State, cop_index: usize) -> Option<usize> {
+
+    let entities = &sim_state.entities;
+
+    let cop_position = entities[cop_index].position;
+
+    let mut visible_entity_indices_by_distance_ascending = vec!();
+    for i in 0..entities.len() {
+
+        if i == cop_index {
+            // Don't consider yourself
+            continue;
+        }
+
+        if entities[i].is_dead() {
+            // Don't consider corpses
+            continue;
+        }
+
+        if !can_see(
+            &sim_state.buildings,
+            cop_position,
+            entities[i].position) {
+            // Don't consider entities you cannot see
+            continue;
+        }
+
+        visible_entity_indices_by_distance_ascending.push(i);
+    }
+
+    visible_entity_indices_by_distance_ascending.sort_by(|a, b| {
+        let distance_a = (entities[*a].position - cop_position).length();
+        let distance_b = (entities[*b].position - cop_position).length();
+
+        distance_b.partial_cmp(&distance_a).unwrap()
+    });
+
+    let mut best_target_score = -INFINITY;
+    let mut best_target_index = None;
+
+    // Consider each visible entity as a target
+    for target_index in &visible_entity_indices_by_distance_ascending {
+        if !entities[*target_index].is_zombie() {
+            continue;
+        }
+
+        let vector_to_target_normal = (entities[*target_index].position - cop_position).normalize();
+
+        let mut target_score = 0.0;
+
+        // Consider each visible entity as a blocker
+        for blocker_index in &visible_entity_indices_by_distance_ascending {
+
+            let blocker_position = entities[*blocker_index].position;
+            let vector_to_blocker = blocker_position - cop_position;
+            let blocker_distance_squared = vector_to_blocker.length_squared();
+
+            // Bit of an optimization to avoid a square root,
+            // equivalent to coverage = cos(angle_of_blocker_from_target) / blocker_distance
+            let blocker_coverage = vector_to_target_normal.dot(vector_to_blocker) / blocker_distance_squared;
+
+            let blocker_score = match &entities[*blocker_index].dead_or_alive {
+
+                // We want to target zombies
+                DeadOrAlive::Alive { zombie_or_human: ZombieOrHuman::Zombie { .. }, .. } => 1.0,
+
+                // We want to avoid hitting civilians
+                DeadOrAlive::Alive {
+                    zombie_or_human: ZombieOrHuman::Human {
+                        human: Human::Civilian { .. },
+                        .. },
+                    ..
+                } => -1.0,
+
+                // We really want to avoid hitting cops
+                DeadOrAlive::Alive {
+                    zombie_or_human: ZombieOrHuman::Human {
+                        human: Human::Cop { .. },
+                        .. },
+                    ..
+                } => -2.0,
+
+                _ => 0.0
+            };
+
+            target_score = (1.0 - blocker_coverage) * target_score + blocker_coverage * blocker_score;
+        }
+        if target_score > best_target_score {
+            best_target_score = target_score;
+            best_target_index = Some(*target_index);
+        }
+    }
+
+    if best_target_score > 0.0 {
+        best_target_index
+    } else {
+        None
+    }
+}
+
 fn update_cop(
     args: &UpdateArgs,
     sim_state: &mut State,
@@ -748,39 +849,20 @@ fn update_cop(
                     }
                     // Look for target if you do have ammo
                     else {
-                        let my_pos = entities[index].position;
+                        let target_index = cop_find_best_target(sim_state, index);
 
-                        let mut min_index = 0;
-                        let mut min_distance_sqr = INFINITY;
-
-                        for i in 0..entities.len() {
-
-                            if entities[i].is_zombie() {
-                                let delta = entities[i].position - my_pos;
-                                let distance_sqr = delta.length_squared();
-                                if distance_sqr < min_distance_sqr {
-
-                                    // make sure we can actually see the target
-                                    if !can_see(buildings,
-                                                entities[index].position,
-                                                entities[i].position) {
-                                        continue;
-                                    }
-
-                                    min_index = i;
-                                    min_distance_sqr = distance_sqr;
-                                }
+                        match target_index {
+                            Some(i) => {
+                                let aim_time_distribution = Exp::new(cop_type.aim_time_mean());
+                                StateChange::Enter(CopState::Aiming {
+                                    aim_time_remaining: aim_time_distribution.sample(&mut sim_state.rng),
+                                    target_index: i,
+                                })
+                            },
+                            None => {
+                                // Remain in idle state
+                                StateChange::Continue
                             }
-                        }
-                        if min_distance_sqr < INFINITY {
-                            let aim_time_distribution = Exp::new(cop_type.aim_time_mean());
-                            StateChange::Enter(CopState::Aiming {
-                                aim_time_remaining: aim_time_distribution.sample(&mut sim_state.rng),
-                                target_index: min_index,
-                            })
-                        } else {
-                            // Remain in idle state
-                            StateChange::Continue
                         }
                     }
                 }
