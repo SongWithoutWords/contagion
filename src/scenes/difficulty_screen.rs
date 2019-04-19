@@ -8,7 +8,7 @@ use crate::presentation::display::{Programs, Textures};
 use glium::DrawParameters;
 use crate::presentation::graphics::font::FontPkg;
 use crate::{simulation, presentation};
-use crate::scenes::{game, main_menu};
+use crate::scenes::game;
 use sdl2::keyboard::Keycode;
 use crate::presentation::camera::*;
 

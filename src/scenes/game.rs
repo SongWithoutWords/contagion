@@ -22,7 +22,6 @@ use crate::scenes::difficulty_screen;
 use crate::presentation::graphics::font::FontPkg;
 use crate::scenes::victory_screen::VictoryScreen;
 use crate::scenes::loss_screen::LossScreen;
-use crate::scenes::difficulty_screen::DifficultyScreen;
 use crate::core::scalar::Scalar;
 
 pub struct Game {
