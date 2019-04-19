@@ -45,6 +45,7 @@ pub enum SpriteType {
     ZombieIconHighlight,
     CopIconHighlight,
     CivilianIconHighlight,
+    InfectionSymbol,
 }
 
 // pub type Textures = EnumMap<SpriteType, Texture2d>;
@@ -112,6 +113,9 @@ pub fn load_textures(window: &glium_sdl2::SDL2Facade) -> Textures {
                 => load_texture(window, "assets/images/ui/cop_highlight.png"),
             SpriteType::CivilianIconHighlight
                 => load_texture(window, "assets/images/ui/civilian_highlight.png"),
+            SpriteType::InfectionSymbol
+                => load_texture(window, "assets/images/ui/biohazard_symbol.png"),
+
         },
         background_texture: load_texture(&window, "assets/images/dirt.jpg"),
         wallpaper: load_texture(&window, "assets/images/contagion_wallpaper.png"),
@@ -361,35 +365,38 @@ fn push_health_bar_vertices(buffer: &mut Vec<ColorVertex>, sprite: &Sprite, heal
 
 fn push_infection_symbol_vertices(buffer: &mut Vec<ColorVertex>, sprite: &Sprite, infection: Scalar) {
     let position = Vector2 { x: sprite.position.x, y: sprite.position.y + 1.0 };
-    let up = 1.0;
+    let up = 1.2;
     let down = 0.7;
 
-
     let top_left = Vector2 { x: position.x - up, y: position.y + up };
-    let top_right = top_left.lerp(Vector2 { x: position.x + up, y: position.y + up }, -infection);
-    let bot_left = Vector2 { x: position.x - up, y: position.y + down };
-    let bot_right = bot_left.lerp(Vector2 { x: position.x + up, y: position.y + down }, -infection);
+    let top_right = Vector2 { x: position.x + up, y: position.y + up };
+    let bot_left = Vector2 { x: position.x - up, y: position.y - down };
+    let bot_right = Vector2 { x: position.x + up, y: position.y - down };
 
     let color = vector4(0.0, 1.0, 0.0, 1.0).lerp(vector4(1.0, 0.0, 0.0, 1.0), infection).as_f32_array();
 
     let vertex0 = ColorVertex {
         position: top_left.as_f32_array(),
-        tex_coords: [0.0, 1.0],
+//        tex_coords: [0.0, 1.0],
+        tex_coords: [0.0, 2.0],
         color,
     };
     let vertex1 = ColorVertex {
         position: top_right.as_f32_array(),
-        tex_coords: [1.0, 1.0],
+//        tex_coords: [1.0, 1.0],
+        tex_coords: [2.0, 2.0],
         color,
     };
     let vertex2 = ColorVertex {
         position: bot_left.as_f32_array(),
+//        tex_coords: [0.0, 0.0],
         tex_coords: [0.0, 0.0],
         color,
     };
     let vertex3 = ColorVertex {
         position: bot_right.as_f32_array(),
-        tex_coords: [1.0, 0.0],
+//        tex_coords: [1.0, 0.0],
+        tex_coords: [2.0, 0.0],
         color,
     };
     buffer.push(vertex0);
@@ -992,7 +999,6 @@ pub fn display(
 
     let mut vertex_buffers = enum_map! {_ => vec!()};
     let mut vertex_buffers_green_hp = vec!();
-    let mut vertex_buffers_red_hp = vec!();
     let mut vertex_buffers_gui = enum_map! {_ => vec!()};
     let mut vertex_buffers_building = vec!();
     let mut vertex_buffers_path = vec!();
@@ -1065,30 +1071,24 @@ pub fn display(
         };
 
 
-
-//        let infection = match &entity.dead_or_alive {
-//            ZombieOrHuman::Human { infection, .. } => *infection,
-//            _ => INFECTION_MIN
-//        };
-
         let infection = match &entity.dead_or_alive {
             DeadOrAlive::Alive {
                 zombie_or_human: ZombieOrHuman::Human {
                     infection,
-                    .. },
+                    ..
+                },
                 ..
-            } =>  *infection,
-            _=> INFECTION_MIN
+            } => *infection,
+            _ => INFECTION_MIN
         };
 
-        println!("{}", infection);
         // Display a health bar only for entities that are wounded but not dead
         if ENTITY_HEALTH_MIN < health && health < ENTITY_HEALTH_MAX {
             push_health_bar_vertices(&mut vertex_buffers_green_hp, &sprite, health);
         }
         // Display a health bar only for entities that are wounded but not dead
         if INFECTION_MIN < infection && infection < INFECTION_MAX {
-            push_infection_symbol_vertices(&mut vertex_buffers_red_hp, &sprite, infection);
+            push_infection_symbol_vertices(&mut vertex_buffers_gui[SpriteType::InfectionSymbol], &sprite, infection);
         }
     }
 
@@ -1309,18 +1309,6 @@ pub fn display(
         params,
         &uniforms);
 
-    // Render green HP
-    let uniforms = uniform! {
-        matrix: camera_frame,
-    };
-    draw_color_sprites(
-        frame,
-        window,
-        &vertex_buffers_red_hp,
-        &programs.gui_program,
-        params,
-        &uniforms);
-
     // Render GUI
     let mat_gui = [
         [1.0, 0.0, 0.0, 0.0],
@@ -1506,6 +1494,20 @@ pub fn display(
                 window,
                 &vertex_buffer,
                 &programs.sprite_program,
+                params,
+                &uniforms);
+        } else if _gui_type == SpriteType::InfectionSymbol {
+
+            // Render infection symbol
+            let uniforms = uniform! {
+        matrix: camera_frame,
+          tex: &textures.sprite_textures[_gui_type],
+    };
+            draw_color_sprites(
+                frame,
+                window,
+                &vertex_buffer,
+                &programs.gui_program,
                 params,
                 &uniforms);
         }
