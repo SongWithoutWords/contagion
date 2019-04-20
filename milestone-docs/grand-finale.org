@@ -1,0 +1,96 @@
+# #+title: Team 12's Grand-Finale Submission Document
+
+Please checkout the ~grand-finale~ tag to evaluate our submission
+- We will add this tag for our submission on Friday, April 19th.
+
+Link to project: https://github.com/SongWithoutWords/contagion
+
+* MILESTONE REQUIREMENTS
+
+Requirements marked [X] are requirements we think are fully satisified
+Requirements marked [~] are requirements we think are partially satisfied
+Requirements marked [ ] are requirements we think are not satisfied
+
+The final version of your game should support robust and continuous gameplay as well as integrate advanced game elements created using either a game engine or alternative tools. You should implement one or more advanced gameplay features (AI, physics, geometry, or other). The game should fully comply with your game development plan.
+
+** (100%) Milestone requirements:
+
+- [X] Development: All features implemented in the previous milestones should be working, or improved upon if it’s the case.
+
+- [X] Robustness: Sustain progressive, non-repetitive gameplay across one or more levels for 10min including all new features. No verbal explanation should be required at any point during the gameplay.
+
+- [X] Usability: Include a self-explanatory tutorial introducing the player to the game mechanics.
+
+- [X] External Integration: Include integration of one or more external tools or libraries (physical simulation (PhysX, Bullet, ODE, etc …), game engines, or alternatives)
+  - The list of external libraries we used includes the following:
+    - enum-map
+    - freetype-sys
+    - glium_sdl2
+    - glium
+    - image
+    - lerp
+    - libc
+    - num
+    - piston-music
+    - rand
+    - rand_xorshift
+    - sdl2
+
+- [ ] Advanced Graphics: Implementation of one or more advanced graphics features including visual effects (Particle Systems, 2.5D(3D) lighting, 2D dynamic shadows) and/or advanced 2D geometric modifications (2D deformations, rigged/skinned motion).
+  - The most sophisticated graphical method we employed was sprite batching.
+
+- [X] Advanced Gameplay: Implementation of one or more advanced gameplay features including advanced decision making mechanisms based on goals (path planning, A*, or similar), or some form of group behavior if applicable to the game; more complex physic interactions with the environment (e.g. gravity, bouncing, complex dynamics).
+
+- [X] Accessibility: evaluate and optimizing user-game interactions (choice of user gestures, ease of navigation, etc …).
+  - The player views the world from the perspective of a top-down camera which they can control in a number of ways
+    - The camera can be moved using the WASD keys
+    - The camera can be moved by clicking and dragging with the middle mouse button
+    - The camera can be moved by placing the cursor at the edge of the screen in full-screen mode
+    - The camera can be moved by zooming out of one point and into another
+
+- [X] Audio: There should be audio feedback for all meaningful interactions in the game as well as a background music with tones reflecting the current state of the game.
+  - The game includes background music, in addition to sound effects for the following actions:
+    - Entities dying
+    - Civilians becoming infected
+    - Guns being fired (different sound effects for different weapons)
+    - Guns being reloaded
+
+* Work completed this milestone
+
+** Audio
+- Fixed a bug in our open-source audio library (piston-music) which caused playing new sound effects to change the volume of all existing sound effects.
+- Attenuate the volume of sound effects depending on the distance from the camera to the source (helps prevent the game from being an overwhelming wall of noise)
+
+** Gameplay
+
+- Completed melee combat system for zombies/civilians
+- Increased initial spawn area to fill the playable space
+- Better police targeting algorithm to avoid friendly fire, by considering intervening entities between the shooter and the target
+
+*** Barricades
+  - Toggle between building and selection modes by pressing B or clicking the icon in the top right corner
+  - Gain money by killing zombies, indicated by UI at the top, spend to build barricades
+  - Barricades have collisions, observe cop pathfinding, and take damage based on force applied to them by zombies
+  - Draw barricades by clicking and dragging left mouse while in building mode
+  - Cancel drawing a barricade or selecting units by pressing right click
+  - Barricade preview changes shape, color, and angle based on preview placement and validity of position/money available
+
+** Textures
+- New original textures for victory and loss screen
+- New original textures for buildings
+
+** Tutorial
+- Added an interactive tutorial, that walks the player through all of the controls
+
+** UI
+- Improved world entity icons
+- Added money icon, build icon, and selection icon for use with the barricade building system
+- Added biohazard symbol, with colour used to show infection level among infected humans
+
+*** Difficulty level
+- Created difficuly selection UI and buttons
+- Can select between easy, medium, and hard gameplay modes
+- Restarting the game launches a new game with the same difficuly
+- Difficulty level is included in victory/loss screen
+- Made game window size no less than 1024x768 when resizing
+
