@@ -411,8 +411,8 @@ fn push_hand_vertices(buffer: &mut Vec<Vertex>, sprite: &Sprite, hand: bool, typ
 }
 
 fn push_health_bar_vertices(buffer: &mut Vec<ColorVertex>, sprite: &Sprite, health: Scalar) {
-    let position = Vector2 { x: sprite.position.x, y: sprite.position.y + 0.6 };
-    let up = 0.4;
+    let position = Vector2 { x: sprite.position.x, y: sprite.position.y + 1.0};
+    let up = 0.5;
     let down = 0.2;
 
     let top_left = Vector2 { x: position.x - up, y: position.y + up };
@@ -451,40 +451,36 @@ fn push_health_bar_vertices(buffer: &mut Vec<ColorVertex>, sprite: &Sprite, heal
 }
 
 fn push_infection_symbol_vertices(buffer: &mut Vec<ColorVertex>, sprite: &Sprite, infection: Scalar) {
-    let position = Vector2 { x: sprite.position.x, y: sprite.position.y + 1.0 };
-    let up = 0.4;
-    let down = 0.4;
-    let height = 0.6;
+    let height = 0.0;
+    let position = Vector2 { x: sprite.position.x, y: sprite.position.y + height};
+    let up = 0.35;
+    let down = 0.35;
 
-    let top_left = Vector2 { x: position.x - up, y: position.y + up + height };
-    let top_right = Vector2 { x: position.x + up, y: position.y + up + height };
-    let bot_left = Vector2 { x: position.x - up, y: position.y - down + height };
-    let bot_right = Vector2 { x: position.x + up, y: position.y - down + height };
+    let top_left = Vector2 { x: position.x - up, y: position.y + up };
+    let top_right = Vector2 { x: position.x + up, y: position.y + up };
+    let bot_left = Vector2 { x: position.x - up, y: position.y - down };
+    let bot_right = Vector2 { x: position.x + up, y: position.y - down };
 
     let color = vector4(0.0, 1.0, 0.0, 1.0).lerp(vector4(1.0, 0.0, 0.0, 1.0), infection).as_f32_array();
 
     let vertex0 = ColorVertex {
         position: top_left.as_f32_array(),
         tex_coords: [0.0, 1.0],
-//        tex_coords: [0.0, 2.0],
         color,
     };
     let vertex1 = ColorVertex {
         position: top_right.as_f32_array(),
         tex_coords: [1.0, 1.0],
-//        tex_coords: [2.0, 2.0],
         color,
     };
     let vertex2 = ColorVertex {
         position: bot_left.as_f32_array(),
         tex_coords: [0.0, 0.0],
-//        tex_coords: [0.0, 0.0],
         color,
     };
     let vertex3 = ColorVertex {
         position: bot_right.as_f32_array(),
         tex_coords: [1.0, 0.0],
-//        tex_coords: [2.0, 0.0],
         color,
 
     };
@@ -1660,7 +1656,7 @@ pub fn display(
                 &programs.sprite_program,
                 params,
                 &uniforms);
-        } else if _gui_type == SpriteType::MoneyHighlight {} else if _gui_type == SpriteType::ZombieIconHighlight {
+        } else if _gui_type == SpriteType::MoneyHighlight {
             let uniforms = uniform! {
                     matrix: mat_gui,
                     tex: &textures.sprite_textures[_gui_type],
@@ -1672,7 +1668,7 @@ pub fn display(
                 &programs.sprite_program,
                 params,
                 &uniforms);
-        } else if _gui_type == SpriteType::ZombieIconHighlight {} else if _gui_type == SpriteType::CivilianIconHighlight {
+        } else if _gui_type == SpriteType::ZombieIconHighlight {
             let uniforms = uniform! {
                     matrix: mat_gui,
                     tex: &textures.sprite_textures[_gui_type],
@@ -1775,6 +1771,13 @@ pub fn display(
             };
 
             draw_money_num(window, state.money as usize, frame, &font.lowres());
+            draw_color_sprites(
+                frame,
+                window,
+                &vertex_buffer,
+                &programs.sprite_program,
+                params,
+                &uniforms);
         } else if _gui_type == SpriteType::InfectionSymbol {
 
             // Render infection symbol
@@ -1862,7 +1865,7 @@ pub fn display(
         if gamestate.tut_01 {
             let mut text_to_display = "Find and select a cop or drag to select multiple";
             if gamestate.tut_passed == true {
-                text_to_display = "good!";
+                text_to_display = "Good!";
                 scale_width = 0.2;
                 x_offset = -0.1;
                 if tutorial_text_fade(gamestate) {

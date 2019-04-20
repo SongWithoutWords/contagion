@@ -37,7 +37,7 @@ pub struct Game {
 const EASY_COP_COUNT: Scalar = 0.1;
 const EASY_INFECTED_COUNT: Scalar = 0.07;
 const MEDIUM_COP_COUNT: Scalar = 0.07;
-const MEDIUM_INFECTED_COUNT: Scalar = 0.17;
+const MEDIUM_INFECTED_COUNT: Scalar = 0.18;
 const HARD_COP_COUNT: Scalar = 0.04;
 const HARD_INFECTED_COUNT: Scalar = 0.4;
 
@@ -46,7 +46,7 @@ impl Game {
         let gui = presentation::ui::gui::Component::init_game_gui();
         let camera = presentation::camera::Camera::new();
         let control = simulation::control::Control::new();
-        let game_state: GameState;
+        let mut game_state: GameState;
         let entity_count = 100;
         let mut cop_entities = 0.05;
         let mut infected_entities = 0.2;
@@ -64,13 +64,12 @@ impl Game {
         }
 
         let state = simulation::initial_state::initial_state(entity_count, cop_entities, infected_entities, rand::random::<u32>());
+        game_state = simulation::game_state::GameState::new();
 
         if difficulty {
             game_state = simulation::game_state::GameState::new_difficulty(easy, medium, hard);
         } else if tutorial {
             game_state = simulation::game_state::GameState::new_tutorial();
-        } else {
-            game_state = simulation::game_state::GameState::new();
         }
 
 
