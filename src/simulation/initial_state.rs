@@ -182,7 +182,6 @@ pub fn initial_state(entity_count: u32, cop_entities: f64, infected_entities: f6
         Vector2 { x: 60.0, y: building_y }
     ]));
     building_type.insert(current_index, 6);
-    current_index += 1;
 
     // Generate World Boundary
 
