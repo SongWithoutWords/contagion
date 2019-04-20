@@ -14,7 +14,7 @@ extern crate sdl2;
 use std::time::Instant;
 
 use glium::draw_parameters::Blend;
-use glium_sdl2::SDL2Facade;
+use glium_sdl2::{SDL2Facade};
 use sdl2::{EventPump, Sdl};
 
 use crate::core::scalar:: *;

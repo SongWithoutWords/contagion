@@ -36,7 +36,7 @@ pub fn create_window() -> (Sdl, SDL2Facade, EventPump) {
 
     // creating window
     // available functionality: https://nukep.github.io/rust-sdl2/sdl2/video/struct.WindowBuilder.html#method.resizable
-    let window = video_subsystem
+    let mut window = video_subsystem
         .window(WINDOW_TITLE, WINDOW_W, WINDOW_H)
         .resizable()
         .build_glium()
@@ -44,6 +44,9 @@ pub fn create_window() -> (Sdl, SDL2Facade, EventPump) {
 
     // force vsync
     video_subsystem.gl_set_swap_interval(1);
+
+    // set minimum window size
+    window.window_mut().set_minimum_size(WINDOW_W, WINDOW_H).unwrap();
 
     let event_pump = sdl_context.event_pump().unwrap();
 
