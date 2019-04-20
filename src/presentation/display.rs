@@ -1660,7 +1660,7 @@ pub fn display(
                 &programs.sprite_program,
                 params,
                 &uniforms);
-        } else if _gui_type == SpriteType::MoneyHighlight {} else if _gui_type == SpriteType::ZombieIconHighlight {
+        } else if _gui_type == SpriteType::MoneyHighlight {
             let uniforms = uniform! {
                     matrix: mat_gui,
                     tex: &textures.sprite_textures[_gui_type],
@@ -1672,7 +1672,7 @@ pub fn display(
                 &programs.sprite_program,
                 params,
                 &uniforms);
-        } else if _gui_type == SpriteType::ZombieIconHighlight {} else if _gui_type == SpriteType::CivilianIconHighlight {
+        } else if _gui_type == SpriteType::ZombieIconHighlight {
             let uniforms = uniform! {
                     matrix: mat_gui,
                     tex: &textures.sprite_textures[_gui_type],
@@ -1775,6 +1775,13 @@ pub fn display(
             };
 
             draw_money_num(window, state.money as usize, frame, &font.lowres());
+            draw_color_sprites(
+                frame,
+                window,
+                &vertex_buffer,
+                &programs.sprite_program,
+                params,
+                &uniforms);
         } else if _gui_type == SpriteType::InfectionSymbol {
 
             // Render infection symbol
