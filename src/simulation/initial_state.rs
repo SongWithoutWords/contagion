@@ -6,6 +6,7 @@ use std::collections::HashSet;
 use crate::core::geo::polygon::*;
 use crate::core::scalar::*;
 use crate::core::vector::*;
+use std::collections::HashMap;
 
 use super::state::*;
 
@@ -25,6 +26,7 @@ pub fn initial_state(entity_count: u32, cop_entities: f64, infected_entities: f6
         entities: vec!(),
         buildings: vec!(),
         building_outlines: vec!(),
+        building_type: HashMap::new(),
         barricades: vec!(),
         selection: HashSet::new(),
         projectiles: vec!(),
@@ -35,6 +37,7 @@ pub fn initial_state(entity_count: u32, cop_entities: f64, infected_entities: f6
     let entities = &mut state.entities;
     let buildings = &mut state.buildings;
     let building_outlines = &mut state.building_outlines;
+    let building_type = &mut state.building_type;
 
     // We want the spawn area to be proportional to the number of entities
     // let side_length_of_spawn_area = 3.0 * entity_count_fp.sqrt();
@@ -81,6 +84,7 @@ pub fn initial_state(entity_count: u32, cop_entities: f64, infected_entities: f6
     // Generate some buildings
     let mut building_x = -20.0;
     let mut building_y = 0.0;
+    let mut current_index: usize = 0;
 
     // Neighbourhood on south side
     while building_x < (side_length_of_spawn_area) + 20.0 {
@@ -93,6 +97,8 @@ pub fn initial_state(entity_count: u32, cop_entities: f64, infected_entities: f6
                 Vector2 { x: building_x + 10.0, y: building_y + 10.0 },
                 Vector2 { x: building_x, y: building_y + 10.0 }
             ]));
+            building_type.insert(current_index, 0);
+            current_index += 1;
 
             building_y += 20.0;
         }
@@ -108,6 +114,8 @@ pub fn initial_state(entity_count: u32, cop_entities: f64, infected_entities: f6
         Vector2 { x: 20.0, y: building_y + 20.0},
         Vector2 { x: 10.0, y: building_y + 20.0 }
     ]));
+    building_type.insert(current_index, 1);
+    current_index += 1;
 
     // Southeast building in the square
     buildings.push(Polygon(vec![
@@ -117,6 +125,8 @@ pub fn initial_state(entity_count: u32, cop_entities: f64, infected_entities: f6
         Vector2 { x: 60.0, y: building_y + 20.0 },
         Vector2 { x: 70.0, y: building_y + 20.0 }
     ]));
+    building_type.insert(current_index, 2);
+    current_index += 1;
 
     // Octagonal building in the middle of the square
     buildings.push(Polygon(vec![
@@ -129,6 +139,8 @@ pub fn initial_state(entity_count: u32, cop_entities: f64, infected_entities: f6
         Vector2 { x: 42.5, y: building_y + 17.5 },
         Vector2 { x: 37.5, y: building_y + 17.5 }
     ]));
+    building_type.insert(current_index, 3);
+    current_index += 1;
 
     buildings.push(Polygon(vec![
         Vector2 { x: -20.0, y: building_y },
@@ -136,6 +148,8 @@ pub fn initial_state(entity_count: u32, cop_entities: f64, infected_entities: f6
         Vector2 { x: -5.0, y: building_y + 30.0 },
         Vector2 { x: -5.0, y: building_y }
     ]));
+    building_type.insert(current_index, 4);
+    current_index += 1;
 
     buildings.push(Polygon(vec![
         Vector2 { x: 95.0, y: building_y },
@@ -143,6 +157,8 @@ pub fn initial_state(entity_count: u32, cop_entities: f64, infected_entities: f6
         Vector2 { x: 80.0, y: building_y + 30.0 },
         Vector2 { x: 80.0, y: building_y }
     ]));
+    building_type.insert(current_index, 4);
+    current_index += 1;
 
     building_y = building_y + 30.0;
 
@@ -154,6 +170,8 @@ pub fn initial_state(entity_count: u32, cop_entities: f64, infected_entities: f6
         Vector2 { x: 30.0, y: building_y + 10.0 },
         Vector2 { x: 20.0, y: building_y }
     ]));
+    building_type.insert(current_index, 5);
+    current_index += 1;
 
     // Northeast building in the square
     buildings.push(Polygon(vec![
@@ -163,6 +181,8 @@ pub fn initial_state(entity_count: u32, cop_entities: f64, infected_entities: f6
         Vector2 { x: 50.0, y: building_y + 10.0 },
         Vector2 { x: 60.0, y: building_y }
     ]));
+    building_type.insert(current_index, 6);
+    current_index += 1;
 
     // Generate World Boundary
 

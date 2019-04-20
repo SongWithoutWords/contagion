@@ -6,12 +6,14 @@ use crate::simulation::ai::path::Path;
 use crate::simulation::barricade::*;
 
 use std::collections::HashSet;
+use std::collections::HashMap;
 
 #[derive(Clone)]
 pub struct State {
     pub entities: Vec<Entity>,
     pub buildings: Vec<Polygon>,
     pub building_outlines: Vec<Polygon>,
+    pub building_type: HashMap<usize, u32>,
     pub barricades: Vec<Barricade>,
     pub selection: HashSet<usize>,
     pub projectiles: Vec<Projectile>,

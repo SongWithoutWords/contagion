@@ -39,6 +39,12 @@ pub enum SpriteType {
     CopWorldIcon,
     CivilianWorldIcon,
     BuildingOne,
+    BuildingTwo,
+    BuildingThree,
+    BuildingFour,
+    BuildingFive,
+    BuildingSix,
+    BuildingSeven,
     ZombieTorso,
     ZombieClawRight,
     ZombieClawLeft,
@@ -106,6 +112,18 @@ pub fn load_textures(window: &glium_sdl2::SDL2Facade) -> Textures {
                 => load_texture(window, "assets/images/ui/civilian_world_icon_new.png"),
             SpriteType::BuildingOne
                 => load_texture(window, "assets/images/building/building_one.png"),
+            SpriteType::BuildingTwo
+                => load_texture(window, "assets/images/building/building_two.png"),
+            SpriteType::BuildingThree
+                => load_texture(window, "assets/images/building/building_three.png"),
+            SpriteType::BuildingFour
+                => load_texture(window, "assets/images/building/building_four.png"),
+            SpriteType::BuildingFive
+                => load_texture(window, "assets/images/building/building_five.png"),
+            SpriteType::BuildingSix
+                => load_texture(window, "assets/images/building/building_six.png"),
+            SpriteType::BuildingSeven
+                => load_texture(window, "assets/images/building/building_seven.png"),
             SpriteType::ZombieTorso
                 => load_texture(window, "assets/images/zombie/zombie_torso.png"),
             SpriteType::ZombieClawRight
@@ -1132,7 +1150,15 @@ pub fn display(
     let mut vertex_buffers = enum_map! {_ => vec!()};
     let mut vertex_buffers_green_hp = vec!();
     let mut vertex_buffers_gui = enum_map! {_ => vec!()};
+
     let mut vertex_buffers_building = vec!();
+    let mut vertex_buffers_building_two = vec!();
+    let mut vertex_buffers_building_three = vec!();
+    let mut vertex_buffers_building_four = vec!();
+    let mut vertex_buffers_building_five = vec!();
+    let mut vertex_buffers_building_six = vec!();
+    let mut vertex_buffers_building_seven = vec!();
+
     let mut vertex_buffers_barricade = vec!();
     let mut vertex_buffers_path = vec!();
     let mut text_buffers = vec!();
@@ -1402,9 +1428,28 @@ pub fn display(
     //  push_gui_vertices(&mut vertex_buffers_gui[SpriteType::SelectionHighlight], component);
 
     // Compute vertices for buildings
-    for building in &state.buildings {
+    for i in 0..state.buildings.len() {
         let color = [0.1, 0.1, 0.1, 1.0];
-        push_building_vertices(&mut vertex_buffers_building, building, color);
+        match &state.building_type.get(&i) {
+            None => (),
+            Some(building_t) => {
+                if **building_t == 3 {
+                    push_building_vertices(&mut vertex_buffers_building_three, &state.buildings[i], color);
+                } else if **building_t == 4 {
+                    push_building_vertices(&mut vertex_buffers_building_two, &state.buildings[i], color);
+                } else if **building_t == 1 {
+                    push_building_vertices(&mut vertex_buffers_building_four, &state.buildings[i], color);
+                } else if **building_t == 2{
+                    push_building_vertices(&mut vertex_buffers_building_seven, &state.buildings[i], color);
+                } else if **building_t == 5 {
+                    push_building_vertices(&mut vertex_buffers_building_five, &state.buildings[i], color);
+                } else if **building_t == 6 {
+                    push_building_vertices(&mut vertex_buffers_building_six, &state.buildings[i], color);
+                } else {
+                    push_building_vertices(&mut vertex_buffers_building, &state.buildings[i], color);
+                }
+            }
+        }
     }
 
     for barricade in &state.barricades {
@@ -1462,7 +1507,7 @@ pub fn display(
             &uniforms);
     }
 
-    // Render buildings
+    // Render regular buildings
     {
         let uniforms = uniform! {
             matrix: camera_frame,
@@ -1476,6 +1521,88 @@ pub fn display(
             params,
             &uniforms);
     }
+
+    {
+        let uniforms = uniform! {
+            matrix: camera_frame,
+            tex: &textures.sprite_textures[SpriteType::BuildingThree],
+        };
+        draw_color_sprites(
+            frame,
+            window,
+            &vertex_buffers_building_three,
+            &programs.sprite_program,
+            params,
+            &uniforms);
+    }
+
+    {
+        let uniforms = uniform! {
+            matrix: camera_frame,
+            tex: &textures.sprite_textures[SpriteType::BuildingTwo],
+        };
+        draw_color_sprites(
+            frame,
+            window,
+            &vertex_buffers_building_two,
+            &programs.sprite_program,
+            params,
+            &uniforms);
+    }
+
+    {
+        let uniforms = uniform! {
+            matrix: camera_frame,
+            tex: &textures.sprite_textures[SpriteType::BuildingFour],
+        };
+        draw_color_sprites(
+            frame,
+            window,
+            &vertex_buffers_building_four,
+            &programs.sprite_program,
+            params,
+            &uniforms);
+    }
+    {
+        let uniforms = uniform! {
+            matrix: camera_frame,
+            tex: &textures.sprite_textures[SpriteType::BuildingFive],
+        };
+        draw_color_sprites(
+            frame,
+            window,
+            &vertex_buffers_building_five,
+            &programs.sprite_program,
+            params,
+            &uniforms);
+    }
+    {
+        let uniforms = uniform! {
+            matrix: camera_frame,
+            tex: &textures.sprite_textures[SpriteType::BuildingSix],
+        };
+        draw_color_sprites(
+            frame,
+            window,
+            &vertex_buffers_building_six,
+            &programs.sprite_program,
+            params,
+            &uniforms);
+    }
+    {
+        let uniforms = uniform! {
+            matrix: camera_frame,
+            tex: &textures.sprite_textures[SpriteType::BuildingSeven],
+        };
+        draw_color_sprites(
+            frame,
+            window,
+            &vertex_buffers_building_seven,
+            &programs.sprite_program,
+            params,
+            &uniforms);
+    }
+
     // Draw Fence border textures
     draw_left_fence(frame, window, textures, programs, camera_frame, params);
     draw_right_fence(frame, window, textures, programs, camera_frame, params);
