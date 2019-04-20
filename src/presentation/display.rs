@@ -1869,7 +1869,7 @@ pub fn display(
         if gamestate.tut_01 {
             let mut text_to_display = "Find and select a cop or drag to select multiple";
             if gamestate.tut_passed == true {
-                text_to_display = "good!";
+                text_to_display = "Good!";
                 scale_width = 0.2;
                 x_offset = -0.1;
                 if tutorial_text_fade(gamestate) {
