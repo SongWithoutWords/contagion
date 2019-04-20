@@ -138,8 +138,8 @@ pub fn load_textures(window: &glium_sdl2::SDL2Facade) -> Textures {
         },
         background_texture: load_texture(&window, "assets/images/dirt.jpg"),
         wallpaper: load_texture(&window, "assets/images/contagion_wallpaper.png"),
-        victory: load_texture(&window, "assets/images/homer.png"),
-        loss: load_texture(&window, "assets/images/lisa.png"),
+        victory: load_texture(&window, "assets/images/victory_scene.png"),
+        loss: load_texture(&window, "assets/images/loss_scene.png"),
         outside_border_texture: load_texture(&window, "assets/images/grass.jpg"),
         left_fence_texture: load_texture(&window, "assets/images/wall_left.jpg"),
         top_fence_texture: load_texture(&window, "assets/images/wall.jpg"),
@@ -2363,7 +2363,7 @@ pub fn display_loss_screen(
     let text_display = format!("{}", text_1_loss);
     let str_slice: &str = &text_display[..];
     let text = glium_text::TextDisplay::new(&system, font.medres(), str_slice);
-    let color = [1.0, 1.0, 0.0, 1.0f32];
+    let color = [1.0, 0.0, 0.0, 1.0f32];
     let _font_scale_down = 1.5;
     let text_width = text.get_width() as f64;
     let (w, h) = frame.get_dimensions();
@@ -2385,7 +2385,7 @@ pub fn display_loss_screen(
     let text_display = format!("{}", text_diff);
     let str_slice: &str = &text_display[..];
     let text = glium_text::TextDisplay::new(&system, font.medres(), str_slice);
-    let color = [1.0, 1.0, 0.0, 1.0f32];
+    let color = [1.0, 0.0, 0.0, 1.0f32];
     let translate_offset = Vector4 { x: 0.0, y: -0.3, z: 0.0, w: 0.0 };
     matrix = matrix.translation(translate_offset);
     glium_text::draw(&text, &system, frame, matrix.as_f32_array(), color);
@@ -2394,7 +2394,7 @@ pub fn display_loss_screen(
     let text_display = format!("Score: {}", score);
     let str_slice: &str = &text_display[..];
     let text = glium_text::TextDisplay::new(&system, font.medres(), str_slice);
-    let color = [1.0, 1.0, 0.0, 1.0f32];
+    let color = [1.0, 0.0, 0.0, 1.0f32];
     let scale_factor = Vector4 { x: 0.5, y: 0.5, z: 1.0, w: 1.0 };
     let translate_offset = Vector4 { x: 0.1, y: -0.2, z: 0.0, w: 0.0 };
     matrix = matrix.scale(scale_factor).translation(translate_offset);
@@ -2406,7 +2406,7 @@ pub fn display_loss_screen(
 
     let str_slice: &str = &text_display[..];
     let text = glium_text::TextDisplay::new(&system, font.medres(), str_slice);
-    let color = [1.0, 1.0, 0.0, 1.0f32];
+    let color = [1.0, 0.0, 0.0, 1.0f32];
     let translate_offset = Vector4 { x: 0.0, y: -0.2, z: 0.0, w: 0.0 };
     matrix = matrix.translation(translate_offset);
     glium_text::draw(&text, &system, frame, matrix.as_f32_array(), color);
