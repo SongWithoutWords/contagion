@@ -2651,7 +2651,7 @@ pub fn display_difficulty_screen(
     let _text_offset = 1.0 / text_width;
     let scale_factor = Vector4 { x: 1.0 / text_width, y: 1.0 * (w as f64) / (h as f64) / text_width, z: 1.0, w: 1.0 };
     let translation_offset = Vector4 { x: -0.5, y: 0.0, z: 0.0, w: 0.0 };
-    let mut matrix = mat.scale(scale_factor).translation(translation_offset);
+    let matrix = mat.scale(scale_factor).translation(translation_offset);
     glium_text::draw(&text, &system, frame, matrix.as_f32_array(), color);
 }
 

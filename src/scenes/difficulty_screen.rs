@@ -1,4 +1,3 @@
-use crate::simulation::update::EntityCounts;
 use crate::simulation::game_state::GameState;
 use crate::presentation::ui::gui::Component;
 use crate::scenes::scene::{Scene, UpdateResult};
