@@ -37,7 +37,7 @@ pub struct Game {
 const EASY_COP_COUNT: Scalar = 0.1;
 const EASY_INFECTED_COUNT: Scalar = 0.07;
 const MEDIUM_COP_COUNT: Scalar = 0.075;
-const MEDIUM_INFECTED_COUNT: Scalar = 0.1;
+const MEDIUM_INFECTED_COUNT: Scalar = 0.15;
 const HARD_COP_COUNT: Scalar = 0.04;
 const HARD_INFECTED_COUNT: Scalar = 0.4;
 

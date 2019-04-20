@@ -107,7 +107,8 @@ impl Scene for VictoryScreen {
                                                    &mut self.gui,
 
                                                    &self.entity_counts,
-                                                   &fonts);
+                                                   &fonts,
+                                                      &mut self.game_state);
         target.finish().unwrap();
     }
 }

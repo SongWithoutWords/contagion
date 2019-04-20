@@ -630,7 +630,7 @@ impl Component {
         }
     }
 
-    // difficulty scene's GUI event handler
+    // Difficulty scene's GUI event handler
     pub fn handle_difficulty_event(&mut self, event: &Event, window: &mut SDL2Facade, game_state: &mut GameState) {
         // handle events for any menu laid on top of game
         for i in 0..self.components.len() {

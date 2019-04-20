@@ -27,42 +27,42 @@ impl LossScreen {
         LossScreen {
             entity_counts: entity_counts,
             game_state: game_state,
-            gui:gui,
+            gui: gui,
             camera: camera,
         }
     }
 }
 
-impl Scene for LossScreen  {
+impl Scene for LossScreen {
     fn update(&mut self, event_pump: &mut EventPump, window: &mut SDL2Facade, delta_time: f64) -> UpdateResult {
         match self.game_state {
-            GameState{transition_game, transition_menu, terminate, easy_game, medium_game, hard_game, ..} =>
+            GameState { transition_game, transition_menu, terminate, easy_game, medium_game, hard_game, .. } =>
                 {
                     if easy_game {
                         self.game_state.easy_game = false;
                         self.game_state.easy = true;
-                        return UpdateResult::Transition(Box::new(game::Game::new(false, true, self.game_state.easy, false, false)))
+                        return UpdateResult::Transition(Box::new(game::Game::new(false, true, self.game_state.easy, false, false)));
                     }
                     if medium_game {
                         self.game_state.medium_game = false;
                         self.game_state.medium = true;
-                        return UpdateResult::Transition(Box::new(game::Game::new(false, true, false, self.game_state.medium, false)))
+                        return UpdateResult::Transition(Box::new(game::Game::new(false, true, false, self.game_state.medium, false)));
                     }
                     if hard_game {
                         self.game_state.hard_game = false;
                         self.game_state.hard = true;
-                        return UpdateResult::Transition(Box::new(game::Game::new(false, true, false, false, self.game_state.hard)))
+                        return UpdateResult::Transition(Box::new(game::Game::new(false, true, false, false, self.game_state.hard)));
                     }
                     if transition_game {
                         self.game_state.transition_game = false;
-                        return UpdateResult::Transition(Box::new(game::Game::new(self.game_state.tutorial, false, false, false, false)))
+                        return UpdateResult::Transition(Box::new(game::Game::new(self.game_state.tutorial, false, false, false, false)));
                     }
                     if transition_menu {
                         self.game_state.transition_menu = false;
-                        return UpdateResult::Transition(Box::new(main_menu::MainMenu::new()))
+                        return UpdateResult::Transition(Box::new(main_menu::MainMenu::new()));
                     }
                     if terminate {
-                        return UpdateResult::Exit
+                        return UpdateResult::Exit;
                     }
                 }
         }
@@ -71,8 +71,8 @@ impl Scene for LossScreen  {
             match event {
                 // Exit window if escape key pressed or quit event triggered
                 Event::Quit { .. } => {
-                    return UpdateResult::Exit
-                },
+                    return UpdateResult::Exit;
+                }
                 Event::KeyDown { keycode: Some(Keycode::L), .. } => {
                     println!("Debug info:");
                     println!("  DT:               {:?}", delta_time);
@@ -89,14 +89,15 @@ impl Scene for LossScreen  {
     fn render(&mut self, window: &SDL2Facade, programs: &Programs, textures: &Textures, params: &DrawParameters, fonts: &FontPkg) {
         let mut target = window.draw();
         presentation::display::display_loss_screen(&mut target,
-                                                 &window,
-                                                 &programs,
-                                                 &textures,
-                                                 &params,
+                                                   &window,
+                                                   &programs,
+                                                   &textures,
+                                                   &params,
                                                    self.camera.compute_matrix().as_f32_array(),
-                                                 &mut self.gui,
-                                                 &self.entity_counts,
-                                                 &fonts);
+                                                   &mut self.gui,
+                                                   &self.entity_counts,
+                                                   &fonts,
+                                                   &mut self.game_state);
         target.finish().unwrap();
     }
 }

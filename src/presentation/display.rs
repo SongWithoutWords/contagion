@@ -2182,6 +2182,7 @@ pub fn display_loss_screen(
     ui: &mut Component,
     entity_counts: &EntityCounts,
     fonts: &FontPkg,
+    game_state: &mut GameState,
 ) {
     let font = fonts.get("Consola").unwrap();
     //  frame.clear_color(0.0, 0.0, 0.0, 1.0);
@@ -2280,6 +2281,23 @@ pub fn display_loss_screen(
     let mut matrix = mat.scale(scale_factor).translation(translation_offset);
     glium_text::draw(&text, &system, frame, matrix.as_f32_array(), color);
 
+    // Difficulty
+    let mut text_diff = "".to_string();
+    if game_state.easy {
+        text_diff = "Difficulty: EASY".to_string();
+    } else if game_state.medium {
+        text_diff = "Difficulty: MEDIUM".to_string();
+    } else if game_state.hard {
+        text_diff = "Difficulty: HARD".to_string();
+    }
+    let text_display = format!("{}", text_diff);
+    let str_slice: &str = &text_display[..];
+    let text = glium_text::TextDisplay::new(&system, font.medres(), str_slice);
+    let color = [1.0, 1.0, 0.0, 1.0f32];
+    let translate_offset = Vector4 { x: 0.0, y: -0.3, z: 0.0, w: 0.0 };
+    matrix = matrix.translation(translate_offset);
+    glium_text::draw(&text, &system, frame, matrix.as_f32_array(), color);
+
     // Score
     let text_display = format!("Score: {}", score);
     let str_slice: &str = &text_display[..];
@@ -2313,6 +2331,7 @@ pub fn display_victory_screen(
     // state: &State,
     entity_counts: &EntityCounts,
     fonts: &FontPkg,
+    game_state: &mut GameState,
 ) {
     let font = fonts.get("Consola").unwrap();
     // background color
@@ -2404,6 +2423,23 @@ pub fn display_victory_screen(
     let scale_factor = Vector4 { x: 2.0 / text_width, y: 2.0 * (w as f64) / (h as f64) / text_width, z: 1.0, w: 1.0 };
     let translation_offset = Vector4 { x: -1.0, y: 0.8, z: 0.0, w: 0.0 };
     let mut matrix = mat.scale(scale_factor).translation(translation_offset);
+    glium_text::draw(&text, &system, frame, matrix.as_f32_array(), color);
+
+    // Difficulty
+    let mut text_diff = "".to_string();
+    if game_state.easy {
+        text_diff = "Difficulty: EASY".to_string();
+    } else if game_state.medium {
+        text_diff = "Difficulty: MEDIUM".to_string();
+    } else if game_state.hard {
+        text_diff = "Difficulty: HARD".to_string();
+    }
+    let text_display = format!("{}", text_diff);
+    let str_slice: &str = &text_display[..];
+    let text = glium_text::TextDisplay::new(&system, font.medres(), str_slice);
+    let color = [0.0, 0.0, 0.0, 1.0f32];
+    let translate_offset = Vector4 { x: 0.0, y: -0.3, z: 0.0, w: 0.0 };
+    matrix = matrix.translation(translate_offset);
     glium_text::draw(&text, &system, frame, matrix.as_f32_array(), color);
 
     // Score
