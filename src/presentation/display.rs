@@ -411,8 +411,8 @@ fn push_hand_vertices(buffer: &mut Vec<Vertex>, sprite: &Sprite, hand: bool, typ
 }
 
 fn push_health_bar_vertices(buffer: &mut Vec<ColorVertex>, sprite: &Sprite, health: Scalar) {
-    let position = Vector2 { x: sprite.position.x, y: sprite.position.y + 0.6 };
-    let up = 0.4;
+    let position = Vector2 { x: sprite.position.x, y: sprite.position.y + 1.0};
+    let up = 0.5;
     let down = 0.2;
 
     let top_left = Vector2 { x: position.x - up, y: position.y + up };
@@ -451,40 +451,36 @@ fn push_health_bar_vertices(buffer: &mut Vec<ColorVertex>, sprite: &Sprite, heal
 }
 
 fn push_infection_symbol_vertices(buffer: &mut Vec<ColorVertex>, sprite: &Sprite, infection: Scalar) {
-    let position = Vector2 { x: sprite.position.x, y: sprite.position.y + 1.0 };
-    let up = 0.4;
-    let down = 0.4;
-    let height = 0.6;
+    let height = 0.0;
+    let position = Vector2 { x: sprite.position.x, y: sprite.position.y + height};
+    let up = 0.35;
+    let down = 0.35;
 
-    let top_left = Vector2 { x: position.x - up, y: position.y + up + height };
-    let top_right = Vector2 { x: position.x + up, y: position.y + up + height };
-    let bot_left = Vector2 { x: position.x - up, y: position.y - down + height };
-    let bot_right = Vector2 { x: position.x + up, y: position.y - down + height };
+    let top_left = Vector2 { x: position.x - up, y: position.y + up };
+    let top_right = Vector2 { x: position.x + up, y: position.y + up };
+    let bot_left = Vector2 { x: position.x - up, y: position.y - down };
+    let bot_right = Vector2 { x: position.x + up, y: position.y - down };
 
     let color = vector4(0.0, 1.0, 0.0, 1.0).lerp(vector4(1.0, 0.0, 0.0, 1.0), infection).as_f32_array();
 
     let vertex0 = ColorVertex {
         position: top_left.as_f32_array(),
         tex_coords: [0.0, 1.0],
-//        tex_coords: [0.0, 2.0],
         color,
     };
     let vertex1 = ColorVertex {
         position: top_right.as_f32_array(),
         tex_coords: [1.0, 1.0],
-//        tex_coords: [2.0, 2.0],
         color,
     };
     let vertex2 = ColorVertex {
         position: bot_left.as_f32_array(),
         tex_coords: [0.0, 0.0],
-//        tex_coords: [0.0, 0.0],
         color,
     };
     let vertex3 = ColorVertex {
         position: bot_right.as_f32_array(),
         tex_coords: [1.0, 0.0],
-//        tex_coords: [2.0, 0.0],
         color,
 
     };
